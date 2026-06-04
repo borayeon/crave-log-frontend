@@ -4,10 +4,14 @@ import BottomNavigation from '@/components/layout/BottomNavigation';
 import TimelineView from '@/components/timeline/TimelineView';
 import ProfileView from '@/components/profile/ProfileView';
 import SpaceView from '@/components/space/SpaceView';
-import { useAppStore } from '@/store/useStore';
 
-export default function App() {
-  const viewMode = useAppStore(state => state.viewMode);
+// 🚀 AppProvider와 useAppStore를 모두 가져옵니다.
+import { AppProvider, useAppStore } from '@/store/useStore';
+
+// 1. 실제 UI를 그리고 상태를 꺼내 쓰는 자식 컴포넌트
+const AppContent = () => {
+  // Context API 방식이므로 구조분해할당으로 꺼내옵니다.
+  const { viewMode } = useAppStore();
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex justify-center items-center font-sans p-0 sm:p-4">
@@ -19,5 +23,14 @@ export default function App() {
         <BottomNavigation />
       </div>
     </div>
+  );
+};
+
+// 2. 최상단 부모 컴포넌트 (Provider로 감싸기만 함)
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
   );
 }

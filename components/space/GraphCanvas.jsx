@@ -1,10 +1,13 @@
 "use client";
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { useAppStore, useActiveNodes } from '@/store/useStore';
+import { useAppStore } from '../../store/useStore';
 
 export default function GraphCanvas() {
-  const { nodes, selectedNodeId, setSelectedNodeId, hoveredNodeId, setHoveredNodeId, sheetHeight, graphSubMode } = useAppStore();
-  const activeNodeIds = useActiveNodes(); // 커스텀 훅으로 분리된 상태 가져오기
+  const { 
+    nodes, selectedNodeId, setSelectedNodeId, 
+    hoveredNodeId, setHoveredNodeId, 
+    activeNodeIds, sheetHeight, graphSubMode 
+  } = useAppStore();
   
   const simNodes = useRef([]);
   const canvasRef = useRef(null);
@@ -141,7 +144,7 @@ export default function GraphCanvas() {
             if (!node.parentId) return null;
             const parent = simNodes.current.find(n => n.id === node.parentId);
             if (!parent) return null;
-            const isHighlighted = activeHighlightIds ? (activeHighlightIds.has(node.id) && activeHighlightIds.has(parent.id)) : (activeNodeIds.has(node.id) && activeNodeIds.has(parent.id));
+            const isHighlighted = activeHighlightIds ? (activeHighlightIds.has(node.id) && activeHighlightIds.has(parent.id)) : (activeNodeIds && activeNodeIds.has(node.id) && activeNodeIds.has(parent.id));
             return (
               <line key={`link-${node.id}`} x1={parent.x} y1={parent.y} x2={node.x} y2={node.y}
                 stroke={isHighlighted ? "#CBD5E1" : "#F1F5F9"} strokeWidth={isHighlighted ? "1.5" : "0.5"}
@@ -153,7 +156,7 @@ export default function GraphCanvas() {
         {simNodes.current.map(node => {
           const isSelected = selectedNodeId === node.id;
           const isHovered = hoveredNodeId === node.id;
-          const isHighlighted = activeHighlightIds ? activeHighlightIds.has(node.id) : activeNodeIds.has(node.id);
+          const isHighlighted = activeHighlightIds ? activeHighlightIds.has(node.id) : (activeNodeIds && activeNodeIds.has(node.id));
           const dotSize = node.size === 'lg' ? 'w-4 h-4' : node.size === 'md' ? 'w-3 h-3' : 'w-2 h-2';
 
           return (

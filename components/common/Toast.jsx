@@ -1,9 +1,10 @@
 "use client";
 import { Sparkles } from 'lucide-react';
-import { useAppStore } from '@/store/useStore';
+import { useAppStore } from '../../store/useStore';
 
 export default function Toast() {
-  const toastMessage = useAppStore(state => state.toastMessage);
+  // 🚀 기존 Zustand 방식 대신 Context API의 구조분해할당 방식으로 꺼내옵니다.
+  const { toastMessage } = useAppStore();
   
   if (!toastMessage) return null;
   return (
