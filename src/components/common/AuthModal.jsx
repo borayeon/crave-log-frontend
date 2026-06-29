@@ -3,13 +3,12 @@ import { Lock, MessageSquare } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const AuthModal = () => {
-  const { loginModalOpen, setLoginModalOpen, setIsAdmin, showToast } = useAppStore();
+  const { loginModalOpen, setLoginModalOpen } = useAppStore();
   if (!loginModalOpen) return null;
 
   const handleLogin = () => {
-    setIsAdmin(true);
-    setLoginModalOpen(false);
-    showToast("호스트로 로그인되었습니다! 🔓 이제 프로필을 설정해보세요.");
+    // ⭐️ 백엔드의 카카오 OAuth2 진입점으로 바로 이동시킵니다.
+    window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
   };
 
   return (

@@ -33,7 +33,7 @@ const TimelineView = () => {
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/me/categories`, {
+      const res = await apiFetch(`${API_BASE_URL}/me/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newCategoryName.trim() })
@@ -52,7 +52,7 @@ const TimelineView = () => {
     
     const numericCatId = catId.replace('cat_', '');
     try {
-      const res = await fetch(`${API_BASE_URL}/me/categories/${numericCatId}/tags`, {
+      const res = await apiFetch(`${API_BASE_URL}/me/categories/${numericCatId}/tags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: tagName.trim() })
@@ -74,7 +74,7 @@ const TimelineView = () => {
         ? `${API_BASE_URL}/me/categories/${numericId}`
         : `${API_BASE_URL}/me/tags/${numericId}`;
         
-      const res = await fetch(url, { method: 'DELETE' });
+      const res = await apiFetch(url, { method: 'DELETE' });
       
       if (res.ok) {
         await fetchAllData();

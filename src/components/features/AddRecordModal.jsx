@@ -23,7 +23,7 @@ const AddRecordModal = () => {
         imageUrl: imageUrl || '[https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop](https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop)',
         isPublic: true, tagIds: numericTagIds
       };
-      const res = await fetch(`${API_BASE_URL}/me/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await apiFetch(`${API_BASE_URL}/me/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (res.ok) { 
         await fetchAllData(); showToast('새 기록이 성공적으로 추가되었습니다! 🎉'); setAddRecordModalOpen(false); 
         setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); 

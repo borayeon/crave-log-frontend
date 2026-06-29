@@ -3,7 +3,7 @@ import { Menu, Sparkles, Search, User, LogOut, Lock, Plus } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const TopNavBar = () => {
-  const { viewMode, setViewMode, isSidebarOpen, setIsSidebarOpen, isAdmin, setIsAdmin, setLoginModalOpen, setAddRecordModalOpen, showToast } = useAppStore();
+  const { viewMode, setViewMode, isSidebarOpen, setIsSidebarOpen, isAdmin, setLoginModalOpen, setAddRecordModalOpen, showToast, handleLogout } = useAppStore();
   const titleMap = { profile: '인덱스 (Index)', edit_profile: '프로필 설정 (Set Profile)', archive: '취향 보관함 (Taste Archive)', timeline: '발자취 (Timeline)' };
 
   return (
@@ -22,7 +22,9 @@ const TopNavBar = () => {
           <>
             <button onClick={() => setAddRecordModalOpen(true)} className="px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5 md:mr-2"><Plus size={14} /> 새 기록</button>
             <button onClick={() => { setViewMode('profile'); showToast("마이페이지로 이동합니다. 🏃"); }} className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm"><User size={16} /></button>
-            <button onClick={() => { setIsAdmin(false); setViewMode('profile'); showToast("로그아웃 되었습니다. 👋"); }} className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-rose-600 hover:bg-rose-50 transition shadow-sm"><LogOut size={16} /></button>
+            
+            {/* ⭐️ 로그아웃 기능 교체 */}
+            <button onClick={() => { handleLogout(); showToast("로그아웃 되었습니다. 👋"); }} className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-rose-600 hover:bg-rose-50 transition shadow-sm"><LogOut size={16} /></button>
           </>
         ) : (
           <button onClick={() => setLoginModalOpen(true)} className="w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition shadow-sm"><Lock size={14} /></button>

@@ -23,7 +23,7 @@ const EditProfileView = () => {
 
   const handleSave = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/me/profile`, {
+      const res = await apiFetch(`${API_BASE_URL}/me/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

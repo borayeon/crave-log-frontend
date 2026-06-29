@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react';
 
 export const API_BASE_URL = 'http://localhost:8080/api/v1';
 
-const INITIAL_USER_DATA = {
+const INITIAL_USER_DATA = { /* 기존과 동일하게 유지 */
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
   location: "위치를 설정해주세요", bio: "나를 표현하는 짧은 소개를 작성해보세요 🚀",
   status: "환영합니다!", tags: [], goals: [],
@@ -22,20 +22,55 @@ export const AppProvider = ({ children }) => {
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
   const [user, setUser] = useState(INITIAL_USER_DATA);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ⭐️ 1. 초기 로그인 상태를 localStorage의 토큰 유무로 판단합니다.
+  const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem('accessToken'));
+
+  // ⭐️ 2. 앱 실행 시 URL에 토큰이 있다면 가로채서 저장합니다.
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+      localStorage.setItem('accessToken', token);
+      setIsAdmin(true);
+      // 지저분한 토큰 URL을 깔끔하게 지워줍니다.
+      window.history.replaceState({}, document.title, '/');
+    }
+  }, []);
+
+  // ⭐️ 3. JWT 토큰을 자동으로 헤더에 넣어주는 커스텀 fetch 함수입니다.
+  const apiFetch = useCallback(async (endpoint, options = {}) => {
+    const token = localStorage.getItem('accessToken');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`; // 토큰 탑재!
+    }
+    return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  }, []);
+
+  // ⭐️ 4. 로그아웃 처리 함수
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('accessToken');
+    setIsAdmin(false);
+    setViewMode('profile');
+  }, []);
+
+  // 5. 데이터 불러오기 (fetch 대신 apiFetch 사용)
   const fetchAllData = useCallback(async () => {
     const HANDLE = 'taekyeong.dev';
     try {
       setIsLoading(true);
       const [profileRes, treeRes, recordsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/users/${HANDLE}/profile`).catch(() => ({ ok: false })),
-          fetch(`${API_BASE_URL}/users/${HANDLE}/categories`).catch(() => ({ ok: false })),
-          fetch(`${API_BASE_URL}/users/${HANDLE}/records`).catch(() => ({ ok: false }))
+          apiFetch(`/users/${HANDLE}/profile`).catch(() => ({ ok: false })),
+          apiFetch(`/users/${HANDLE}/categories`).catch(() => ({ ok: false })),
+          apiFetch(`/users/${HANDLE}/records`).catch(() => ({ ok: false }))
       ]);
 
       if (profileRes.ok) setUser(await profileRes.json());
@@ -53,7 +88,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [apiFetch]);
 
   useEffect(() => {
     fetchAllData();
@@ -84,7 +119,8 @@ export const AppProvider = ({ children }) => {
       loginModalOpen, setLoginModalOpen,
       addRecordModalOpen, setAddRecordModalOpen,
       tagTree, setTagTree, user, setUser,
-      isSidebarOpen, setIsSidebarOpen, fetchAllData
+      isSidebarOpen, setIsSidebarOpen, fetchAllData,
+      apiFetch, handleLogout // ⭐️ 새로 만든 유틸리티 함수들을 내보냅니다.
     }}>
       {children}
     </AppContext.Provider>
