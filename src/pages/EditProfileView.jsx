@@ -1,10 +1,25 @@
 import React, { useState } from 'react';
 import { Save, Eye, Lock, Trash2, AlertTriangle } from 'lucide-react';
-import { useAppStore, API_BASE_URL } from '../store/AppStore';
+import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
-  const { setViewMode, user, showToast, setIsAdmin, fetchAllData } = useAppStore();
-  const [formData, setFormData] = useState(JSON.parse(JSON.stringify(user)));
+  // ⭐️ 1. apiFetch 꺼내오기 추가
+  const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
+  
+  // ⭐️ 2. 핵심 수정: DB에서 null로 올 수 있는 데이터들의 기본 뼈대를 완벽히 잡아줍니다.
+  const [formData, setFormData] = useState(() => {
+    const safeUser = JSON.parse(JSON.stringify(user || {}));
+    return {
+      ...safeUser,
+      privacy: safeUser.privacy || { developer: true, career: true, idol: true },
+      developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
+      career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
+      idol: safeUser.idol || { nickname: "", birthday: "", age: "", specialty: "", hobbies: "", favorites: {}, qna: [] },
+      tags: safeUser.tags || [],
+      goals: safeUser.goals || []
+    };
+  });
+
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -23,9 +38,9 @@ const EditProfileView = () => {
 
   const handleSave = async () => {
     try {
-      const res = await apiFetch(`${API_BASE_URL}/me/profile`, {
+      // ⭐️ 3. fetch 대신 인증 토큰을 자동으로 담아주는 apiFetch 사용
+      const res = await apiFetch(`/me/profile`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       

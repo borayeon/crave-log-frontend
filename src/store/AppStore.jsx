@@ -19,6 +19,7 @@ export const useAppStore = () => useContext(AppContext);
 export const AppProvider = ({ children }) => {
   const [viewMode, setViewMode] = useState('profile');
   const [toastMessage, setToastMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
   const [user, setUser] = useState(INITIAL_USER_DATA);
@@ -26,6 +27,7 @@ export const AppProvider = ({ children }) => {
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuestMode, setIsGuestMode] = useState(false);
 
   // ⭐️ 1. 초기 로그인 상태를 localStorage의 토큰 유무로 판단합니다.
   const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem('accessToken'));
@@ -54,7 +56,6 @@ export const AppProvider = ({ children }) => {
     }
     return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
   }, []);
-
   // ⭐️ 4. 로그아웃 처리 함수
   const handleLogout = useCallback(() => {
     localStorage.removeItem('accessToken');
@@ -62,15 +63,23 @@ export const AppProvider = ({ children }) => {
     setViewMode('profile');
   }, []);
 
-  // 5. 데이터 불러오기 (fetch 대신 apiFetch 사용)
-  const fetchAllData = useCallback(async () => {
-    const HANDLE = 'taekyeong.dev';
+  // ⭐️ 5. 데이터 불러오기 (isSilent 파라미터 추가)
+  const fetchAllData = useCallback(async (isSilent = false) => {
+    const token = localStorage.getItem('accessToken');
+    const HANDLE = 'taekyeong.dev'; // 비로그인 시 기본 열람할 핸들
+    
+    // 로그인 상태라면 내 정보를, 아니라면 taekyeong.dev의 퍼블릭 정보를 가져옵니다.
+    const profileUrl = token ? `/me/profile` : `/users/${HANDLE}/profile`;
+    const categoriesUrl = token ? `/me/categories` : `/users/${HANDLE}/categories`;
+    const recordsUrl = token ? `/me/records` : `/users/${HANDLE}/records`;
+
     try {
-      setIsLoading(true);
+      if (!isSilent) setIsLoading(true); // isSilent가 아닐 때만 로딩창 띄우기
+      
       const [profileRes, treeRes, recordsRes] = await Promise.all([
-          apiFetch(`/users/${HANDLE}/profile`).catch(() => ({ ok: false })),
-          apiFetch(`/users/${HANDLE}/categories`).catch(() => ({ ok: false })),
-          apiFetch(`/users/${HANDLE}/records`).catch(() => ({ ok: false }))
+          apiFetch(profileUrl).catch(() => ({ ok: false })),
+          apiFetch(categoriesUrl).catch(() => ({ ok: false })),
+          apiFetch(recordsUrl).catch(() => ({ ok: false }))
       ]);
 
       if (profileRes.ok) setUser(await profileRes.json());
@@ -86,7 +95,7 @@ export const AppProvider = ({ children }) => {
       console.error(error);
       setUser(INITIAL_USER_DATA); setTagTree([]); setRecords([]);
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false); // isSilent가 아닐 때만 로딩창 닫기
     }
   }, [apiFetch]);
 
@@ -115,12 +124,14 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{ 
       viewMode, setViewMode, toastMessage, showToast, 
+      searchQuery, setSearchQuery, // ⭐️ 컨텍스트로 내보내기
       records, setRecords, isAdmin, setIsAdmin, 
       loginModalOpen, setLoginModalOpen,
       addRecordModalOpen, setAddRecordModalOpen,
       tagTree, setTagTree, user, setUser,
       isSidebarOpen, setIsSidebarOpen, fetchAllData,
-      apiFetch, handleLogout // ⭐️ 새로 만든 유틸리티 함수들을 내보냅니다.
+      apiFetch, handleLogout,
+      isGuestMode, setIsGuestMode // ⭐️ 전역으로 내보내기
     }}>
       {children}
     </AppContext.Provider>

@@ -3,9 +3,8 @@ import { Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, Rocket, User
 import { useAppStore } from '../store/AppStore';
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen } = useAppStore();
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore(); // isGuestMode 가져오기
   const [activeTab, setActiveTab] = useState('developer'); 
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const handleShare = () => {
     showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
@@ -14,18 +13,19 @@ const ProfileView = () => {
   const isProfileEmpty = user.name === "손님" && (user.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
 
+  // ⭐️ 전역 isGuestMode 연동
   const availableTabs = [
     { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
     { id: 'career', icon: <Briefcase size={16}/>, label: 'Career Info' },
     { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
-  ].filter(tab => !isPreviewMode || user.privacy[tab.id]);
+  ].filter(tab => !isGuestMode || user.privacy?.[tab.id] !== false); 
 
   useEffect(() => {
-    if (isPreviewMode && !user.privacy[activeTab]) {
+    if (isGuestMode && user.privacy?.[activeTab] === false) {
       const firstAvailable = availableTabs[0];
       if (firstAvailable) setActiveTab(firstAvailable.id);
     }
-  }, [isPreviewMode, activeTab, user, availableTabs]);
+  }, [isGuestMode, activeTab, user.privacy, availableTabs]);
 
   return (
     <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
@@ -37,26 +37,23 @@ const ProfileView = () => {
         <div className="flex flex-wrap gap-2">
            {!isProfileEmpty && (
              <>
-                <button onClick={() => setIsPreviewMode(!isPreviewMode)} className={`px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-2 ${isPreviewMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>
-                    {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />} <span className="hidden md:inline">{isPreviewMode ? '미리보기 종료' : '퍼블릭 미리보기'}</span>
-                </button>
+                {/* 상단으로 옮겨간 미리보기 버튼 삭제 */}
                 <button onClick={handleShare} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm flex items-center gap-2">
                     <Link size={16} /> <span className="hidden md:inline">공유</span>
                 </button>
              </>
            )}
-          {isAdmin ? (
+          {isAdmin && !isGuestMode ? (
             <button onClick={() => setViewMode('edit_profile')} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
               <Edit2 size={16} /> <span className="hidden md:inline">프로필 설정</span>
             </button>
-          ) : (
+          ) : !isAdmin ? (
              <button onClick={() => setLoginModalOpen(true)} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
               <Rocket size={16} /> <span className="hidden md:inline">내 프로필 만들기</span>
             </button>
-          )}
+          ) : null}
         </div>
       </header>
-
       {/* Top SNS Profile Area */}
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8 items-center md:items-start mb-6 relative overflow-hidden">
         {isProfileEmpty && !isAdmin && (
@@ -113,7 +110,8 @@ const ProfileView = () => {
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
             {availableTabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
-                    {tab.icon} {tab.label} {!user.privacy[tab.id] && <Lock size={12} className="text-rose-400" />}
+                    {/* ⭐️ 수정: 자물쇠 렌더링 시에도 옵셔널 체이닝 적용 */}
+                    {tab.icon} {tab.label} {user.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
                 </button>
             ))}
           </div>
