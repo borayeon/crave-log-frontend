@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 
-export const API_BASE_URL = 'http://localhost:8080/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 const INITIAL_USER_DATA = { /* 기존과 동일하게 유지 */
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
