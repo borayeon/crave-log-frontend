@@ -7,9 +7,12 @@ import {
 import { useAppStore } from '../store/AppStore';
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen } = useAppStore();
+  // ⭐️ 1. 전역 상태인 isGuestMode를 가져오고, 이전의 로컬 상태(isPreviewMode)는 삭제합니다.
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // ⭐️ 2. 게스트 판단 로직: 비로그인 상태이거나, 호스트가 '게스트 뷰' 버튼을 켰을 때
+  const isGuest = !isAdmin || isGuestMode;
 
   // ⭐️ 탭 순서를 로컬 스토리지에 저장하고 드래그 앤 드롭 상태를 관리합니다.
   const [tabOrder, setTabOrder] = useState(() => {
@@ -36,31 +39,36 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
+  // ⭐️ 3. 전역 isGuest 상태를 사용하여 비공개 탭을 필터링합니다.
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
-    .filter(tab => !isPreviewMode || user.privacy?.[tab.id] !== false);
+    .filter(tab => !isGuest || user.privacy?.[tab.id] !== false);
 
   useEffect(() => {
     // ⭐️ 모든 정보가 비공개일 때 activeTab을 비우도록 수정
-    if (isPreviewMode && activeTab && user.privacy?.[activeTab] === false) {
+    if (isGuest && activeTab && user.privacy?.[activeTab] === false) {
       const firstAvailable = availableTabs[0];
       setActiveTab(firstAvailable ? firstAvailable.id : null);
     } else if (!activeTab && availableTabs.length > 0) {
       setActiveTab(availableTabs[0].id);
     }
-  }, [isPreviewMode, activeTab, user.privacy, availableTabs]);
+  }, [isGuest, activeTab, user.privacy, availableTabs]);
 
-  // ⭐️ 드래그 앤 드롭 이벤트 핸들러
+  // ⭐️ 4. 드래그 앤 드롭 핸들러: 브라우저 인식을 위한 필수 코드(dataTransfer) 추가
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id); // HTML5 드래그가 취소되지 않도록 데이터 설정
   };
 
   const handleDragOver = (e) => {
     e.preventDefault(); // 드롭 허용
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e, dropId) => {
     e.preventDefault();
+    e.stopPropagation(); // 브라우저 기본 동작 방지
     if (!draggedTab || draggedTab === dropId) return;
 
     const newOrder = [...tabOrder];
@@ -84,23 +92,21 @@ const ProfileView = () => {
         <div className="flex flex-wrap gap-2">
            {!isProfileEmpty && (
              <>
-                <button onClick={() => setIsPreviewMode(!isPreviewMode)} className={`px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-2 ${isPreviewMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>
-                    {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />} <span className="hidden md:inline">{isPreviewMode ? '미리보기 종료' : '퍼블릭 미리보기'}</span>
-                </button>
+                {/* ⭐️ 이미 상단바(TopNavBar)에 게스트 토글 버튼이 있으므로 여기선 공유 버튼만 남깁니다. */}
                 <button onClick={handleShare} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm flex items-center gap-2">
                     <Link size={16} /> <span className="hidden md:inline">공유</span>
                 </button>
              </>
            )}
-          {isAdmin ? (
+          {isAdmin && !isGuestMode ? (
             <button onClick={() => setViewMode('edit_profile')} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
               <Edit2 size={16} /> <span className="hidden md:inline">프로필 설정</span>
             </button>
-          ) : (
+          ) : !isAdmin ? (
              <button onClick={() => setLoginModalOpen(true)} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
               <Rocket size={16} /> <span className="hidden md:inline">내 프로필 만들기</span>
             </button>
-          )}
+          ) : null}
         </div>
       </header>
 
@@ -162,7 +168,7 @@ const ProfileView = () => {
             {availableTabs.map(tab => (
                 <button 
                     key={tab.id} 
-                    draggable={!isPreviewMode} // ⭐️ 미리보기 상태가 아닐 때만 드래그 허용
+                    draggable={!isGuest} // ⭐️ 게스트 상태가 아닐 때만 드래그 허용
                     onDragStart={(e) => handleDragStart(e, tab.id)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, tab.id)}
@@ -178,7 +184,7 @@ const ProfileView = () => {
           </div>
 
           {/* Tab Contents */}
-          {availableTabs.length === 0 && isPreviewMode ? (
+          {availableTabs.length === 0 && isGuest ? (
               // ⭐️ 모든 정보가 비공개일 때 빈 화면 렌더링
               <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-zinc-200/60 shadow-sm animate-in fade-in duration-500">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 border border-zinc-100 shadow-inner">
