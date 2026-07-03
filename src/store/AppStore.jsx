@@ -20,12 +20,13 @@ export const useAppStore = () => useContext(AppContext);
 export const AppProvider = ({ children }) => {
   const [viewMode, setViewMode] = useState('profile');
   const [toastMessage, setToastMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // 검색어 상태
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
   const [user, setUser] = useState(INITIAL_USER_DATA);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isGuestMode, setIsGuestMode] = useState(false); // ⭐️ 게스트 모드 상태 추가
   
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
@@ -145,13 +146,14 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{ 
       viewMode, setViewMode, toastMessage, showToast, 
-      searchQuery, setSearchQuery, // 검색어 연동
+      searchQuery, setSearchQuery,
       records, setRecords, isAdmin, setIsAdmin, 
+      isGuestMode, setIsGuestMode, // ⭐️ 내보내기 추가
       loginModalOpen, setLoginModalOpen,
       addRecordModalOpen, setAddRecordModalOpen,
       tagTree, setTagTree, user, setUser,
       isSidebarOpen, setIsSidebarOpen, 
-      apiFetch, fetchAllData, handleLogout // 추가된 함수들 내보내기
+      apiFetch, fetchAllData, handleLogout
     }}>
       {children}
     </AppContext.Provider>
