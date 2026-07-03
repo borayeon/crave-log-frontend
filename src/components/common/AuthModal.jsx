@@ -1,14 +1,19 @@
 import React from 'react';
 import { Lock, MessageSquare } from 'lucide-react';
-import { useAppStore } from '../../store/AppStore';
+import { useAppStore, API_BASE_URL } from '../../store/AppStore';
 
 const AuthModal = () => {
   const { loginModalOpen, setLoginModalOpen } = useAppStore();
+  
   if (!loginModalOpen) return null;
 
   const handleLogin = () => {
-    // ⭐️ 백엔드의 카카오 OAuth2 진입점으로 바로 이동시킵니다.
-    window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+    // ⭐️ VITE_API_BASE_URL (예: https://crave-log-api.onrender.com/api/v1) 에서
+    // 뒤의 /api/v1 부분을 떼어내고 순수 백엔드 도메인만 추출합니다.
+    const backendDomain = API_BASE_URL.replace('/api/v1', '');
+    
+    // 카카오 로그인 인증 창으로 브라우저 이동!
+    window.location.href = `${backendDomain}/oauth2/authorization/kakao`;
   };
 
   return (
@@ -31,4 +36,5 @@ const AuthModal = () => {
     </div>
   );
 };
+
 export default AuthModal;
