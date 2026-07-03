@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
 
+// 환경변수에 등록된 백엔드 주소를 가져옵니다.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
-const INITIAL_USER_DATA = { /* 기존과 동일하게 유지 */
+const INITIAL_USER_DATA = {
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
   location: "위치를 설정해주세요", bio: "나를 표현하는 짧은 소개를 작성해보세요 🚀",
   status: "환영합니다!", tags: [], goals: [],
@@ -19,62 +20,48 @@ export const useAppStore = () => useContext(AppContext);
 export const AppProvider = ({ children }) => {
   const [viewMode, setViewMode] = useState('profile');
   const [toastMessage, setToastMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // 검색어 상태
+
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
   const [user, setUser] = useState(INITIAL_USER_DATA);
+  const [isAdmin, setIsAdmin] = useState(false);
+  
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGuestMode, setIsGuestMode] = useState(false);
 
-  // ⭐️ 1. 초기 로그인 상태를 localStorage의 토큰 유무로 판단합니다.
-  const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem('accessToken'));
-
-  // ⭐️ 2. 앱 실행 시 URL에 토큰이 있다면 가로채서 저장합니다.
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (token) {
-      localStorage.setItem('accessToken', token);
-      setIsAdmin(true);
-      // 지저분한 토큰 URL을 깔끔하게 지워줍니다.
-      window.history.replaceState({}, document.title, '/');
-    }
-  }, []);
-
-  // ⭐️ 3. JWT 토큰을 자동으로 헤더에 넣어주는 커스텀 fetch 함수입니다.
+  // ⭐️ 백엔드에 요청을 보낼 때, 자동으로 로그인 토큰(JWT)을 껴서 보내주는 만능 함수
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
+    
+    // 토큰이 있으면 Authorization 헤더에 Bearer 타입으로 넣기
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`; // 토큰 탑재!
+      headers['Authorization'] = `Bearer ${token}`;
     }
-    return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-  }, []);
-  // ⭐️ 4. 로그아웃 처리 함수
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('accessToken');
-    setIsAdmin(false);
-    setViewMode('profile');
+
+    return fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
   }, []);
 
-  // ⭐️ 5. 데이터 불러오기 (isSilent 파라미터 추가)
   const fetchAllData = useCallback(async (isSilent = false) => {
     const token = localStorage.getItem('accessToken');
-    const HANDLE = 'taekyeong.dev'; // 비로그인 시 기본 열람할 핸들
+    const HANDLE = 'taekyeong.dev'; // 비로그인 시 기본 열람할 유저 핸들
     
-    // 로그인 상태라면 내 정보를, 아니라면 taekyeong.dev의 퍼블릭 정보를 가져옵니다.
+    // 토큰이 있으면 "내 정보(/me/...)"를, 없으면 "퍼블릭 정보(/users/...)"를 불러옵니다.
     const profileUrl = token ? `/me/profile` : `/users/${HANDLE}/profile`;
     const categoriesUrl = token ? `/me/categories` : `/users/${HANDLE}/categories`;
     const recordsUrl = token ? `/me/records` : `/users/${HANDLE}/records`;
 
     try {
-      if (!isSilent) setIsLoading(true); // isSilent가 아닐 때만 로딩창 띄우기
+      if (!isSilent) setIsLoading(true);
       
       const [profileRes, treeRes, recordsRes] = await Promise.all([
           apiFetch(profileUrl).catch(() => ({ ok: false })),
@@ -95,12 +82,46 @@ export const AppProvider = ({ children }) => {
       console.error(error);
       setUser(INITIAL_USER_DATA); setTagTree([]); setRecords([]);
     } finally {
-      if (!isSilent) setIsLoading(false); // isSilent가 아닐 때만 로딩창 닫기
+      if (!isSilent) setIsLoading(false);
     }
   }, [apiFetch]);
 
   useEffect(() => {
+    // ⭐️ 1. URL 파라미터를 뒤져서 카카오 로그인이 돌려준 토큰을 낚아챕니다.
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const error = params.get('error');
+
+    if (token) {
+      // 성공: 토큰을 브라우저에 저장하고 어드민 권한 부여
+      localStorage.setItem('accessToken', token);
+      setIsAdmin(true);
+      
+      // 주소창에 지저분하게 남아있는 ?token=XXXX 부분을 깔끔하게 지워줍니다.
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showToast("로그인 성공! 환영합니다. 🎉");
+    } else if (error) {
+      // 에러 발생 시 처리
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showToast("로그인 실패: " + decodeURIComponent(error));
+    } else {
+      // URL엔 없지만, 예전에 로그인해서 브라우저(로컬 스토리지)에 토큰이 남아있는 경우
+      const savedToken = localStorage.getItem('accessToken');
+      if (savedToken) {
+        setIsAdmin(true);
+      }
+    }
+
+    // ⭐️ 2. 세팅이 끝난 뒤 데이터를 불러옵니다.
     fetchAllData();
+  }, [fetchAllData]);
+
+  // 로그아웃 처리 함수
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('accessToken');
+    setIsAdmin(false);
+    setViewMode('profile');
+    fetchAllData(); // 로그아웃 후 다시 비로그인 상태의 데이터를 불러옵니다.
   }, [fetchAllData]);
 
   const showToast = (msg) => {
@@ -124,14 +145,13 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{ 
       viewMode, setViewMode, toastMessage, showToast, 
-      searchQuery, setSearchQuery, // ⭐️ 컨텍스트로 내보내기
+      searchQuery, setSearchQuery, // 검색어 연동
       records, setRecords, isAdmin, setIsAdmin, 
       loginModalOpen, setLoginModalOpen,
       addRecordModalOpen, setAddRecordModalOpen,
       tagTree, setTagTree, user, setUser,
-      isSidebarOpen, setIsSidebarOpen, fetchAllData,
-      apiFetch, handleLogout,
-      isGuestMode, setIsGuestMode // ⭐️ 전역으로 내보내기
+      isSidebarOpen, setIsSidebarOpen, 
+      apiFetch, fetchAllData, handleLogout // 추가된 함수들 내보내기
     }}>
       {children}
     </AppContext.Provider>
