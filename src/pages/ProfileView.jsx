@@ -7,14 +7,13 @@ import {
 import { useAppStore } from '../store/AppStore';
 
 const ProfileView = () => {
-  // ⭐️ 1. 전역 상태인 isGuestMode를 가져오고, 이전의 로컬 상태(isPreviewMode)는 삭제합니다.
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
 
-  // ⭐️ 2. 게스트 판단 로직: 비로그인 상태이거나, 호스트가 '게스트 뷰' 버튼을 켰을 때
+  // 게스트 판단 로직: 비로그인 상태이거나, 호스트가 '게스트 뷰' 버튼을 켰을 때
   const isGuest = !isAdmin || isGuestMode;
 
-  // ⭐️ 탭 순서를 로컬 스토리지에 저장하고 드래그 앤 드롭 상태를 관리합니다.
+  // 탭 순서를 로컬 스토리지에 저장하고 드래그 앤 드롭 상태를 관리합니다.
   const [tabOrder, setTabOrder] = useState(() => {
     const saved = localStorage.getItem('cravelog_tab_order');
     return saved ? JSON.parse(saved) : ['developer', 'career', 'idol'];
@@ -32,20 +31,19 @@ const ProfileView = () => {
   const isProfileEmpty = user.name === "손님" && (user.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
 
-  // ⭐️ 고정된 배열 대신 tabOrder를 기반으로 탭 데이터를 매핑합니다.
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
     career: { id: 'career', icon: <Briefcase size={16}/>, label: 'Career Info' },
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // ⭐️ 3. 전역 isGuest 상태를 사용하여 비공개 탭을 필터링합니다.
+  // 전역 isGuest 상태를 사용하여 비공개 탭을 필터링합니다.
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
     .filter(tab => !isGuest || user.privacy?.[tab.id] !== false);
 
   useEffect(() => {
-    // ⭐️ 모든 정보가 비공개일 때 activeTab을 비우도록 수정
+    // 모든 정보가 비공개일 때 activeTab을 비우도록 설정
     if (isGuest && activeTab && user.privacy?.[activeTab] === false) {
       const firstAvailable = availableTabs[0];
       setActiveTab(firstAvailable ? firstAvailable.id : null);
@@ -54,21 +52,25 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, user.privacy, availableTabs]);
 
-  // ⭐️ 4. 드래그 앤 드롭 핸들러: 브라우저 인식을 위한 필수 코드(dataTransfer) 추가
+  // ⭐️ 드래그 앤 드롭 핸들러들
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id); // HTML5 드래그가 취소되지 않도록 데이터 설정
+    e.dataTransfer.setData('text/plain', id); // HTML5 드래그 필수 코드
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // 드롭 허용
+    e.preventDefault(); // 드롭 허용 필수
     e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault(); // 진입 시에도 이벤트 전파 방지
   };
 
   const handleDrop = (e, dropId) => {
     e.preventDefault();
-    e.stopPropagation(); // 브라우저 기본 동작 방지
+    e.stopPropagation();
     if (!draggedTab || draggedTab === dropId) return;
 
     const newOrder = [...tabOrder];
@@ -91,12 +93,9 @@ const ProfileView = () => {
         </div>
         <div className="flex flex-wrap gap-2">
            {!isProfileEmpty && (
-             <>
-                {/* ⭐️ 이미 상단바(TopNavBar)에 게스트 토글 버튼이 있으므로 여기선 공유 버튼만 남깁니다. */}
-                <button onClick={handleShare} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm flex items-center gap-2">
-                    <Link size={16} /> <span className="hidden md:inline">공유</span>
-                </button>
-             </>
+             <button onClick={handleShare} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm flex items-center gap-2">
+                 <Link size={16} /> <span className="hidden md:inline">공유</span>
+             </button>
            )}
           {isAdmin && !isGuestMode ? (
             <button onClick={() => setViewMode('edit_profile')} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
@@ -110,6 +109,7 @@ const ProfileView = () => {
         </div>
       </header>
 
+      {}
       {/* Top SNS Profile Area */}
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8 items-center md:items-start mb-6 relative overflow-hidden">
         {isProfileEmpty && !isAdmin && (
@@ -161,31 +161,36 @@ const ProfileView = () => {
         </div>
       </div>
 
+      {}
       {!isProfileEmpty && (
         <>
-          {/* Detail Tabs */}
+          {/* Detail Tabs (⭐️ div 태그와 커서 설정 변경) */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
             {availableTabs.map(tab => (
-                <button 
+                <div 
                     key={tab.id} 
-                    draggable={!isGuest} // ⭐️ 게스트 상태가 아닐 때만 드래그 허용
+                    draggable={!isGuest} // 게스트가 아닐 때만 드래그 허용
                     onDragStart={(e) => handleDragStart(e, tab.id)}
                     onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
                     onDrop={(e) => handleDrop(e, tab.id)}
                     onDragEnd={() => setDraggedTab(null)}
                     onClick={() => setActiveTab(tab.id)} 
-                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap cursor-pointer select-none ${
+                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
+                        !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                    } ${
                         activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
                     } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
                 >
                     {tab.icon} {tab.label} {user.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
-                </button>
+                </div>
             ))}
           </div>
 
+          {}
           {/* Tab Contents */}
           {availableTabs.length === 0 && isGuest ? (
-              // ⭐️ 모든 정보가 비공개일 때 빈 화면 렌더링
+              // 모든 정보가 비공개일 때 빈 화면 렌더링
               <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-zinc-200/60 shadow-sm animate-in fade-in duration-500">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 border border-zinc-100 shadow-inner">
                       <Lock size={28} className="text-zinc-300" />
