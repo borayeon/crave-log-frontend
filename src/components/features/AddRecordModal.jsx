@@ -13,6 +13,8 @@ const AddRecordModal = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const [isTagExpanded, setIsTagExpanded] = useState(false);
+  const [imageInputType, setImageInputType] = useState('file'); // ⭐️ 추가: 이미지 입력 방식 (file / url)
+
   if (!addRecordModalOpen) return null;
 
   // ⭐️ 이미지 파일 업로드 핸들러 추가
@@ -109,15 +111,33 @@ const AddRecordModal = () => {
                   )}
                   {selectedCategory && (selectedCategory.children || []).length === 0 && (<p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100">이 카테고리에는 아직 생성된 태그가 없습니다. 타임라인 트리 편집에서 태그를 먼저 추가해보세요.</p>)}
                   
-                  {/* ⭐️ URL 텍스트창을 파일 업로더로 변경 */}
+                  {/* ⭐️ 이미지 업로드 방식 선택 UI */}
                   <div>
-                    <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">이미지 업로드</label>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageUpload} 
-                      className="w-full mt-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" 
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">이미지 첨부</label>
+                        <div className="flex bg-zinc-100 p-0.5 rounded-lg">
+                            <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>파일</button>
+                            <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>URL</button>
+                        </div>
+                    </div>
+
+                    {imageInputType === 'file' ? (
+                        <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" 
+                        />
+                    ) : (
+                        <input 
+                        type="text" 
+                        value={imageUrl} 
+                        onChange={e => setImageUrl(e.target.value)} 
+                        placeholder="https://..." 
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                        />
+                    )}
+
                     {imageUrl && (
                       <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border border-zinc-200 shadow-sm relative group">
                          <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />

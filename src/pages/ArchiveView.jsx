@@ -18,8 +18,9 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [imageUrl, setImageUrl] = useState('');
   const [content, setContent] = useState('');
   
-  // 🔥 추가: 태그 영역 토글 상태
+  // 🔥 추가: 태그 및 이미지 입력 토글 상태
   const [isTagExpanded, setIsTagExpanded] = useState(true);
+  const [imageInputType, setImageInputType] = useState('file'); // ⭐️ 추가
 
   // ⭐️ 이미지 파일 업로드 핸들러 추가
   const handleImageUpload = (e) => {
@@ -205,10 +206,17 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                 </div>
               )}
 
-              {/* ⭐️ URL 텍스트창을 파일 업로더로 변경 */}
+              {/* ⭐️ 이미지 수정 영역 */}
               <div>
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">이미지 업로드</label>
-                <div className="flex flex-col sm:flex-row gap-3 mt-1">
+                <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">이미지 수정</label>
+                    <div className="flex bg-zinc-100 p-0.5 rounded-lg">
+                        <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>파일</button>
+                        <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>URL</button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
                   {imageUrl && (
                     <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-zinc-200 shadow-sm relative group">
                        <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
@@ -216,12 +224,22 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     </div>
                   )}
                   <div className="flex-1 flex items-center">
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageUpload} 
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" 
-                    />
+                    {imageInputType === 'file' ? (
+                        <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" 
+                        />
+                    ) : (
+                        <input 
+                        type="text" 
+                        value={imageUrl} 
+                        onChange={e => setImageUrl(e.target.value)} 
+                        placeholder="새 이미지 URL" 
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                        />
+                    )}
                   </div>
                 </div>
               </div>
