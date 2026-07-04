@@ -5,7 +5,7 @@ import { Sparkles } from 'lucide-react';
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 const INITIAL_USER_DATA = {
-  name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
+  name: "손님", handle: "guest", profileImageUrl: "", role: "역할을 입력해주세요", major: "전공을 입력해주세요", // ⭐️ profileImageUrl 추가
   location: "위치를 설정해주세요", bio: "나를 표현하는 짧은 소개를 작성해보세요 🚀",
   status: "환영합니다!", tags: [], goals: [],
   idol: { nickname: "", birthday: "", age: "", specialty: "", hobbies: "", favorites: { colors: [], foods: [], games: [], music: [] }, qna: [] },

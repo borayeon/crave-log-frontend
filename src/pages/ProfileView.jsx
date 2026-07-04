@@ -125,7 +125,14 @@ const ProfileView = () => {
 
         <div className={`shrink-0 text-center ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
             <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
-                <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden"><span className="text-5xl font-black text-zinc-300">{isProfileEmpty ? '?' : user.name.charAt(0)}</span></div>
+                <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden">
+                    {/* ⭐️ 프로필 사진 렌더링 로직 반영 */}
+                    {user.profileImageUrl ? (
+                        <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="text-5xl font-black text-zinc-300">{isProfileEmpty ? '?' : user.name.charAt(0)}</span>
+                    )}
+                </div>
                 {!isProfileEmpty && (
                     <div className="absolute -bottom-3 -right-2 bg-zinc-900 text-white px-3 py-1.5 shadow-xl flex items-center gap-1.5 rounded-xl border border-zinc-800">
                         <Sparkles size={12} className="text-yellow-400" /><span className="text-[10px] font-bold tracking-wider">{user.status}</span>

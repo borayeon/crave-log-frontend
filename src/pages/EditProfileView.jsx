@@ -9,6 +9,7 @@ const EditProfileView = () => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     return {
       ...safeUser,
+      profileImageUrl: safeUser.profileImageUrl || '', // ⭐️ 추가
       privacy: safeUser.privacy || { developer: true, career: true, idol: true },
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
@@ -20,6 +21,7 @@ const EditProfileView = () => {
 
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [avatarInputType, setAvatarInputType] = useState('file'); // ⭐️ 프로필 사진 업로드 토글
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -156,6 +158,55 @@ const EditProfileView = () => {
         {/* BASIC TAB */}
         {editTab === 'basic' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
+            {/* ⭐️ 프로필 사진 변경 UI 시작 */}
+            <div className="md:col-span-2 bg-zinc-50 border border-zinc-100 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center md:items-start">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-tr from-indigo-500 to-rose-400 p-1 rounded-3xl shadow-sm relative group">
+                    <div className="w-full h-full bg-white flex items-center justify-center rounded-[1.3rem] overflow-hidden">
+                        {formData.profileImageUrl ? (
+                            <img src={formData.profileImageUrl} alt="avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-3xl font-black text-zinc-300">{formData.name ? formData.name.charAt(0) : '?'}</span>
+                        )}
+                    </div>
+                    {formData.profileImageUrl && (
+                        <button onClick={() => updateNested(["profileImageUrl"], '')} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12}/></button>
+                    )}
+                </div>
+                <div className="flex-1 w-full">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">프로필 사진 설정</label>
+                        <div className="flex bg-zinc-200/50 p-0.5 rounded-lg">
+                            <button type="button" onClick={() => setAvatarInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${avatarInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>파일</button>
+                            <button type="button" onClick={() => setAvatarInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${avatarInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>URL</button>
+                        </div>
+                    </div>
+                    {avatarInputType === 'file' ? (
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => updateNested(["profileImageUrl"], reader.result);
+                                    reader.readAsDataURL(file);
+                                }
+                            }} 
+                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2 text-sm font-bold text-zinc-800 outline-none file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-600 cursor-pointer" 
+                        />
+                    ) : (
+                        <input 
+                            type="text" 
+                            value={formData.profileImageUrl || ''} 
+                            onChange={e => updateNested(["profileImageUrl"], e.target.value)} 
+                            placeholder="이미지 주소 (https://...)" 
+                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 outline-none focus:ring-2 focus:ring-indigo-500" 
+                        />
+                    )}
+                </div>
+            </div>
+            {/* ⭐️ 프로필 사진 변경 UI 끝 */}
+
             {renderInput("이름", ["name"], "예: 홍길동")}
             {/* ⭐️ ID 필드를 읽기 전용으로 설정합니다. */}
             {renderInput("고유 ID (변경 불가)", ["handle"], "예: gildong.dev", true)}
