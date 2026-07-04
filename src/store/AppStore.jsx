@@ -32,6 +32,19 @@ export const AppProvider = ({ children }) => {
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+const [searchResults, setSearchResults] = useState([]); // ⭐️ 검색 결과 상태
+
+  // ⭐️ 검색 실행 함수
+  const searchUsers = async (keyword) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/search?keyword=${encodeURIComponent(keyword)}`);
+      if (res.ok) {
+        setSearchResults(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // ⭐️ 백엔드에 요청을 보낼 때, 자동으로 로그인 토큰(JWT)을 껴서 보내주는 만능 함수
   const apiFetch = useCallback(async (endpoint, options = {}) => {
@@ -153,7 +166,8 @@ export const AppProvider = ({ children }) => {
       addRecordModalOpen, setAddRecordModalOpen,
       tagTree, setTagTree, user, setUser,
       isSidebarOpen, setIsSidebarOpen, 
-      apiFetch, fetchAllData, handleLogout
+      apiFetch, fetchAllData, handleLogout,
+      searchResults, setSearchResults, searchUsers
     }}>
       {children}
     </AppContext.Provider>

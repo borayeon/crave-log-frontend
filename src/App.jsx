@@ -28,6 +28,7 @@ const AppContent = () => {
            {viewMode === 'edit_profile' && <EditProfileView />}
            {viewMode === 'archive' && <ArchiveView />}
            {viewMode === 'timeline' && <TimelineView />}
+           {viewMode === 'search' && <SearchView />}
          </div>
       </main>
 
