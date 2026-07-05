@@ -3,14 +3,13 @@ import { Search, User, Globe } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const SearchView = () => {
-  const { searchResults, searchQuery, showToast } = useAppStore();
+  const { searchResults, searchQuery, showToast, visitUserProfile } = useAppStore(); // ⭐️ visitUserProfile 꺼내오기
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10">
       <header className="mb-8 border-b border-zinc-200/60 pb-6">
         <h2 className="text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
           <Search className="text-indigo-500" size={28} /> 
-          {/* 검색어가 비어있을 때는 '모든 사용자'라고 표시 */}
           <span className="text-indigo-600">
             {searchQuery.trim() === '' ? '모든 사용자' : `"${searchQuery}"`}
           </span> 검색 결과
@@ -33,12 +32,10 @@ const SearchView = () => {
           {searchResults.map(user => (
             <div 
               key={user.handle} 
-              // ⭐️ 프로필 카드를 클릭하면 해당 유저의 퍼블릭 주소로 새 창을 띄웁니다!
+              // ⭐️ 클릭 시 해당 유저의 프로필 데이터를 로드하고 화면을 전환합니다!
               onClick={() => {
-                const profileUrl = `${window.location.origin}/${user.handle}`;
-                showToast(`${user.name}님의 프로필로 이동합니다 🚀`);
-                // 실제 서비스 시 주석을 풀면 해당 유저 프로필로 이동합니다.
-                // window.open(profileUrl, '_blank'); 
+                showToast(`${user.name}님의 프로필을 불러옵니다 🚀`);
+                visitUserProfile(user.handle); 
               }}
               className="p-5 bg-white border border-zinc-200/80 rounded-2xl flex items-center gap-4 hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer group relative overflow-hidden"
             >
@@ -62,7 +59,6 @@ const SearchView = () => {
                   </p>
               </div>
               
-              {/* 호버 시 나타나는 이동 아이콘 */}
               <div className="absolute right-4 text-indigo-100 group-hover:text-indigo-500 transition-colors transform translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 duration-300">
                 <Globe size={20} />
               </div>
@@ -73,5 +69,3 @@ const SearchView = () => {
     </div>
   );
 };
-
-export default SearchView;

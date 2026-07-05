@@ -99,7 +99,30 @@ const [searchResults, setSearchResults] = useState([]); // ⭐️ 검색 결과 
       if (!isSilent) setIsLoading(false);
     }
   }, [apiFetch]);
+  // ⭐️ [추가] 다른 사람의 프로필 방문하기 함수
+  const visitUserProfile = async (handle) => {
+    try {
+        setIsLoading(true);
+        setIsGuestMode(true); // 남의 프로필이므로 강제로 '게스트(보기 전용) 모드' 켜기
+        
+        // 해당 유저의 퍼블릭 데이터 3종 세트 불러오기 (토큰 필요 없음)
+        const [profileRes, treeRes, recordsRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/users/${handle}/profile`),
+            fetch(`${API_BASE_URL}/users/${handle}/categories`),
+            fetch(`${API_BASE_URL}/users/${handle}/records`)
+        ]);
 
+        if (profileRes.ok) setUser(await profileRes.json());
+        if (treeRes.ok) setTagTree(await treeRes.json());
+        if (recordsRes.ok) setRecords(await recordsRes.json());
+        
+        setViewMode('profile'); // 프로필 탭으로 화면 이동
+    } catch(e) {
+        console.error("유저 프로필 조회 실패:", e);
+    } finally {
+        setIsLoading(false);
+    }
+  };
   useEffect(() => {
     // ⭐️ 1. URL 파라미터를 뒤져서 카카오 로그인이 돌려준 토큰을 낚아챕니다.
     const params = new URLSearchParams(window.location.search);
@@ -159,15 +182,15 @@ const [searchResults, setSearchResults] = useState([]); // ⭐️ 검색 결과 
   return (
     <AppContext.Provider value={{ 
       viewMode, setViewMode, toastMessage, showToast, 
-      searchQuery, setSearchQuery,
+      searchQuery, setSearchQuery, searchResults, setSearchResults, searchUsers,
       records, setRecords, isAdmin, setIsAdmin, 
-      isGuestMode, setIsGuestMode, // ⭐️ 내보내기 추가
       loginModalOpen, setLoginModalOpen,
       addRecordModalOpen, setAddRecordModalOpen,
       tagTree, setTagTree, user, setUser,
-      isSidebarOpen, setIsSidebarOpen, 
-      apiFetch, fetchAllData, handleLogout,
-      searchResults, setSearchResults, searchUsers
+      isSidebarOpen, setIsSidebarOpen,
+      isGuestMode, setIsGuestMode,
+      fetchAllData, apiFetch, handleLogout,
+      visitUserProfile // ⭐️ 이 부분을 Provider value 맨 마지막에 꼭 추가해 주세요!
     }}>
       {children}
     </AppContext.Provider>
