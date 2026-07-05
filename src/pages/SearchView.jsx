@@ -3,7 +3,7 @@ import { Search, User } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const SearchView = () => {
-  const { searchResults, searchQuery, searchUsers, setViewMode } = useAppStore();
+  const { searchResults, searchQuery, searchUsers, setViewMode, showToast } = useAppStore();
 
   useEffect(() => {
     if (searchQuery) {
@@ -36,8 +36,8 @@ const SearchView = () => {
           {searchResults.map(user => (
             <div 
               key={user.handle} 
-              // TODO: 추후 다른 사람의 프로필을 보는 기능이 추가되면 여기에 라우팅 연결
-              onClick={() => console.log(`${user.handle} 프로필 클릭됨`)}
+              // ⭐️ 클릭 시 알림 메시지 띄우기
+              onClick={() => showToast(`${user.name}님의 프로필 방문 기능은 곧 추가됩니다! 🛠️`)}
               className="p-5 bg-white border border-zinc-200/80 rounded-2xl flex items-center gap-4 hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
             >
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-rose-400 p-[2px] shrink-0">
