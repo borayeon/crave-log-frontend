@@ -10,6 +10,7 @@ import ProfileView from './pages/ProfileView';
 import EditProfileView from './pages/EditProfileView';
 import ArchiveView from './pages/ArchiveView';
 import TimelineView from './pages/TimelineView';
+import SearchView from './pages/SearchView';
 
 const AppContent = () => {
   const { viewMode } = useAppStore();
@@ -28,7 +29,8 @@ const AppContent = () => {
            {viewMode === 'edit_profile' && <EditProfileView />}
            {viewMode === 'archive' && <ArchiveView />}
            {viewMode === 'timeline' && <TimelineView />}
-           {viewMode === 'search' && <SearchView />}
+           {/* 중복된 SearchView 호출을 하나로 줄였습니다 */}
+           {viewMode === 'search' && <SearchView />} 
          </div>
       </main>
 
