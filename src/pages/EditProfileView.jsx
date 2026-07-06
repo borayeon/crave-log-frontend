@@ -3,13 +3,14 @@ import { Save, Eye, Lock, Trash2, AlertTriangle } from 'lucide-react';
 import { useAppStore, API_BASE_URL } from '../store/AppStore';
 
 const EditProfileView = () => {
-  // ⭐️ 1. apiFetch 꺼내오기
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
-  const [formData, setFormData] = useState(JSON.parse(JSON.stringify(user)));
+  
+  // ⭐️ 버그 수정: 함수형 초기화 문법 오류 수정 (() => { ... } 추가)
+  const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     return {
       ...safeUser,
-      profileImageUrl: safeUser.profileImageUrl || '', // ⭐️ 추가
+      profileImageUrl: safeUser.profileImageUrl || '',
       privacy: safeUser.privacy || { developer: true, career: true, idol: true },
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
@@ -18,6 +19,10 @@ const EditProfileView = () => {
       goals: safeUser.goals || []
     };
   });
+
+  const [editTab, setEditTab] = useState('basic');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [avatarInputType, setAvatarInputType] = useState('file');
 
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

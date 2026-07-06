@@ -7,25 +7,25 @@ import EmptyState from '../components/common/EmptyState';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
 
 const TimelineView = () => {
-  // 1. 상태 및 스토어 로드 (반드시 컴포넌트 최상단에 위치)
-  const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore(); // ⭐️ searchQuery 추가
+  const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
   
   const [isEditing, setIsEditing] = useState(false);
+  
+  // ⭐️ 선택된 카테고리/태그를 추적하는 상태 (기본값: 전체)
   const [selectedFilter, setSelectedFilter] = useState({ type: 'all', value: '전체', id: 'all' });
   const [expandedFolders, setExpandedFolders] = useState({});
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newTagNames, setNewTagNames] = useState({});
 
-  // 2. 방어 코드
+  // 방어 코드 (데이터가 없을 때 에러 방지)
   const safeRecords = Array.isArray(records) ? records : [];
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
 
-  // 3. 필터링 로직
   const filteredRecords = useMemo(() => {
     let filtered = safeRecords;
     
-    // ⭐️ 1단계: 검색어 필터링 적용
-    if (searchQuery.trim()) {
+    // 1단계: 검색어 필터링 적용 (상단 검색바)
+    if (searchQuery && searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(r => 
         (r.title && r.title.toLowerCase().includes(q)) || 
@@ -35,27 +35,35 @@ const TimelineView = () => {
       );
     }
 
-    // 2단계: 카테고리/태그 트리 필터링 적용
+    // ⭐️ 2단계: 좌측 사이드바 클릭 시 해당 카테고리/태그만 필터링!
     if (selectedFilter.type === 'category') {
-      const categoryNode = safeTagTree.find(c => c.id === selectedFilter.id);
+      // 선택한 카테고리를 찾습니다.
+      const categoryNode = safeTagTree.find(c => String(c.id) === String(selectedFilter.id));
       const childTagNames = categoryNode ? (categoryNode.children||[]).map(c => c.name) : [];
-      filtered = safeRecords.filter(r => r.category === selectedFilter.value || (r.tags||[]).some(t => childTagNames.includes(t)));
+      
+      // 기록의 카테고리가 일치하거나, 속한 태그 중 하나라도 포함되어 있으면 보여줍니다.
+      filtered = filtered.filter(r => 
+          r.category === selectedFilter.value || 
+          (r.tags||[]).some(t => childTagNames.includes(t))
+      );
     } else if (selectedFilter.type === 'tag') {
-      filtered = safeRecords.filter(r => (r.tags||[]).includes(selectedFilter.value));
+      // 특정 태그를 선택한 경우
+      filtered = filtered.filter(r => (r.tags||[]).includes(selectedFilter.value));
     }
+
+    // 최신 날짜순으로 정렬하여 반환
     return [...filtered].sort((a, b) => {
         const dateA = new Date(a.date?.replace(/\./g, '-') || 0);
         const dateB = new Date(b.date?.replace(/\./g, '-') || 0);
         return dateB - dateA;
     });
-  }, [safeRecords, selectedFilter, safeTagTree]);
+  }, [safeRecords, selectedFilter, safeTagTree, searchQuery]);
 
-  // 4. 게스트 모드 연동
+  // 게스트 모드 전환 시 편집 모드 종료
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
 
-  // 5. Early Return (반드시 모든 Hook 선언 이후에 위치해야 함!)
   if (safeRecords.length === 0 && safeTagTree.length === 0 && !isEditing) {
       return (
           <div className="h-full bg-[#F8FAFC]">
@@ -69,9 +77,8 @@ const TimelineView = () => {
       );
   }
 
-  // 6. 핸들러 함수들
   const toggleFolder = (catId, e) => {
-    e.stopPropagation();
+    e.stopPropagation(); // 버튼 클릭 이벤트가 전파되어 선택되는 것을 막음
     setExpandedFolders(prev => ({ ...prev, [catId]: !prev[catId] }));
   };
 
@@ -120,16 +127,16 @@ const TimelineView = () => {
       
       if (res.ok) {
         await fetchAllData(true);
-        if(selectedFilter.id === nodeId && selectedFilter.type === type) {
+        // 삭제한 노드가 현재 필터링 중인 노드라면 '전체'로 초기화
+        if(String(selectedFilter.id) === String(nodeId) && selectedFilter.type === type) {
           if (type === 'category') setSelectedFilter({ type: 'all', value: '전체', id: 'all' });
-          else setSelectedFilter({ type: 'category', value: safeTagTree.find(c=>c.id===parentId)?.name, id: parentId });
+          else setSelectedFilter({ type: 'category', value: safeTagTree.find(c => String(c.id) === String(parentId))?.name, id: parentId });
         }
         showToast('삭제되었습니다.');
       }
     } catch(e) { console.error(e); }
   };
 
-  // 7. 렌더링
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
       <header className="px-6 md:px-10 py-8 shrink-0 flex justify-between items-end border-b border-zinc-200/50">
@@ -148,7 +155,8 @@ const TimelineView = () => {
       </header>
 
       <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden flex flex-col md:flex-row gap-8">
-        {/* 좌측 트리 */}
+        
+        {/* ⭐️ 좌측 트리 탐색기 (Tag Explorer) */}
         <div className="w-full md:w-64 shrink-0 flex flex-col h-[40vh] md:h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
           <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -165,28 +173,37 @@ const TimelineView = () => {
             </button>
 
             {safeTagTree.map(cat => {
-              const isCatSelected = selectedFilter.type === 'category' && selectedFilter.id === cat.id;
+              // ⭐️ 현재 선택된 카테고리인지 정확히 판별
+              const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
               const isExpanded = expandedFolders[cat.id];
               return (
                 <div key={cat.id} className="pt-1">
                   <div className={`group flex items-center justify-between rounded-xl transition-colors ${isCatSelected ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-zinc-50 text-zinc-700'}`}>
-                    <button onClick={() => setSelectedFilter({ type: 'category', value: cat.name, id: cat.id })} className="flex-1 flex items-center gap-2.5 px-3 py-2 text-sm font-bold truncate">
+                    
+                    {/* 카테고리 버튼 클릭 시 필터링 적용 */}
+                    <button 
+                      onClick={() => setSelectedFilter({ type: 'category', value: cat.name, id: cat.id })} 
+                      className="flex-1 flex items-center gap-2.5 px-3 py-2 text-sm font-bold truncate"
+                    >
+                      {/* 화살표 아이콘 클릭 시에는 폴더만 열고 닫히도록 버블링 방지 */}
                       <span onClick={(e) => toggleFolder(cat.id, e)} className="p-0.5 rounded-md hover:bg-zinc-200/50 text-zinc-400 transition-transform">
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </span>
                       {isExpanded ? <FolderOpen size={16} className="text-indigo-400 shrink-0"/> : <Folder size={16} className="text-indigo-400 shrink-0"/>}
                       <span className="truncate">{cat.name}</span>
                     </button>
+                    
                     {isEditing && (
                       <button onClick={(e) => handleDeleteNode('category', null, cat.id, e)} className="p-2 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
                         <Trash2 size={14}/>
                       </button>
                     )}
                   </div>
+                  
                   {isExpanded && (
                     <div className="ml-8 mt-1 space-y-1 relative before:absolute before:left-[-11px] before:top-0 before:bottom-2 before:w-px before:bg-zinc-200">
                       {(cat.children || []).map(tag => {
-                        const isTagSelected = selectedFilter.type === 'tag' && selectedFilter.id === tag.id;
+                        const isTagSelected = selectedFilter.type === 'tag' && String(selectedFilter.id) === String(tag.id);
                         return (
                           <div key={tag.id} className="group relative flex items-center justify-between rounded-lg transition-colors">
                             <div className="absolute left-[-11px] top-1/2 w-2.5 h-px bg-zinc-200" />
@@ -251,12 +268,12 @@ const TimelineView = () => {
           )}
         </div>
 
-        {/* 우측 리스트 */}
+        {/* ⭐️ 우측 타임라인 리스트 */}
         <div className="flex-1 min-w-0 overflow-y-auto pr-2 pl-2 md:pl-4 py-2 scrollbar-hide">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
               <FolderOpen size={32} className="text-zinc-300" />
-              해당 태그의 기록이 없습니다.
+              해당 분류의 기록이 없습니다.
               {isAdmin && !isGuestMode && (
                 <button onClick={() => setAddRecordModalOpen(true)} className="mt-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm hover:bg-indigo-100 transition">
                   새 기록 추가하기
