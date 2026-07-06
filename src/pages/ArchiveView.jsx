@@ -432,7 +432,7 @@ const ArchiveView = () => {
                 <div 
                   key={item.id} 
                   onClick={() => !isEditing && setSelectedRecord(item)}
-                  className="group relative aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-100/50 bg-zinc-100"
+                  className={`group relative aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-100/50 bg-zinc-100 transition-all duration-500 ease-out transform ${!isEditing ? 'hover:scale-[1.04] hover:-translate-y-1 hover:shadow-2xl hover:z-10' : ''}`}
                 >
                     {/* 바탕 이미지 */}
                     <img 
