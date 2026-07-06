@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -292,17 +292,20 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 
 // --- 메인 아카이브 뷰 ---
 const ArchiveView = () => {
-  const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore(); // ⭐️ searchQuery 추가
+  const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  
+  // ⭐️ 추가: 현재 선택된 상단 카테고리 필터 상태
+  const [activeCategory, setActiveCategory] = useState('전체');
 
   // 게스트 모드 켜질 때 편집 상태 강제 해제
-  React.useEffect(() => {
+  useEffect(() => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
 
   const handleDeleteGridRecord = async (recordId, e) => {
-    e.stopPropagation(); // 카드 클릭(상세보기) 방지
+    e.stopPropagation();
     if (!apiFetch) return;
 
     try {
@@ -315,6 +318,35 @@ const ArchiveView = () => {
       console.error(err);
     }
   };
+
+  // ⭐️ 기록들로부터 고유한 카테고리 목록을 추출합니다.
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set(records.map(r => r.category).filter(Boolean));
+    return ['전체', ...Array.from(uniqueCategories)];
+  }, [records]);
+
+  // ⭐️ 검색어 + 카테고리 필터링 적용
+  const displayRecords = useMemo(() => {
+    let result = records;
+
+    // 1. 검색어 필터링
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(r => 
+          (r.title && r.title.toLowerCase().includes(q)) || 
+          (r.content && r.content.toLowerCase().includes(q)) ||
+          (r.tags && r.tags.some(t => t.toLowerCase().includes(q))) ||
+          (r.category && r.category.toLowerCase().includes(q))
+      );
+    }
+
+    // 2. 상단 탭 필터링
+    if (activeCategory !== '전체') {
+      result = result.filter(r => r.category === activeCategory);
+    }
+
+    return result;
+  }, [records, searchQuery, activeCategory]);
 
   if (records.length === 0) {
       return (
@@ -329,22 +361,9 @@ const ArchiveView = () => {
       );
   }
 
-  // ⭐️ 검색어 필터링 로직
-  const filteredRecords = React.useMemo(() => {
-    if (!searchQuery.trim()) return records;
-    const q = searchQuery.toLowerCase();
-    return records.filter(r => 
-        (r.title && r.title.toLowerCase().includes(q)) || 
-        (r.content && r.content.toLowerCase().includes(q)) ||
-        (r.tags && r.tags.some(t => t.toLowerCase().includes(q))) ||
-        (r.category && r.category.toLowerCase().includes(q))
-    );
-  }, [records, searchQuery]);
-
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative">
       
-      {/* 상세 팝업 렌더링 */}
       <RecordDetailModal 
         record={selectedRecord} 
         onClose={() => setSelectedRecord(null)}
@@ -356,81 +375,121 @@ const ArchiveView = () => {
         showToast={showToast}
       />
 
-      {/* 헤더 영역 (그림자 제거, 깔끔한 선으로 변경) */}
-      <header className="px-6 md:px-10 py-8 flex flex-col sm:flex-row sm:items-end justify-between shrink-0 relative z-10 border-b border-zinc-200/50 gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
-              Taste Archive <Sparkles size={24} className="text-indigo-500" />
-          </h2>
-          <p className="text-xs font-bold text-zinc-500 mt-2 tracking-widest uppercase">내가 수집한 취향의 조각들</p>
+      {/* ⭐️ 상단 헤더 & 카테고리 필터 영역 */}
+      <header className="px-6 md:px-10 pt-8 pb-4 shrink-0 relative z-10 bg-[#F8FAFC]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
+                취향 아카이브 <Sparkles size={24} className="text-rose-500 fill-rose-500" />
+            </h2>
+            
+            {isAdmin && !isGuestMode && (
+            <div className="flex flex-wrap gap-2">
+                <button 
+                onClick={() => setAddRecordModalOpen(true)}
+                className="px-4 py-2 bg-zinc-900 text-white rounded-full text-xs font-bold hover:bg-zinc-800 transition-all flex items-center gap-2 shadow-sm"
+                >
+                <Plus size={14}/> 새 기록 추가
+                </button>
+                <button 
+                onClick={() => setIsEditing(!isEditing)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
+                >
+                {isEditing ? <><CloseIcon size={14}/> 편집 완료</> : <><Edit2 size={14}/> 보관함 편집</>}
+                </button>
+            </div>
+            )}
         </div>
-        
-        {isAdmin && !isGuestMode && (
-          <div className="flex flex-wrap gap-2">
-            <button 
-              onClick={() => setAddRecordModalOpen(true)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-sm"
-            >
-              <Plus size={14}/> 새 기록 추가
-            </button>
-            <button 
-              onClick={() => setIsEditing(!isEditing)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
-            >
-              {isEditing ? <><CloseIcon size={14}/> 편집 완료</> : <><Edit2 size={14}/> 보관함 편집</>}
-            </button>
-          </div>
-        )}
+
+        {/* ⭐️ 가로 스크롤 가능한 카테고리 필터 (Pill UI) */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+            {categories.map(cat => (
+                <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-2 rounded-full text-sm font-black whitespace-nowrap transition-all duration-300 ${
+                        activeCategory === cat 
+                        ? 'bg-zinc-900 text-white shadow-md' 
+                        : 'bg-white border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+                    }`}
+                >
+                    {cat}
+                </button>
+            ))}
+        </div>
       </header>
       
-      {/* 심플한 갤러리 그리드 영역 */}
-      <div className="flex-1 px-6 md:px-10 py-8 overflow-y-auto scrollbar-hide">
-        {filteredRecords.length === 0 && (
+      {/* ⭐️ 사진 중심의 갤러리 그리드 영역 */}
+      <div className="flex-1 px-6 md:px-10 py-6 overflow-y-auto scrollbar-hide">
+        {displayRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed">
-              검색 결과가 없습니다.
+              선택한 카테고리에 해당하는 기록이 없습니다.
             </div>
         )}
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {filteredRecords.map(item => (
+        
+        {/* 그리드 설정: 화면 크기에 맞춰 열 개수 조절 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 pb-10">
+            {displayRecords.map(item => (
                 <div 
                   key={item.id} 
                   onClick={() => !isEditing && setSelectedRecord(item)}
-                  className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-zinc-200/80 hover:shadow-lg hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                  className="group relative aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-100/50 bg-zinc-100"
                 >
-                    {/* 이미지 영역 */}
-                    <div className={`relative aspect-[4/5] overflow-hidden bg-zinc-100 ${isEditing ? 'opacity-90' : ''}`}>
-                        {/* ⭐️ 공백 문자열 방어 코드 적용 (?.) */}
-                        <img src={item.image?.trim() ? item.image : DEFAULT_IMAGE} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                        
-                        {/* 삭제 버튼 (편집 모드 시) */}
-                        {isEditing && (
-                          <button 
-                            onClick={(e) => handleDeleteGridRecord(item.id, e)}
-                            className="absolute top-3 right-3 z-30 p-2.5 bg-rose-500/90 backdrop-blur-sm text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+                    {/* 바탕 이미지 */}
+                    <img 
+                        src={item.image?.trim() ? item.image : DEFAULT_IMAGE} 
+                        onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
+                        alt={item.title} 
+                        className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-110'}`} 
+                    />
+                    
+                    {/* 편집 모드 삭제 버튼 */}
+                    {isEditing && (
+                        <button 
+                        onClick={(e) => handleDeleteGridRecord(item.id, e)}
+                        className="absolute top-3 right-3 z-30 p-2.5 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50"
+                        >
+                        <Trash2 size={16} />
+                        </button>
+                    )}
 
-                        {/* 카테고리 라벨 */}
-                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black rounded-lg shadow-sm uppercase tracking-wider">
-                            {item.category}
+                    {/* ⭐️ 마우스 호버 시 나타나는 검은색 오버레이 & 정보 */}
+                    {!isEditing && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 md:p-5">
+                            
+                            {/* 우측 상단 북마크 아이콘 장식 (디자인 요소) */}
+                            <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0 transition-all duration-500 delay-100">
+                                <Sparkles size={14} />
+                            </div>
+
+                            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
+                                <h3 className="text-white text-lg md:text-xl font-black truncate drop-shadow-md mb-1.5">
+                                    {item.title}
+                                </h3>
+                                
+                                <div className="flex items-center gap-1.5 text-zinc-300 text-xs font-medium mb-3">
+                                    <Calendar size={12} />
+                                    <span>{item.date}</span>
+                                </div>
+                                
+                                {/* 태그 뱃지 */}
+                                <div className="flex flex-wrap gap-1.5 h-6 overflow-hidden">
+                                    <span className="px-2 py-0.5 bg-rose-500/80 text-white text-[10px] font-black rounded-md backdrop-blur-sm border border-rose-400/50">
+                                        {item.category}
+                                    </span>
+                                    {(item.tags || []).slice(0, 2).map(tag => (
+                                        <span key={tag} className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-md backdrop-blur-sm border border-white/10 truncate max-w-[80px]">
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                    {(item.tags || []).length > 2 && (
+                                        <span className="px-2 py-0.5 bg-white/10 text-zinc-300 text-[10px] font-bold rounded-md backdrop-blur-sm">
+                                            +{(item.tags || []).length - 2}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    {/* 하단 텍스트 영역 */}
-                    <div className="p-4 flex-1 flex flex-col justify-center">
-                        <h4 className="text-sm font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
-                        {/* 해시태그 요약 표시 */}
-                        {(item.tags || []).length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5 overflow-hidden h-4">
-                            {item.tags.slice(0, 2).map(tag => (
-                              <span key={tag} className="text-[10px] font-bold text-zinc-400 truncate max-w-[60px]">#{tag}</span>
-                            ))}
-                            {item.tags.length > 2 && <span className="text-[10px] font-bold text-zinc-400">...</span>}
-                          </div>
-                        )}
-                    </div>
+                    )}
                 </div>
             ))}
         </div>
