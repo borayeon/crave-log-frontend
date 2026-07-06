@@ -4,6 +4,7 @@ import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown } from 'lucide-reac
 import { useAppStore, API_BASE_URL } from '../../store/AppStore';
 
 const AddRecordModal = () => {
+  // ⭐️ 1. apiFetch 꺼내오기
   const { addRecordModalOpen, setAddRecordModalOpen, tagTree, fetchAllData, showToast, setViewMode, apiFetch } = useAppStore();
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -36,17 +37,17 @@ const AddRecordModal = () => {
     try {
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
       const payload = {
-        title: title.trim(), 
-        categoryName: selectedCategory?.name || '분류 없음', 
-        recordDate: date.replace(/-/g, '.'),
+        title: title.trim(), categoryName: selectedCategory?.name || '분류 없음', recordDate: date.replace(/-/g, '.'),
         imageUrl: imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
-        content: content.trim(),
-        isPublic: true, 
-        tagIds: numericTagIds
+        isPublic: true, tagIds: numericTagIds
       };
       
+      // ⭐️ 2. fetch 대신 apiFetch 사용!
       const res = await apiFetch(`/me/records`, { method: 'POST', body: JSON.stringify(payload) });
+      
       if (res.ok) { 
+        await fetchAllData(); showToast('새 기록이 성공적으로 추가되었습니다! 🎉'); setAddRecordModalOpen(false); 
+        setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); 
         await fetchAllData(); 
         showToast('새 기록이 성공적으로 추가되었습니다! 🎉'); 
         setAddRecordModalOpen(false); 

@@ -3,9 +3,9 @@ import { Save, Eye, Lock, Trash2, AlertTriangle } from 'lucide-react';
 import { useAppStore, API_BASE_URL } from '../store/AppStore';
 
 const EditProfileView = () => {
+  // ⭐️ 1. apiFetch 꺼내오기
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
-  
-  const [formData, setFormData] = useState(() => {
+  const [formData, setFormData] = useState(JSON.parse(JSON.stringify(user)));
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     return {
       ...safeUser,
@@ -38,9 +38,10 @@ const EditProfileView = () => {
 
   const handleSave = async () => {
     try {
+      // ⭐️ 2. fetch 대신 apiFetch 사용! (알아서 토큰이 담겨 날아갑니다)
       const res = await apiFetch(`/me/profile`, {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData) // headers 설정도 apiFetch가 알아서 해줍니다.
       });
       
       if (res.ok) {
