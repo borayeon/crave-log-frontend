@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Save, Eye, Lock, Trash2, AlertTriangle } from 'lucide-react';
-import { useAppStore, API_BASE_URL } from '../store/AppStore';
+import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
-  // ⭐️ 버그 수정: 함수형 초기화 문법 오류 수정 (() => { ... } 추가)
+  // ⭐️ 에러 해결: 단 한 번만 선언되도록 정리된 상태값들
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     return {
@@ -22,11 +22,6 @@ const EditProfileView = () => {
 
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [avatarInputType, setAvatarInputType] = useState('file');
-
-  const [editTab, setEditTab] = useState('basic');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [avatarInputType, setAvatarInputType] = useState('file'); // ⭐️ 프로필 사진 업로드 토글
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -43,10 +38,9 @@ const EditProfileView = () => {
 
   const handleSave = async () => {
     try {
-      // ⭐️ 2. fetch 대신 apiFetch 사용! (알아서 토큰이 담겨 날아갑니다)
       const res = await apiFetch(`/me/profile`, {
         method: 'PUT',
-        body: JSON.stringify(formData) // headers 설정도 apiFetch가 알아서 해줍니다.
+        body: JSON.stringify(formData)
       });
       
       if (res.ok) {
@@ -73,23 +67,15 @@ const EditProfileView = () => {
     }
   };
 
-  // ⭐️ isReadOnly 속성을 추가하여 ID 필드를 읽기 전용으로 만듭니다.
-  const renderInput = (label, path, placeholder = "", isReadOnly = false) => (
+  const renderInput = (label, path, placeholder = "") => (
     <div>
       <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
       <input
         type="text"
         placeholder={placeholder}
         value={path.reduce((o, i) => (o || {})[i] || '', formData)}
-        onChange={e => {
-          if (!isReadOnly) updateNested(path, e.target.value);
-        }}
-        readOnly={isReadOnly}
-        className={`w-full mt-2 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-colors ${
-          isReadOnly 
-            ? 'bg-zinc-100 text-zinc-500 border border-transparent cursor-not-allowed' 
-            : 'bg-zinc-50 border border-zinc-200 text-zinc-800 focus:ring-2 focus:ring-indigo-500'
-        }`}
+        onChange={e => updateNested(path, e.target.value)}
+        className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
       />
     </div>
   );
@@ -160,69 +146,19 @@ const EditProfileView = () => {
           </div>
         )}
 
-        {}
         {/* BASIC TAB */}
         {editTab === 'basic' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
-            {/* ⭐️ 프로필 사진 변경 UI 시작 */}
-            <div className="md:col-span-2 bg-zinc-50 border border-zinc-100 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center md:items-start">
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-tr from-indigo-500 to-rose-400 p-1 rounded-3xl shadow-sm relative group">
-                    <div className="w-full h-full bg-white flex items-center justify-center rounded-[1.3rem] overflow-hidden">
-                        {formData.profileImageUrl ? (
-                            <img src={formData.profileImageUrl} alt="avatar" className="w-full h-full object-cover" />
-                        ) : (
-                            <span className="text-3xl font-black text-zinc-300">{formData.name ? formData.name.charAt(0) : '?'}</span>
-                        )}
-                    </div>
-                    {formData.profileImageUrl && (
-                        <button onClick={() => updateNested(["profileImageUrl"], '')} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12}/></button>
-                    )}
-                </div>
-                <div className="flex-1 w-full">
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">프로필 사진 설정</label>
-                        <div className="flex bg-zinc-200/50 p-0.5 rounded-lg">
-                            <button type="button" onClick={() => setAvatarInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${avatarInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>파일</button>
-                            <button type="button" onClick={() => setAvatarInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${avatarInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>URL</button>
-                        </div>
-                    </div>
-                    {avatarInputType === 'file' ? (
-                        <input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => updateNested(["profileImageUrl"], reader.result);
-                                    reader.readAsDataURL(file);
-                                }
-                            }} 
-                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2 text-sm font-bold text-zinc-800 outline-none file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-600 cursor-pointer" 
-                        />
-                    ) : (
-                        <input 
-                            type="text" 
-                            value={formData.profileImageUrl || ''} 
-                            onChange={e => updateNested(["profileImageUrl"], e.target.value)} 
-                            placeholder="이미지 주소 (https://...)" 
-                            className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 outline-none focus:ring-2 focus:ring-indigo-500" 
-                        />
-                    )}
-                </div>
-            </div>
-            {/* ⭐️ 프로필 사진 변경 UI 끝 */}
-
             {renderInput("이름", ["name"], "예: 홍길동")}
-            {/* ⭐️ ID 필드를 읽기 전용으로 설정합니다. */}
-            {renderInput("고유 ID (변경 불가)", ["handle"], "예: gildong.dev", true)}
+            {renderInput("닉네임/핸들", ["handle"], "예: gildong.dev")}
+            {renderInput("프로필 이미지 URL", ["profileImageUrl"], "https://...")}
             {renderInput("직무/역할", ["role"], "예: Backend Developer")}
             {renderInput("전공/소속", ["major"], "예: 컴퓨터공학")}
             {renderInput("위치", ["location"], "예: Seoul, Korea")}
             {renderInput("현재 상태", ["status"], "예: 구직 중, 여행 중")}
             <div className="md:col-span-2">
                 <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">한 줄 소개</label>
-                <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio || ''} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             {renderArrayTextarea("Tags (키워드)", ["tags"])}
             {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
@@ -317,7 +253,6 @@ const EditProfileView = () => {
         )}
       </div>
 
-      {}
       {/* Danger Zone */}
       <div className="bg-rose-50 border border-rose-200 p-8 rounded-[2rem] mt-8 animate-in fade-in relative overflow-hidden">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
