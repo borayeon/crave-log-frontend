@@ -69,3 +69,4 @@ const SearchView = () => {
     </div>
   );
 };
+export default SearchView;
