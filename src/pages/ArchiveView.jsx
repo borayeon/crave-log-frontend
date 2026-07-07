@@ -118,7 +118,7 @@ return (
       <div 
         className="bg-zinc-950 md:bg-zinc-900 rounded-2xl
              w-full max-w-5xl
-             h-[75vh]
+             h-[50vh]
              flex flex-col md:flex-row
              overflow-hidden shadow-2xl border border-zinc-800"
         onClick={e => e.stopPropagation()}
