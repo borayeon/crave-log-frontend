@@ -302,38 +302,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     </div>
                 )}
             </div>
-
-            {/* Footer Area: 저장 버튼 또는 인스타그램 스타일 액션바 */}
-            {isEditMode ? (
-                 <div className="p-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
-                    <div className="flex gap-2">
-                        <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-lg font-bold text-sm hover:bg-zinc-800 transition">취소</button>
-                        <button onClick={handleSave} className="flex-1 py-2.5 bg-zinc-100 text-zinc-900 rounded-lg font-black text-sm hover:bg-white transition flex items-center justify-center gap-2">저장 완료</button>
-                    </div>
-                 </div>
-            ) : (
-                <div className="border-t border-zinc-800 p-4 shrink-0 bg-zinc-950">
-                    <div className="flex items-center justify-between mb-3 text-white">
-                        <div className="flex gap-4">
-                            <button className="hover:text-zinc-400 transition-colors"><Heart size={24} /></button>
-                            <button className="hover:text-zinc-400 transition-colors"><MessageCircle size={24} /></button>
-                            <button className="hover:text-zinc-400 transition-colors"><Send size={24} /></button>
-                        </div>
-                        <button className="hover:text-zinc-400 transition-colors"><Bookmark size={24} /></button>
-                    </div>
-                    <p className="text-sm font-bold text-white mb-1">CraveLog Archive</p>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{record.date}</p>
-                    
-                    {/* Fake Comment Input */}
-                    <div className="mt-4 flex items-center gap-3 border-t border-zinc-800 pt-4">
-                        <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
-                             {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="me" className="w-full h-full object-cover"/> : null}
-                        </div>
-                        <input type="text" placeholder="Add a comment..." disabled className="bg-transparent flex-1 text-sm text-white outline-none placeholder-zinc-500" />
-                        <button className="text-sm font-bold text-indigo-400 opacity-50 cursor-not-allowed">Post</button>
-                    </div>
-                </div>
-            )}
         </div>
       </div>
     </div>
