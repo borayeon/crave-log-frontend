@@ -1,9 +1,10 @@
 import React from 'react';
-import { Search, User, Globe } from 'lucide-react';
+import { Search, Globe } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const SearchView = () => {
-  const { searchResults, searchQuery, showToast, visitUserProfile } = useAppStore(); // ⭐️ visitUserProfile 꺼내오기
+  // ⭐️ visitUserProfile 가져오기
+  const { searchResults, searchQuery, showToast, visitUserProfile } = useAppStore();
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10">
@@ -32,10 +33,12 @@ const SearchView = () => {
           {searchResults.map(user => (
             <div 
               key={user.handle} 
-              // ⭐️ 클릭 시 해당 유저의 프로필 데이터를 로드하고 화면을 전환합니다!
+              // ⭐️ 클릭 시 해당 유저의 프로필 데이터 불러오기
               onClick={() => {
-                showToast(`${user.name}님의 프로필을 불러옵니다 🚀`);
-                visitUserProfile(user.handle); 
+                showToast(`${user.name}님의 프로필로 이동합니다 🚀`);
+                if (visitUserProfile) {
+                    visitUserProfile(user.handle);
+                }
               }}
               className="p-5 bg-white border border-zinc-200/80 rounded-2xl flex items-center gap-4 hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer group relative overflow-hidden"
             >
@@ -69,4 +72,5 @@ const SearchView = () => {
     </div>
   );
 };
+
 export default SearchView;
