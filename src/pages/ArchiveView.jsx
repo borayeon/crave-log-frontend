@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
 
-// --- 상세 보기 & 수정 모달 컴포넌트 ---
+// --- 상세 보기 & 수정 모달 컴포넌트 (인스타그램 UI 스타일) ---
 const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, apiFetch, fetchAllData, showToast }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [title, setTitle] = useState('');
@@ -17,7 +17,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [isTagExpanded, setIsTagExpanded] = useState(true);
   const [imageInputType, setImageInputType] = useState('file');
 
-  const { user } = useAppStore(); // Get user data for the fake profile header
+  const { user } = useAppStore(); // 작성자 정보를 표시하기 위해 가져옴
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -114,18 +114,18 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 
   return (
     <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
-      {/* Container simulating the Instagram split view */}
+      {/* 인스타그램 스타일 분할 모달 컨테이너 */}
       <div 
-        className="bg-zinc-900 rounded-lg w-full max-w-6xl max-h-[90vh] h-full flex flex-col md:flex-row overflow-hidden shadow-2xl relative" 
+        className="bg-zinc-950 md:bg-zinc-900 rounded-lg w-full max-w-6xl max-h-[90vh] h-full flex flex-col md:flex-row overflow-hidden shadow-2xl relative border border-zinc-800" 
         onClick={e => e.stopPropagation()}
       >
-        {/* Close Button - Absolutely positioned for easy access */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-800/50 rounded-full md:hidden">
+        {/* 모바일 닫기 버튼 */}
+        <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full md:hidden backdrop-blur-md">
             <CloseIcon size={20}/>
         </button>
 
-        {/* Left Side: Image Area (Takes up more space) */}
-        <div className="w-full md:w-3/5 h-64 md:h-full bg-black flex items-center justify-center relative border-r border-zinc-800 shrink-0">
+        {/* 좌측 영역: 이미지 (블랙 배경, object-contain으로 원본 비율 유지) */}
+        <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full bg-black flex items-center justify-center relative border-r border-zinc-800 shrink-0">
             {isEditMode ? (
                  <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-900">
                      <p className="text-zinc-400 mb-4 font-bold text-sm">이미지 미리보기</p>
@@ -144,60 +144,57 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     src={record.image?.trim() ? record.image : DEFAULT_IMAGE} 
                     onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
                     alt={record.title} 
-                    className="w-full h-full object-contain" // Use object-contain to fit the image without cropping
+                    className="w-full h-full object-contain" 
                 />
-            )}
-            
-            {!isEditMode && (
-                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-[11px] font-black rounded-md uppercase tracking-wider border border-white/10">
-                    {record.category}
-                </div>
             )}
         </div>
 
-        {/* Right Side: Details/Edit Area */}
-        <div className="w-full md:w-2/5 flex flex-col h-full bg-zinc-900 text-zinc-200 overflow-y-auto scrollbar-hide">
+        {/* 우측 영역: 상세 정보 및 댓글/수정 폼 */}
+        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-zinc-950 text-zinc-200 overflow-hidden">
             
-            {/* Header: User Info (Fake profile header like IG) & Actions */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
+            {/* Header: 유저 프로필 영역 */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-800 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700">
                          {user?.profileImageUrl ? (
                             <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
                         ) : (
                              <span className="text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>
                         )}
                     </div>
-                    <div>
-                        <p className="text-sm font-bold text-white">{user?.handle || 'User'}</p>
-                        {record.location && <p className="text-[10px] text-zinc-400">{record.location}</p>} {/* Assuming you might add location later */}
+                    <div className="leading-tight">
+                        <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                            {user?.handle || 'User'} 
+                            <span className="text-[10px] text-zinc-500 font-medium tracking-wider">• {record.category}</span>
+                        </p>
+                        {user?.location && <p className="text-[10px] text-zinc-400">{user.location}</p>}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                     {!isEditMode && isAdmin && !isGuestMode && (
-                        <>
-                        <button onClick={() => setIsEditMode(true)} className="p-2 text-zinc-400 hover:text-indigo-400 transition-colors"><Edit2 size={16}/></button>
-                        <button onClick={handleDelete} className="p-2 text-zinc-400 hover:text-rose-400 transition-colors"><Trash2 size={16}/></button>
-                        </>
+                        <div className="flex items-center gap-1 mr-2">
+                            <button onClick={() => setIsEditMode(true)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="수정"><Edit2 size={16}/></button>
+                            <button onClick={handleDelete} className="p-2 text-zinc-400 hover:text-rose-500 transition-colors" title="삭제"><Trash2 size={16}/></button>
+                        </div>
                     )}
-                     <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white transition-colors hidden md:block"><CloseIcon size={20}/></button>
+                    <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white transition-colors hidden md:block"><CloseIcon size={24}/></button>
                 </div>
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="p-4 flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                 {isEditMode ? (
-                    /* --- EDIT MODE FORM --- */
+                    /* --- 수정 모드 폼 --- */
                     <div className="space-y-5 animate-in fade-in duration-300">
                         <div>
-                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">제목 <span className="text-rose-500">*</span></label>
-                            <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">제목 <span className="text-rose-500">*</span></label>
+                            <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none transition-colors" />
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">폴더 <span className="text-rose-500">*</span></label>
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">카테고리 <span className="text-rose-500">*</span></label>
                             <select 
                                 value={categoryId} 
                                 onChange={e=>{
@@ -205,38 +202,38 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 setTagIds([]);
                                 setIsTagExpanded(true);
                                 }} 
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none appearance-none"
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none appearance-none transition-colors"
                             >
                                 <option value="">선택해주세요</option>
                                 {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                             </select>
                             </div>
                             <div>
-                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">날짜</label>
-                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none [color-scheme:dark]" />
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜</label>
+                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none [color-scheme:dark] transition-colors" />
                             </div>
                         </div>
                         
                         {tagTree.find(c => String(c.id) === String(categoryId))?.children?.length > 0 && (
-                            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg overflow-hidden">
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg overflow-hidden">
                             <button 
                                 type="button"
                                 onClick={() => setIsTagExpanded(!isTagExpanded)}
-                                className="w-full flex items-center justify-between px-3 py-2 hover:bg-zinc-700/50 transition-colors"
+                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-800 transition-colors"
                             >
-                                <span className="text-xs font-bold text-zinc-400 uppercase">태그 수정 ({tagIds.length})</span>
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">태그 수정 ({tagIds.length})</span>
                                 <ChevronDown size={14} className={`text-zinc-500 transition-transform ${isTagExpanded ? 'rotate-180' : ''}`} />
                             </button>
                             
                             {isTagExpanded && (
-                                <div className="p-3 border-t border-zinc-700 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                                <div className="p-3 border-t border-zinc-800 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                                 {tagTree.find(c => String(c.id) === String(categoryId)).children.map(tag => {
                                     const isSelected = tagIds.includes(tag.id);
                                     return (
                                     <button 
                                         key={tag.id} type="button"
                                         onClick={() => setTagIds(prev => isSelected ? prev.filter(id=>id!==tag.id) : [...prev, tag.id])} 
-                                        className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${isSelected ? 'bg-indigo-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${isSelected ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
                                     >
                                         #{tag.name}
                                     </button>
@@ -248,76 +245,94 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                         )}
 
                         <div>
-                            <div className="flex items-center justify-between mb-1">
-                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">이미지 수정</label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">이미지 소스</label>
                                 <div className="flex bg-zinc-800 p-0.5 rounded-md">
                                     <button type="button" onClick={() => setImageInputType('file')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition ${imageInputType === 'file' ? 'bg-zinc-600 text-white' : 'text-zinc-500'}`}>파일</button>
                                     <button type="button" onClick={() => setImageInputType('url')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition ${imageInputType === 'url' ? 'bg-zinc-600 text-white' : 'text-zinc-500'}`}>URL</button>
                                 </div>
                             </div>
 
-                            <div className="flex items-center">
-                                {imageInputType === 'file' ? (
-                                    <input 
-                                        type="file" accept="image/*" onChange={handleImageUpload} 
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-300 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer" 
-                                    />
-                                ) : (
-                                    <input 
-                                        type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="새 이미지 URL" 
-                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white outline-none" 
-                                    />
-                                )}
-                            </div>
+                            {imageInputType === 'file' ? (
+                                <input 
+                                    type="file" accept="image/*" onChange={handleImageUpload} 
+                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-400 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer" 
+                                />
+                            ) : (
+                                <input 
+                                    type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="새 이미지 URL" 
+                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none" 
+                                />
+                            )}
                         </div>
 
                         <div>
-                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">설명</label>
-                            <textarea value={content} onChange={e=>setContent(e.target.value)} rows={4} className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none resize-none" />
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">본문</label>
+                            <textarea value={content} onChange={e=>setContent(e.target.value)} rows={5} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none resize-none transition-colors" />
                         </div>
                     </div>
                 ) : (
-                    /* --- VIEW MODE DETAILS --- */
+                    /* --- 조회 모드 본문 영역 (댓글 UI 연상) --- */
                     <div className="animate-in fade-in duration-300">
-                        
-                        {/* Title and Date */}
-                        <div className="mb-4">
-                            <h2 className="text-xl font-bold text-white mb-2 leading-snug">{record.title}</h2>
-                            <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
-                                <Calendar size={12} />
-                                <span>{record.date}</span>
+                        <div className="flex gap-3">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
+                                {user?.profileImageUrl ? (
+                                    <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="w-full h-full flex items-center justify-center text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>
+                                )}
                             </div>
-                        </div>
-                        
-                        <hr className="border-zinc-800 mb-4" />
-
-                        {/* Content Area */}
-                        {record.content && (
-                            <div className="mb-6">
-                                <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap font-medium">
+                            <div className="flex-1 pt-1">
+                                <span className="text-sm font-bold text-white mr-2">{user?.handle || 'User'}</span>
+                                <span className="text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed font-medium">
+                                    <span className="font-bold text-white mb-1 block">{record.title}</span>
                                     {record.content}
-                                </p>
+                                </span>
+                                
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                    {(record.tags || []).map(tag => (
+                                        <span key={tag} className="text-xs font-medium text-[#E0F2FE] hover:text-white cursor-pointer transition-colors">#{tag}</span>
+                                    ))}
+                                </div>
+                                <div className="mt-3 text-[11px] text-zinc-500 font-medium">
+                                    {record.date}
+                                </div>
                             </div>
-                        )}
-                        
-                        {/* Tags Area */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {(record.tags || []).map(tag => (
-                                <span key={tag} className="text-xs font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer transition-colors">#{tag}</span>
-                            ))}
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Footer: Save Buttons (Only in Edit Mode) */}
-            {isEditMode && (
-                 <div className="p-4 border-t border-zinc-800 bg-zinc-900/90 shrink-0">
+            {/* Footer Area: 저장 버튼 또는 인스타그램 스타일 액션바 */}
+            {isEditMode ? (
+                 <div className="p-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
                     <div className="flex gap-2">
-                        <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-800 text-zinc-300 rounded-lg font-bold text-sm hover:bg-zinc-700 transition">취소</button>
-                        <button onClick={handleSave} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-500 transition flex items-center justify-center gap-2"><Save size={14}/> 저장</button>
+                        <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-lg font-bold text-sm hover:bg-zinc-800 transition">취소</button>
+                        <button onClick={handleSave} className="flex-1 py-2.5 bg-zinc-100 text-zinc-900 rounded-lg font-black text-sm hover:bg-white transition flex items-center justify-center gap-2">저장 완료</button>
                     </div>
                  </div>
+            ) : (
+                <div className="border-t border-zinc-800 p-4 shrink-0 bg-zinc-950">
+                    <div className="flex items-center justify-between mb-3 text-white">
+                        <div className="flex gap-4">
+                            <button className="hover:text-zinc-400 transition-colors"><Heart size={24} /></button>
+                            <button className="hover:text-zinc-400 transition-colors"><MessageCircle size={24} /></button>
+                            <button className="hover:text-zinc-400 transition-colors"><Send size={24} /></button>
+                        </div>
+                        <button className="hover:text-zinc-400 transition-colors"><Bookmark size={24} /></button>
+                    </div>
+                    <p className="text-sm font-bold text-white mb-1">CraveLog Archive</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{record.date}</p>
+                    
+                    {/* Fake Comment Input */}
+                    <div className="mt-4 flex items-center gap-3 border-t border-zinc-800 pt-4">
+                        <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
+                             {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="me" className="w-full h-full object-cover"/> : null}
+                        </div>
+                        <input type="text" placeholder="Add a comment..." disabled className="bg-transparent flex-1 text-sm text-white outline-none placeholder-zinc-500" />
+                        <button className="text-sm font-bold text-indigo-400 opacity-50 cursor-not-allowed">Post</button>
+                    </div>
+                </div>
             )}
         </div>
       </div>
@@ -325,7 +340,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   );
 };
 
-// --- 메인 아카이브 뷰 ---
+// --- 메인 아카이브 뷰 (갤러리 호버 이펙트 유지) ---
 const ArchiveView = () => {
   const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
