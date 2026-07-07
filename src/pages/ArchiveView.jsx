@@ -116,7 +116,11 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
       {/* 인스타그램 스타일 분할 모달 컨테이너 */}
       <div 
-        className="bg-zinc-950 md:bg-zinc-900 rounded-lg w-full max-w-6xl max-h-[90vh] h-full flex flex-col md:flex-row overflow-hidden shadow-2xl relative border border-zinc-800" 
+        className="bg-zinc-950 md:bg-zinc-900 rounded-2xl
+             w-full max-w-5xl
+             h-[75vh]
+             flex flex-col md:flex-row
+             overflow-hidden shadow-2xl border border-zinc-800"
         onClick={e => e.stopPropagation()}
       >
         {/* 모바일 닫기 버튼 */}
