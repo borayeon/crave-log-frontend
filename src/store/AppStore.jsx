@@ -31,8 +31,14 @@ export const AppProvider = ({ children }) => {
   
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+
+  // ⭐️ 누락되었던 showToast 함수 복구!
+  const showToast = useCallback((msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  }, []);
 
   // 백엔드 통신용 함수 (자동으로 토큰 탑재)
   const apiFetch = useCallback(async (endpoint, options = {}) => {
@@ -140,7 +146,7 @@ export const AppProvider = ({ children }) => {
       if (savedToken) setIsAdmin(true);
     }
     fetchAllData();
-  }, [fetchAllData]);
+  }, [fetchAllData, showToast]);
 
   // 로그아웃
   const handleLogout = useCallback(() => {
