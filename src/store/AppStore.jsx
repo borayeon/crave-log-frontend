@@ -23,7 +23,7 @@ export const AppProvider = ({ children }) => {
   // 1. 기본 UI 상태
   const [viewMode, setViewMode] = useState('profile');
   const [toastMessage, setToastMessage] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
   // 2. 모달 상태
