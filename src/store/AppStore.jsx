@@ -42,7 +42,7 @@ export const AppProvider = ({ children }) => {
     setTimeout(() => setToastMessage(''), 3000);
   }, []);
   
-  // 공통 인증 Fetch 함수 (API 요청 시 토큰 자동 주입)
+  // 공통 인증 Fetch 함수 (API 요청 시 토큰 자동 주입)  
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
@@ -54,16 +54,19 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   // ⭐️ 통합 데이터 조회 로직 (자동 로그아웃 및 우회 처리 추가)
-  const fetchAllData = useCallback(async (isSilent = false) => {
+  const fetchAllData = useCallback(async (isSilent = false, handleOverride = null) => {
     const token = localStorage.getItem('accessToken');
     let targetUrlBase = '';
     let isFetchingMe = false; // 내 정보를 가져오는 중인지 확인하는 플래그
     const defaultHandle = 'taekyeong.dev'; 
     
-    if (visitedHandle) {
-      targetUrlBase = `/users/${visitedHandle}`;
+    // ⭐️ 파라미터로 명시적 핸들이 넘어오면 그것을 최우선으로 사용합니다.
+    const currentHandle = handleOverride !== null ? handleOverride : visitedHandle;
+
+    if (currentHandle && currentHandle !== "") {
+      targetUrlBase = `/users/${currentHandle}`;
     } else if (token) {
-      isFetchingMe = true;
+      isFetchingMe = true;ㅁ
       targetUrlBase = `/me`;
     } else {
       targetUrlBase = `/users/${defaultHandle}`;
@@ -109,20 +112,31 @@ export const AppProvider = ({ children }) => {
   }, [apiFetch, visitedHandle]);
 
   // 다른 유저 프로필 방문 함수
-  const visitUserProfile = useCallback((targetHandle) => {
+  const visitUserProfile = useCallback(async (targetHandle) => {
     setVisitedHandle(targetHandle); 
     setIsGuestMode(true); 
     setViewMode('profile');
+    
+    // URL 주소창에 파라미터 추가 (뒤로가기/공유 최적화)
+    const newUrl = `${window.location.pathname}?u=${targetHandle}`;
+    window.history.pushState({}, '', newUrl);
+    
     showToast(`${targetHandle}님의 공간으로 이동합니다 🚀`);
-  }, [showToast]);
+    await fetchAllData(false, targetHandle); // 즉시 새 데이터 로드
+  }, [showToast, fetchAllData]);
 
-  // 내 본래 프로필로 복귀하는 함수
-  const resetToMyProfile = useCallback(() => {
+  // ⭐️ 내 본래 프로필로 복귀하는 함수
+  const resetToMyProfile = useCallback(async () => {
     setVisitedHandle(null);
     setIsGuestMode(false);
     setViewMode('profile');
+    
+    // URL 파라미터 초기화
+    window.history.replaceState({}, document.title, window.location.pathname);
+    
     showToast("내 프로필로 돌아왔습니다 🏠");
-  }, [showToast]);
+    await fetchAllData(false, ""); // 즉시 내 데이터 로드 (오버라이드 무시)
+  }, [showToast, fetchAllData]);
 
   // 유저 검색 함수
   const searchUsers = useCallback(async (keyword) => {
