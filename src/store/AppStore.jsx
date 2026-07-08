@@ -35,6 +35,12 @@ export const AppProvider = ({ children }) => {
   // ⭐️ 추가: 남의 프로필을 보고 있는지 추적하는 상태
   const [visitedHandle, setVisitedHandle] = useState(null); 
 
+  // ⭐️ 누락되었던 showToast 함수 복구!
+  const showToast = useCallback((msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  }, []);
+  
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
