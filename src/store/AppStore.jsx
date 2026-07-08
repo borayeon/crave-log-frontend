@@ -53,31 +53,44 @@ export const AppProvider = ({ children }) => {
     return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
   }, []);
 
-  // 통합 데이터 조회 로직 (상태에 따라 호출 대상 분기)
+  // ⭐️ 통합 데이터 조회 로직 (자동 로그아웃 및 우회 처리 추가)
   const fetchAllData = useCallback(async (isSilent = false) => {
     const token = localStorage.getItem('accessToken');
     let targetUrlBase = '';
+    let isFetchingMe = false; // 내 정보를 가져오는 중인지 확인하는 플래그
+    const defaultHandle = 'taekyeong.dev'; 
     
     if (visitedHandle) {
-      // 1. 타인 프로필을 방문 중일 때
       targetUrlBase = `/users/${visitedHandle}`;
     } else if (token && !isGuestMode) {
-      // 2. 로그인되어 있고, 내 프로필(호스트 모드)을 볼 때
+      isFetchingMe = true;
       targetUrlBase = `/me`;
     } else {
-      // 3. 비로그인이거나, 내 프로필을 게스트 뷰로 볼 때 (기본 포트폴리오 전시 계정 지정)
-      const defaultHandle = 'taekyeong.dev'; 
       targetUrlBase = `/users/${defaultHandle}`;
     }
 
     try {
       if (!isSilent) setIsLoading(true);
-      const [profileRes, treeRes, recordsRes] = await Promise.all([
-        apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false })),
-        apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false })),
-        apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }))
-      ]);
+      
+      // Promise.all 대신 개별 통신하여 상태 코드를 유연하게 체크합니다.
+      let profileRes = await apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false }));
+      let treeRes = await apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false }));
+      let recordsRes = await apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }));
 
+      // 🚨 핵심 로직: 내 정보('/me')를 요청했는데 실패했다면? (토큰 만료 등)
+      if (isFetchingMe && !profileRes.ok) {
+        console.warn("유효하지 않은 토큰입니다. 자동 로그아웃 후 전시용 계정으로 전환합니다.");
+        localStorage.removeItem('accessToken'); // 썩은 토큰 폐기
+        setIsAdmin(false); // 권한 즉시 박탈 (로그아웃 버튼 -> 로그인 버튼으로 변경됨)
+
+        // 전시용 계정으로 다시 데이터를 재요청!
+        targetUrlBase = `/users/${defaultHandle}`;
+        profileRes = await apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false }));
+        treeRes = await apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false }));
+        recordsRes = await apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }));
+      }
+
+      // 최종적으로 가져온 데이터 적용
       if (profileRes.ok) setUser(await profileRes.json());
       else setUser(INITIAL_USER_DATA);
       
