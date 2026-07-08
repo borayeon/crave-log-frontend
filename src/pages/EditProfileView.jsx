@@ -31,7 +31,7 @@ const EditProfileView = () => {
         if (!current[path[i]]) current[path[i]] = {};
         current = current[path[i]];
       }
-      current[path[path.length - 1]] = value;
+      current[path[path.length - 1]] = value; 
       return newData;
     });
   };
@@ -146,24 +146,59 @@ const EditProfileView = () => {
           </div>
         )}
 
-        {/* BASIC TAB */}
-        {editTab === 'basic' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
-            {renderInput("이름", ["name"], "예: 홍길동")}
-            {renderInput("닉네임/핸들", ["handle"], "예: gildong.dev")}
-            {renderInput("프로필 이미지 URL", ["profileImageUrl"], "https://...")}
-            {renderInput("직무/역할", ["role"], "예: Backend Developer")}
-            {renderInput("전공/소속", ["major"], "예: 컴퓨터공학")}
-            {renderInput("위치", ["location"], "예: Seoul, Korea")}
-            {renderInput("현재 상태", ["status"], "예: 구직 중, 여행 중")}
-            <div className="md:col-span-2">
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">한 줄 소개</label>
-                <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-            {renderArrayTextarea("Tags (키워드)", ["tags"])}
-            {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
-          </div>
-        )}
+{/* BASIC TAB */}
+{editTab === 'basic' && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
+    {renderInput("이름", ["name"], "예: 홍길동")}
+
+    {/* 닉네임(수정 불가) */}
+    <div>
+      <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">
+        닉네임 / 핸들
+      </label>
+
+      <div className="relative mt-2">
+        <input
+          type="text"
+          value={formData.handle || ""}
+          readOnly
+          className="w-full bg-zinc-100 border border-zinc-200 rounded-xl px-4 py-3 pr-10 text-sm font-bold text-zinc-500 cursor-not-allowed select-all"
+        />
+
+        <Lock
+          size={16}
+          className="absolute right-3 top-1/2 -translate-y-1/2 -translate-y-1/2 text-zinc-400"
+        />
+      </div>
+
+      <p className="mt-2 text-xs text-zinc-400">
+        닉네임은 계정 생성 후 변경할 수 없습니다.
+      </p>
+    </div>
+
+    {renderInput("프로필 이미지 URL", ["profileImageUrl"], "https://...")}
+    {renderInput("직무/역할", ["role"], "예: Backend Developer")}
+    {renderInput("전공/소속", ["major"], "예: 컴퓨터공학")}
+    {renderInput("위치", ["location"], "예: Seoul, Korea")}
+    {renderInput("현재 상태", ["status"], "예: 구직 중, 여행 중")}
+
+    <div className="md:col-span-2">
+      <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">
+        한 줄 소개
+      </label>
+      <textarea
+        placeholder="나를 표현하는 멋진 문장을 적어주세요."
+        value={formData.bio}
+        onChange={e => updateNested(["bio"], e.target.value)}
+        rows={2}
+        className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+      />
+    </div>
+
+    {renderArrayTextarea("Tags (키워드)", ["tags"])}
+    {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
+  </div>
+)}
 
         {/* DEVELOPER TAB */}
         {editTab === 'developer' && (
