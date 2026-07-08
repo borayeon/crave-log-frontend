@@ -62,7 +62,7 @@ export const AppProvider = ({ children }) => {
     
     if (visitedHandle) {
       targetUrlBase = `/users/${visitedHandle}`;
-    } else if (token && !isGuestMode) {
+    } else if (token) {
       isFetchingMe = true;
       targetUrlBase = `/me`;
     } else {
@@ -106,7 +106,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       if (!isSilent) setIsLoading(false);
     }
-  }, [apiFetch, visitedHandle, isGuestMode]);
+  }, [apiFetch, visitedHandle]);
 
   // 다른 유저 프로필 방문 함수
   const visitUserProfile = useCallback((targetHandle) => {
