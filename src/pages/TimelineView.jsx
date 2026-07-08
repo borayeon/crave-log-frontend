@@ -20,6 +20,11 @@ const TimelineView = () => {
   const filteredRecords = useMemo(() => {
     let filtered = safeRecords;
     
+    // ⭐️ 추가: 게스트 뷰 모드일 때는 비공개 기록을 강제로 숨깁니다!
+    if (isGuestMode) {
+      filtered = filtered.filter(r => r.isPublic !== false);
+    }
+    
     if (searchQuery && searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(r => 
@@ -43,7 +48,7 @@ const TimelineView = () => {
         const dateB = new Date(b.date?.replace(/\./g, '-') || 0);
         return dateB - dateA;
     });
-  }, [safeRecords, selectedFilter, safeTagTree, searchQuery]);
+  }, [safeRecords, selectedFilter, safeTagTree, searchQuery, isGuestMode]); // ⭐️ 의존성 배열에 isGuestMode 추가
 
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);

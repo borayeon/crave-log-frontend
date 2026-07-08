@@ -384,6 +384,11 @@ const ArchiveView = () => {
   const displayRecords = useMemo(() => {
     let result = records;
 
+    // ⭐️ 추가: 게스트 뷰 모드일 때는 비공개 기록을 강제로 숨깁니다!
+    if (isGuestMode) {
+      result = result.filter(r => r.isPublic !== false);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(r => 
@@ -399,7 +404,7 @@ const ArchiveView = () => {
     }
 
     return result;
-  }, [records, searchQuery, activeCategory]);
+  }, [records, searchQuery, activeCategory, isGuestMode]); // ⭐️ 의존성 배열에 isGuestMode 추가
 
   if (records.length === 0) {
       return (
