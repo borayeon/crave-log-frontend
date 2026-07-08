@@ -2,53 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { 
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
-    ArrowRight, Heart, MessageSquare, Lock 
+    ArrowRight, Heart, MessageSquare, Lock, Loader2 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
-import { Loader2 } from 'lucide-react'; // 루시드 아이콘의 스피너 활용
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
+  // 1. 상태 및 스토어 불러오기 (중복 제거 및 통합)
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
 
-  // 게스트 판단 로직: 비로그인 상태이거나, 호스트가 '게스트 뷰' 버튼을 켰을 때
   const isGuest = !isAdmin || isGuestMode;
 
-  // 탭 순서를 로컬 스토리지에 저장하고 드래그 앤 드롭 상태를 관리합니다.
   const [tabOrder, setTabOrder] = useState(() => {
     const saved = localStorage.getItem('cravelog_tab_order');
     return saved ? JSON.parse(saved) : ['developer', 'career', 'idol'];
   });
   const [draggedTab, setDraggedTab] = useState(null);
-const { user, isLoading } = useAppStore();
-
-  // ⭐️ 핵심: 로딩 중일 때는 "손님" 화면을 그리지 않고 로딩 애니메이션만 보여줍니다.
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[500px] text-zinc-400">
-        <Loader2 className="w-8 h-8 animate-spin mb-2 text-zinc-500" />
-        <p className="text-sm font-medium tracking-tight">프로필을 불러오는 중입니다...</p>
-      </div>
-    );
-  }
-
-  // 로딩이 끝나면 안전하게 내 계정 혹은 전시용 계정이 출력됩니다.
-  return (
-    <div className="profile-container">
-      <h1>{user.name}님의 프로필</h1>
-      {/* 기존 프로필 UI 코드들... */}
-    </div>
-  );
-  useEffect(() => {
-    localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
-  }, [tabOrder]);
-
-  const handleShare = () => {
-    showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
-  };
-
-  const isProfileEmpty = user.name === "손님" && (user.tags || []).length === 0;
-  const shouldBlur = isProfileEmpty && !isAdmin;
 
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
@@ -56,13 +25,16 @@ const { user, isLoading } = useAppStore();
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // 전역 isGuest 상태를 사용하여 비공개 탭을 필터링합니다.
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
     .filter(tab => !isGuest || user.privacy?.[tab.id] !== false);
 
+  // 2. 모든 useEffect는 무조건 return(조건부 렌더링)보다 위에 위치해야 합니다!
   useEffect(() => {
-    // 모든 정보가 비공개일 때 activeTab을 비우도록 설정
+    localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
+  }, [tabOrder]);
+
+  useEffect(() => {
     if (isGuest && activeTab && user.privacy?.[activeTab] === false) {
       const firstAvailable = availableTabs[0];
       setActiveTab(firstAvailable ? firstAvailable.id : null);
@@ -71,20 +43,20 @@ const { user, isLoading } = useAppStore();
     }
   }, [isGuest, activeTab, user.privacy, availableTabs]);
 
-  // ⭐️ 드래그 앤 드롭 핸들러들
+  // 드래그 앤 드롭 핸들러들
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id); // HTML5 드래그 필수 코드
+    e.dataTransfer.setData('text/plain', id);
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // 드롭 허용 필수
+    e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnter = (e) => {
-    e.preventDefault(); // 진입 시에도 이벤트 전파 방지
+    e.preventDefault();
   };
 
   const handleDrop = (e, dropId) => {
@@ -103,6 +75,24 @@ const { user, isLoading } = useAppStore();
     setDraggedTab(null);
   };
 
+  const handleShare = () => {
+    showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
+  };
+
+  const isProfileEmpty = user.name === "손님" && (user.tags || []).length === 0;
+  const shouldBlur = isProfileEmpty && !isAdmin;
+
+  // 3. 로딩 상태 처리 (모든 Hook이 선언된 이후, 실제 화면을 그리기 직전에 배치)
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[500px] text-zinc-400">
+        <Loader2 className="w-8 h-8 animate-spin mb-2 text-zinc-500" />
+        <p className="text-sm font-medium tracking-tight">프로필을 불러오는 중입니다...</p>
+      </div>
+    );
+  }
+
+  // 4. 로딩이 끝나면 보여줄 진짜 프로필 UI 전체
   return (
     <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
       <header className="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -128,7 +118,6 @@ const { user, isLoading } = useAppStore();
         </div>
       </header>
 
-      {}
       {/* Top SNS Profile Area */}
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8 items-center md:items-start mb-6 relative overflow-hidden">
         {isProfileEmpty && !isAdmin && (
@@ -145,7 +134,6 @@ const { user, isLoading } = useAppStore();
         <div className={`shrink-0 text-center ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
             <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
                 <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden">
-                    {/* ⭐️ 프로필 사진 렌더링 로직 반영 */}
                     {user.profileImageUrl ? (
                         <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -187,15 +175,14 @@ const { user, isLoading } = useAppStore();
         </div>
       </div>
 
-      {}
+      {/* Detail Tabs */}
       {!isProfileEmpty && (
         <>
-          {/* Detail Tabs (⭐️ div 태그와 커서 설정 변경) */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
             {availableTabs.map(tab => (
                 <div 
                     key={tab.id} 
-                    draggable={!isGuest} // 게스트가 아닐 때만 드래그 허용
+                    draggable={!isGuest}
                     onDragStart={(e) => handleDragStart(e, tab.id)}
                     onDragOver={handleDragOver}
                     onDragEnter={handleDragEnter}
@@ -213,10 +200,8 @@ const { user, isLoading } = useAppStore();
             ))}
           </div>
 
-          {}
           {/* Tab Contents */}
           {availableTabs.length === 0 && isGuest ? (
-              // 모든 정보가 비공개일 때 빈 화면 렌더링
               <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-zinc-200/60 shadow-sm animate-in fade-in duration-500">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 border border-zinc-100 shadow-inner">
                       <Lock size={28} className="text-zinc-300" />
