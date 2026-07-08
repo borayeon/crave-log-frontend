@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-// ⭐️ ChevronDown 추가
-import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown } from 'lucide-react';
+import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock } from 'lucide-react';
 import { useAppStore, API_BASE_URL } from '../../store/AppStore';
 
 const AddRecordModal = () => {
-  // ⭐️ 1. apiFetch 꺼내오기
   const { addRecordModalOpen, setAddRecordModalOpen, tagTree, fetchAllData, showToast, setViewMode, apiFetch } = useAppStore();
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -12,19 +10,19 @@ const AddRecordModal = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [content, setContent] = useState(''); 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isPublic, setIsPublic] = useState(true); // ⭐️ 공개 여부 상태 추가
 
   const [isTagExpanded, setIsTagExpanded] = useState(false);
-  const [imageInputType, setImageInputType] = useState('file'); // ⭐️ 추가: 이미지 입력 방식 (file / url)
+  const [imageInputType, setImageInputType] = useState('file');
 
   if (!addRecordModalOpen) return null;
 
-  // ⭐️ 이미지 파일 업로드 핸들러 추가
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageUrl(reader.result); // 파일을 Base64 문자열로 변환하여 저장
+        setImageUrl(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -37,22 +35,21 @@ const AddRecordModal = () => {
     try {
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
       const payload = {
-        title: title.trim(), categoryName: selectedCategory?.name || '분류 없음', recordDate: date.replace(/-/g, '.'),
+        title: title.trim(), 
+        categoryName: selectedCategory?.name || '분류 없음', 
+        recordDate: date.replace(/-/g, '.'),
         imageUrl: imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
-        isPublic: true, tagIds: numericTagIds
+        content: content.trim(),
+        isPublic: isPublic, // ⭐️ 공개 여부 전송
+        tagIds: numericTagIds
       };
       
-      // ⭐️ 2. fetch 대신 apiFetch 사용!
       const res = await apiFetch(`/me/records`, { method: 'POST', body: JSON.stringify(payload) });
-      
       if (res.ok) { 
-        await fetchAllData(); showToast('새 기록이 성공적으로 추가되었습니다! 🎉'); setAddRecordModalOpen(false); 
-        setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); 
         await fetchAllData(); 
         showToast('새 기록이 성공적으로 추가되었습니다! 🎉'); 
         setAddRecordModalOpen(false); 
-        // 폼 리셋
-        setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); setContent('');
+        setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); setContent(''); setIsPublic(true);
       }
       else showToast('기록 추가에 실패했습니다.');
     } catch (e) { console.error(e); showToast('서버 연동 중 오류가 발생했습니다.'); }
@@ -112,7 +109,6 @@ const AddRecordModal = () => {
                   )}
                   {selectedCategory && (selectedCategory.children || []).length === 0 && (<p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100">이 카테고리에는 아직 생성된 태그가 없습니다. 타임라인 트리 편집에서 태그를 먼저 추가해보세요.</p>)}
                   
-                  {/* ⭐️ 이미지 업로드 방식 선택 UI */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                         <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">이미지 첨부</label>
@@ -151,6 +147,26 @@ const AddRecordModal = () => {
                     <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">간단한 메모 (선택)</label>
                     <textarea value={content} onChange={e=>setContent(e.target.value)} placeholder="이 기록에 대해 남기고 싶은 이야기를 적어주세요." rows={3} className="w-full mt-1 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none" />
                   </div>
+
+                  {/* ⭐️ 공개/비공개 토글 UI */}
+                  <div className="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <div>
+                      <h4 className="text-sm font-bold text-zinc-800 flex items-center gap-1.5">
+                        {isPublic ? <Globe size={16} className="text-indigo-500"/> : <Lock size={16} className="text-rose-500"/>}
+                        {isPublic ? '전체 공개' : '나만 보기 (비공개)'}
+                      </h4>
+                      <p className="text-[10px] font-medium text-zinc-500 mt-1">
+                        {isPublic ? '방문하는 모든 사람이 이 기록을 볼 수 있습니다.' : '나의 공간에서 나에게만 보입니다.'}
+                      </p>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsPublic(!isPublic)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${isPublic ? 'bg-indigo-500' : 'bg-zinc-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
                 </div>
                 <button onClick={handleSubmit} className="w-full mt-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm transition duration-300 shadow-md flex items-center justify-center gap-2"><Plus size={18} /> 보관함에 기록 저장하기</button>
             </>
@@ -159,4 +175,5 @@ const AddRecordModal = () => {
     </div>
   );
 };
+
 export default AddRecordModal;

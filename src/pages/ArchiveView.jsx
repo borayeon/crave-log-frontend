@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
 
-// --- 상세 보기 & 수정 모달 컴포넌트 (인스타그램 UI 스타일) ---
 const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, apiFetch, fetchAllData, showToast }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [title, setTitle] = useState('');
@@ -14,10 +13,11 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [date, setDate] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [content, setContent] = useState('');
+  const [isPublic, setIsPublic] = useState(true); // ⭐️ 상태 추가
   const [isTagExpanded, setIsTagExpanded] = useState(true);
   const [imageInputType, setImageInputType] = useState('file');
 
-  const { user } = useAppStore(); // 작성자 정보를 표시하기 위해 가져옴
+  const { user } = useAppStore(); 
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -42,6 +42,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
       setDate(record.date?.replace(/\./g, '-') || '');
       setImageUrl(record.image);
       setContent(record.content || '');
+      setIsPublic(record.isPublic ?? true); // ⭐️ 기존 상태 세팅
       setIsTagExpanded(true);
 
       const cat = tagTree.find(c => c.name === record.category);
@@ -76,7 +77,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         recordDate: date.replace(/-/g, '.'),
         imageUrl: imageUrl || DEFAULT_IMAGE,
         content: content.trim(),
-        isPublic: true,
+        isPublic: isPublic, // ⭐️ 저장 시 반영
         tagIds: numericTagIds
       };
 
@@ -112,23 +113,16 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-return (
+  return (
     <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
-      {/* 인스타그램 스타일 분할 모달 컨테이너 */}
       <div 
-        className="bg-zinc-950 md:bg-zinc-900 rounded-2xl
-             w-full max-w-5xl
-             h-[50vh]
-             flex flex-col md:flex-row
-             overflow-hidden shadow-2xl border border-zinc-800"
+        className="bg-zinc-950 md:bg-zinc-900 rounded-2xl w-full max-w-5xl h-[75vh] flex flex-col md:flex-row overflow-hidden shadow-2xl border border-zinc-800"
         onClick={e => e.stopPropagation()}
       >
-        {/* 모바일 닫기 버튼 */}
         <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full md:hidden backdrop-blur-md">
             <CloseIcon size={20}/>
         </button>
 
-        {/* 좌측 영역: 이미지 (블랙 배경, object-contain으로 원본 비율 유지) */}
         <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full bg-black flex items-center justify-center relative border-r border-zinc-800 shrink-0">
             {isEditMode ? (
                  <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-900">
@@ -153,10 +147,7 @@ return (
             )}
         </div>
 
-        {/* 우측 영역: 상세 정보 및 댓글/수정 폼 */}
         <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-zinc-950 text-zinc-200 overflow-hidden">
-            
-            {/* Header: 유저 프로필 영역 */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-800 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700">
@@ -186,10 +177,8 @@ return (
                 </div>
             </div>
 
-            {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                 {isEditMode ? (
-                    /* --- 수정 모드 폼 --- */
                     <div className="space-y-5 animate-in fade-in duration-300">
                         <div>
                             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">제목 <span className="text-rose-500">*</span></label>
@@ -274,9 +263,25 @@ return (
                             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">본문</label>
                             <textarea value={content} onChange={e=>setContent(e.target.value)} rows={5} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none resize-none transition-colors" />
                         </div>
+                        
+                        {/* ⭐️ 수정 모드: 공개 여부 토글 */}
+                        <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg mt-2">
+                          <div>
+                            <h4 className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                              {isPublic ? <Globe size={14} className="text-indigo-400"/> : <Lock size={14} className="text-rose-400"/>}
+                              {isPublic ? '전체 공개' : '나만 보기 (비공개)'}
+                            </h4>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => setIsPublic(!isPublic)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPublic ? 'bg-indigo-500' : 'bg-zinc-600'}`}
+                          >
+                            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-1'}`} />
+                          </button>
+                        </div>
                     </div>
                 ) : (
-                    /* --- 조회 모드 본문 영역 (댓글 UI 연상) --- */
                     <div className="animate-in fade-in duration-300">
                         <div className="flex gap-3">
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
@@ -289,7 +294,10 @@ return (
                             <div className="flex-1 pt-1">
                                 <span className="text-sm font-bold text-white mr-2">{user?.handle || 'User'}</span>
                                 <span className="text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed font-medium">
-                                    <span className="font-bold text-white mb-1 block">{record.title}</span>
+                                    <span className="font-bold text-white mb-1 flex items-center gap-1.5">
+                                        {record.title}
+                                        {!record.isPublic && <Lock size={12} className="text-rose-400" title="비공개 기록" />} {/* ⭐️ 비공개 뱃지 */}
+                                    </span>
                                     {record.content}
                                 </span>
                                 
@@ -306,13 +314,42 @@ return (
                     </div>
                 )}
             </div>
+
+            {isEditMode ? (
+                 <div className="p-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
+                    <div className="flex gap-2">
+                        <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-lg font-bold text-sm hover:bg-zinc-800 transition">취소</button>
+                        <button onClick={handleSave} className="flex-1 py-2.5 bg-zinc-100 text-zinc-900 rounded-lg font-black text-sm hover:bg-white transition flex items-center justify-center gap-2">저장 완료</button>
+                    </div>
+                 </div>
+            ) : (
+                <div className="border-t border-zinc-800 p-4 shrink-0 bg-zinc-950">
+                    <div className="flex items-center justify-between mb-3 text-white">
+                        <div className="flex gap-4">
+                            <button className="hover:text-zinc-400 transition-colors"><Heart size={24} /></button>
+                            <button className="hover:text-zinc-400 transition-colors"><MessageCircle size={24} /></button>
+                            <button className="hover:text-zinc-400 transition-colors"><Send size={24} /></button>
+                        </div>
+                        <button className="hover:text-zinc-400 transition-colors"><Bookmark size={24} /></button>
+                    </div>
+                    <p className="text-sm font-bold text-white mb-1">CraveLog Archive</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{record.date}</p>
+                    
+                    <div className="mt-4 flex items-center gap-3 border-t border-zinc-800 pt-4">
+                        <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
+                             {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="me" className="w-full h-full object-cover"/> : null}
+                        </div>
+                        <input type="text" placeholder="Add a comment..." disabled className="bg-transparent flex-1 text-sm text-white outline-none placeholder-zinc-500" />
+                        <button className="text-sm font-bold text-indigo-400 opacity-50 cursor-not-allowed">Post</button>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
     </div>
   );
 };
 
-// --- 메인 아카이브 뷰 (갤러리 호버 이펙트 유지) ---
 const ArchiveView = () => {
   const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -452,6 +489,13 @@ const ArchiveView = () => {
                         alt={item.title} 
                         className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-110'}`} 
                     />
+
+                    {/* ⭐️ 갤러리 뷰 썸네일 비공개 뱃지 */}
+                    {!item.isPublic && (
+                      <div className="absolute top-3 right-3 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20">
+                        <Lock size={12} />
+                      </div>
+                    )}
                     
                     {isEditing && (
                         <button 
