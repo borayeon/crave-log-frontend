@@ -176,7 +176,8 @@ export const AppProvider = ({ children }) => {
       tagTree, setTagTree, user, setUser,
       isSidebarOpen, setIsSidebarOpen, 
       apiFetch, fetchAllData, handleLogout, 
-      visitUserProfile, resetToMyProfile, visitedHandle 
+      visitUserProfile, resetToMyProfile, visitedHandle,
+      isLoading
     }}>
       {children}
     </AppContext.Provider>
