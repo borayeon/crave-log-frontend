@@ -1,5 +1,7 @@
 import React from 'react';
 import { AppProvider, useAppStore } from './store/AppStore';
+import { Sparkles, Loader2 } from 'lucide-react'; // ⭐️ 로딩 아이콘 추가
+
 import Toast from './components/common/Toast';
 import AuthModal from './components/common/AuthModal';
 import AddRecordModal from './components/features/AddRecordModal';
@@ -13,8 +15,25 @@ import TimelineView from './pages/TimelineView';
 import SearchView from './pages/SearchView';
 
 const AppContent = () => {
-  const { viewMode } = useAppStore();
+  // ⭐️ 상태 관리소에서 로딩 상태(isLoading)를 가져옵니다.
+  const { viewMode, isLoading } = useAppStore();
 
+  // 🚨 전역 로딩 화면: 데이터가 모두 준비되기 전까지는 사이드바나 네비게이션을 아예 그리지 않습니다!
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-[#F8FAFC] gap-5">
+        <div className="w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center text-indigo-500 shadow-xl border border-zinc-200/60 animate-bounce">
+          <Sparkles size={36} />
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+          <p className="text-sm font-black text-zinc-500 tracking-widest uppercase">CraveLog Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 로딩이 끝나면 진짜 화면을 렌더링합니다.
   return (
     <div className="flex h-screen w-full overflow-hidden transition-colors duration-700 font-sans bg-[#F8FAFC]">
       <Toast />
@@ -29,8 +48,7 @@ const AppContent = () => {
            {viewMode === 'edit_profile' && <EditProfileView />}
            {viewMode === 'archive' && <ArchiveView />}
            {viewMode === 'timeline' && <TimelineView />}
-           {/* 중복된 SearchView 호출을 하나로 줄였습니다 */}
-           {viewMode === 'search' && <SearchView />} 
+           {viewMode === 'search' && <SearchView />}
          </div>
       </main>
 
