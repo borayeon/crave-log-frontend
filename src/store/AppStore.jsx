@@ -66,7 +66,7 @@ export const AppProvider = ({ children }) => {
     if (currentHandle && currentHandle !== "") {
       targetUrlBase = `/users/${currentHandle}`;
     } else if (token) {
-      isFetchingMe = true;ㅁ
+      isFetchingMe = true;
       targetUrlBase = `/me`;
     } else {
       targetUrlBase = `/users/${defaultHandle}`;
