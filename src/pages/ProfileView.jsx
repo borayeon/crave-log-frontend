@@ -5,6 +5,7 @@ import {
     ArrowRight, Heart, MessageSquare, Lock 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
+import { Loader2 } from 'lucide-react'; // 루시드 아이콘의 스피너 활용
 
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
@@ -19,7 +20,25 @@ const ProfileView = () => {
     return saved ? JSON.parse(saved) : ['developer', 'career', 'idol'];
   });
   const [draggedTab, setDraggedTab] = useState(null);
+const { user, isLoading } = useAppStore();
 
+  // ⭐️ 핵심: 로딩 중일 때는 "손님" 화면을 그리지 않고 로딩 애니메이션만 보여줍니다.
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[500px] text-zinc-400">
+        <Loader2 className="w-8 h-8 animate-spin mb-2 text-zinc-500" />
+        <p className="text-sm font-medium tracking-tight">프로필을 불러오는 중입니다...</p>
+      </div>
+    );
+  }
+
+  // 로딩이 끝나면 안전하게 내 계정 혹은 전시용 계정이 출력됩니다.
+  return (
+    <div className="profile-container">
+      <h1>{user.name}님의 프로필</h1>
+      {/* 기존 프로필 UI 코드들... */}
+    </div>
+  );
   useEffect(() => {
     localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
   }, [tabOrder]);
