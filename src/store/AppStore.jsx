@@ -1,9 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { 
+  User, History, Network, Sparkles, MapPin, Briefcase, 
+  Lock, LogOut, ChevronRight, Search, Heart, Share2, 
+  Calendar, Tag, ArrowRight, Bell, Folder, FolderOpen, 
+  Hash, Plus, Trash2, Edit2, ChevronDown, X as CloseIcon,
+  Menu, GraduationCap, Target, Code, HeartHandshake,
+  MessageSquare, Eye, EyeOff, Link, Save, X, AlertTriangle,
+  Rocket
+} from 'lucide-react';
 
-// 백엔드 API 기본 주소 (나중에 환경 변수로 빼는 것을 권장)
-export const API_BASE_URL = 'http://localhost:8080/api/v1';
+// ⭐️ 수정: 고정된 localhost 대신 Vercel 환경 변수를 사용하도록 변경합니다!
+// import.meta.env.VITE_API_BASE_URL은 환경변수에 세팅된 백엔드 주소를 가져옵니다.
+// 만약 환경 변수가 없으면(에러 방지), 기본값으로 localhost를 사용합니다.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
-// 초기 비어있는 데이터 상태 (에러 방지용)
+// --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
   location: "위치를 설정해주세요", bio: "나를 표현하는 짧은 소개를 작성해보세요 🚀",
