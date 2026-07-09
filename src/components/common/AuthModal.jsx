@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mail, ArrowLeft, KeyRound, User as UserIcon, AtSign, Sparkles, CheckCircle2, ShieldCheck, Check } from 'lucide-react';
+import { Mail, ArrowLeft, KeyRound, User as UserIcon, AtSign, Sparkles, CheckCircle2, ShieldCheck, Check, MessageSquare } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const AuthModal = () => {
@@ -127,6 +127,22 @@ const AuthModal = () => {
     }
   };
 
+  // ⭐️ 카카오 로그인 처리 (데모)
+  const handleKakaoLogin = async () => {
+    showToast("카카오 로그인 진행 중...");
+    // 실제 환경에서는 여기서 OAuth URL로 리다이렉트
+    // window.location.href = `${API_BASE_URL}/oauth2/authorization/kakao`;
+    
+    // 데모를 위한 임시 처리
+    setTimeout(() => {
+        setIsAdmin(true);
+        fetchAllData();
+        setViewMode('profile');
+        showToast("카카오로 로그인되었습니다! 💛");
+        resetAndClose();
+    }, 800);
+  };
+
   // 뒤로가기 버튼 로직
   const goBack = () => {
     if (step === 'LOGIN_PASSWORD' || step === 'SIGNUP_PASSWORD') {
@@ -171,17 +187,33 @@ const AuthModal = () => {
             </p>
         </div>
 
-        {/* 1단계: 이메일 입력 폼 */}
+        {/* 1단계: 이메일 입력 폼 및 소셜 로그인 */}
         {step === 'EMAIL_ENTRY' && (
-            <form onSubmit={handleCheckEmail} className="w-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="relative mb-6">
-                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-                    <input ref={emailInputRef} type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="이메일 주소" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3.5 pl-11 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-inner" />
+            <div className="w-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
+                <form onSubmit={handleCheckEmail}>
+                    <div className="relative mb-6">
+                        <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <input ref={emailInputRef} type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="이메일 주소" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3.5 pl-11 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-inner" />
+                    </div>
+                    <button disabled={isLoading} type="submit" className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white rounded-xl font-black text-sm transition duration-300 shadow-md mb-6">
+                    {isLoading ? '확인 중...' : '다음'}
+                    </button>
+                </form>
+
+                {/* ⭐️ 소셜 로그인 구분선 및 버튼 추가 */}
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="flex-1 h-px bg-zinc-200"></div>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">or</span>
+                    <div className="flex-1 h-px bg-zinc-200"></div>
                 </div>
-                <button disabled={isLoading} type="submit" className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white rounded-xl font-black text-sm transition duration-300 shadow-md">
-                  {isLoading ? '확인 중...' : '다음'}
+
+                <button 
+                    onClick={handleKakaoLogin} 
+                    className="w-full py-3.5 bg-[#FEE500] hover:bg-[#E5CF00] text-black rounded-xl font-black text-sm flex items-center justify-center gap-2 transition duration-300 shadow-sm"
+                >
+                    <MessageSquare size={16} className="fill-black" /> 카카오 계정으로 계속하기
                 </button>
-            </form>
+            </div>
         )}
 
         {/* 2-1단계: 로그인 폼 */}
