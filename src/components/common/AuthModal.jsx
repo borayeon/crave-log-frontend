@@ -13,6 +13,11 @@ const AuthModal = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
+  
+  // ⭐️ 추가된 상태들 (비밀번호 확인, 찾기 탭, 찾은 아이디)
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [findTab, setFindTab] = useState('id'); // 'id' | 'pw'
+  const [foundHandle, setFoundHandle] = useState('');
 
   if (!loginModalOpen) return null;
 
@@ -27,6 +32,7 @@ const AuthModal = () => {
     setTimeout(() => {
         setMode('main');
         setEmail(''); setPassword(''); setName(''); setHandle('');
+        setPasswordConfirm(''); setFoundHandle(''); setFindTab('id'); // ⭐️ 추가 리셋
     }, 300); 
   };
 
@@ -60,11 +66,17 @@ const AuthModal = () => {
   // ⭐️ 자체 이메일 회원가입 처리
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (!email || !password || !name || !handle) {
+    if (!email || !password || !passwordConfirm || !name || !handle) {
         showToast("모든 항목을 입력해주세요.");
         return;
     }
     
+    // ⭐️ 비밀번호 일치 확인 로직
+    if (password !== passwordConfirm) {
+        showToast("비밀번호가 서로 일치하지 않습니다.");
+        return;
+    }
+
     // 핸들(ID)은 URL에 쓰이므로 영문 소문자/숫자/. 만 허용
     const handleRegex = /^[a-z0-9.]+$/;
     if (!handleRegex.test(handle)) {
@@ -83,6 +95,7 @@ const AuthModal = () => {
         showToast("회원가입이 완료되었습니다! 로그인 해주세요. 🚀");
         setMode('email_login'); // 성공 시 로그인 화면으로 이동
         setPassword(''); // 비밀번호 입력칸 비워주기
+        setPasswordConfirm('');
       } else {
         const data = await res.json();
         showToast(data.message || "회원가입에 실패했습니다.");
@@ -90,6 +103,42 @@ const AuthModal = () => {
     } catch (e) {
       showToast("서버 연결에 실패했습니다.");
     }
+  };
+
+  // ⭐️ 아이디 찾기 처리
+  const handleFindId = async (e) => {
+    e.preventDefault();
+    if (!email || !name) return showToast("이름과 이메일을 입력해주세요.");
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/find-id`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name })
+      });
+      const data = await res.json();
+      if (res.ok) setFoundHandle(data.handle);
+      else showToast(data.message || "일치하는 정보가 없습니다.");
+    } catch (e) { showToast("서버 오류가 발생했습니다."); }
+  };
+
+  // ⭐️ 비밀번호 재설정 처리
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!email || !name || !password || !passwordConfirm) return showToast("모든 항목을 입력해주세요.");
+    if (password !== passwordConfirm) return showToast("새 비밀번호가 일치하지 않습니다.");
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, newPassword: password })
+      });
+      if (res.ok) {
+        showToast("비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요! 🔑");
+        setMode('email_login');
+        setPassword(''); setPasswordConfirm('');
+      } else {
+        const data = await res.json();
+        showToast(data.message || "일치하는 정보가 없습니다.");
+      }
+    } catch (e) { showToast("서버 오류가 발생했습니다."); }
   };
 
   return (
@@ -151,9 +200,16 @@ const AuthModal = () => {
                     </div>
                 </div>
 
-                <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm flex items-center justify-center transition duration-300 shadow-md">
+                <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm flex items-center justify-center transition duration-300 shadow-md mb-4">
                   로그인
                 </button>
+
+                {/* ⭐️ 아이디/비밀번호 찾기 버튼 추가 */}
+                <div className="w-full text-center">
+                    <button type="button" onClick={() => { setMode('find_account'); setFindTab('id'); setFoundHandle(''); }} className="text-xs font-bold text-zinc-500 hover:text-indigo-600 transition-colors">
+                        아이디 / 비밀번호를 잊으셨나요?
+                    </button>
+                </div>
             </form>
         )}
 
@@ -191,12 +247,84 @@ const AuthModal = () => {
                             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
                         </div>
                     </div>
+                    {/* ⭐️ 비밀번호 확인 입력 필드 추가 */}
+                    <div>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">비밀번호 확인</label>
+                        <div className="relative mt-1">
+                            <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                            <input type="password" value={passwordConfirm} onChange={e=>setPasswordConfirm(e.target.value)} required placeholder="••••••••" className={`w-full bg-zinc-50 border rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none ${passwordConfirm && password !== passwordConfirm ? 'border-rose-400' : 'border-zinc-200'}`} />
+                        </div>
+                        {passwordConfirm && password !== passwordConfirm && (
+                            <p className="text-[10px] text-rose-500 font-bold pl-1 mt-1">비밀번호가 일치하지 않습니다.</p>
+                        )}
+                    </div>
                 </div>
 
                 <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm flex items-center justify-center transition duration-300 shadow-md shrink-0">
                   회원가입 완료
                 </button>
             </form>
+        )}
+
+        {/* ⭐️ 4. 아이디/비밀번호 찾기 폼 화면 */}
+        {mode === 'find_account' && (
+            <div className="w-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex bg-zinc-100 p-1 rounded-xl mb-6">
+                    <button onClick={() => { setFindTab('id'); setFoundHandle(''); }} className={`flex-1 py-2 text-xs font-black rounded-lg transition-all ${findTab === 'id' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>아이디 찾기</button>
+                    <button onClick={() => setFindTab('pw')} className={`flex-1 py-2 text-xs font-black rounded-lg transition-all ${findTab === 'pw' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>비밀번호 재설정</button>
+                </div>
+
+                {findTab === 'id' ? (
+                    <form onSubmit={handleFindId} className="space-y-4">
+                        <p className="text-xs font-medium text-zinc-500 mb-4 text-center">가입 시 등록한 이름과 이메일을 입력해주세요.</p>
+                        <div>
+                            <div className="relative">
+                                <UserIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                <input type="text" value={name} onChange={e=>setName(e.target.value)} required placeholder="이름 (닉네임)" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            </div>
+                        </div>
+                        <div>
+                            <div className="relative">
+                                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="이메일" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                            </div>
+                        </div>
+                        
+                        {foundHandle ? (
+                            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-center animate-in zoom-in-95">
+                                <p className="text-xs font-bold text-indigo-500 mb-1">회원님의 아이디(핸들)는</p>
+                                <p className="text-lg font-black text-indigo-700">@{foundHandle}</p>
+                                <button type="button" onClick={() => setMode('email_login')} className="mt-4 w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700">로그인하러 가기</button>
+                            </div>
+                        ) : (
+                            <button type="submit" className="w-full mt-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-black text-sm transition shadow-md">아이디 찾기</button>
+                        )}
+                    </form>
+                ) : (
+                    <form onSubmit={handleResetPassword} className="space-y-4 max-h-[40vh] overflow-y-auto px-1 pb-1 scrollbar-hide">
+                        <p className="text-[11px] font-medium text-zinc-500 mb-2 text-center leading-relaxed">
+                            보안을 위해 계정 정보가 일치하면<br/>즉시 새로운 비밀번호로 덮어씁니다.
+                        </p>
+                        <div className="relative">
+                            <UserIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                            <input type="text" value={name} onChange={e=>setName(e.target.value)} required placeholder="이름 (닉네임)" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold text-zinc-800 outline-none" />
+                        </div>
+                        <div className="relative">
+                            <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="가입한 이메일" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold text-zinc-800 outline-none" />
+                        </div>
+                        <div className="relative mt-4">
+                            <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="새 비밀번호" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold text-zinc-800 outline-none" />
+                        </div>
+                        <div className="relative">
+                            <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                            <input type="password" value={passwordConfirm} onChange={e=>setPasswordConfirm(e.target.value)} required placeholder="새 비밀번호 확인" className={`w-full bg-zinc-50 border rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold text-zinc-800 outline-none ${passwordConfirm && password !== passwordConfirm ? 'border-rose-400' : 'border-zinc-200'}`} />
+                        </div>
+                        <button type="submit" className="w-full mt-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-black text-sm transition shadow-md shrink-0">비밀번호 재설정</button>
+                    </form>
+                )}
+            </div>
         )}
       </div>
     </div>
