@@ -71,11 +71,18 @@ const AuthModal = () => {
 
     setIsLoading(true);
     try {
-      // ⭐️ [API 연동 지점] 로그인 처리
+      // ⭐️ [API 연동 지점] 실제로는 여기서 JWT 토큰을 받아와야 합니다.
+      // const response = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      // const data = await response.json();
+      // localStorage.setItem('accessToken', data.token); // 실제 환경
+      
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // 데모를 위한 임시 토큰 발급 (이게 있어야 새로고침 시 유지됩니다!)
+      localStorage.setItem('accessToken', 'dummy_demo_token_for_email_login'); 
+      
       setIsAdmin(true);
-      await fetchAllData();
+      await fetchAllData(false, ""); // ⭐️ 여기서 ""를 넘겨 확실하게 내 프로필을 가져오도록 강제
       setViewMode('profile');
       showToast("로그인 성공! 환영합니다 🎉");
       resetAndClose();
@@ -112,11 +119,14 @@ const AuthModal = () => {
 
     setIsLoading(true);
     try {
-      // ⭐️ [API 연동 지점] 최종 회원가입 처리
+      // ⭐️ [API 연동 지점] 회원가입 후 토큰 발급
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // 회원가입 직후에도 토큰을 저장해야 로그인 상태가 유지됩니다.
+      localStorage.setItem('accessToken', 'dummy_demo_token_for_signup');
+      
       setIsAdmin(true);
-      await fetchAllData();
+      await fetchAllData(false, ""); // ⭐️ 내 프로필 로드 강제
       setViewMode('profile');
       showToast("CraveLog 가입을 환영합니다! 🎉 나만의 인덱스를 꾸며보세요.");
       resetAndClose();
@@ -135,8 +145,9 @@ const AuthModal = () => {
     
     // 데모를 위한 임시 처리
     setTimeout(() => {
+        localStorage.setItem('accessToken', 'dummy_demo_token_for_kakao'); // ⭐️ 토큰 저장 추가
         setIsAdmin(true);
-        fetchAllData();
+        fetchAllData(false, ""); // ⭐️ 내 프로필 로드 강제
         setViewMode('profile');
         showToast("카카오로 로그인되었습니다! 💛");
         resetAndClose();

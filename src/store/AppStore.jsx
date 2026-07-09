@@ -67,7 +67,7 @@ export const AppProvider = ({ children }) => {
     if (currentHandle && currentHandle !== "") {
       targetUrlBase = `/users/${currentHandle}`; // 특정 유저 조회
     } else if (token) {
-      targetUrlBase = `/me`; // 내 정보 조회
+      targetUrlBase = `/me`; // ⭐️ 토큰이 있으면 무조건 내 정보 조회
     } else {
       targetUrlBase = `/users/${defaultHandle}`; // 기본 계정 조회
     }
@@ -81,8 +81,17 @@ export const AppProvider = ({ children }) => {
           apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }))
       ]);
 
-      if (profileRes.ok) setUser(await profileRes.json());
-      else setUser(INITIAL_USER_DATA);
+      if (profileRes.ok) {
+          setUser(await profileRes.json());
+      } else {
+          // ⭐️ 토큰이 유효하지 않아서 /me 호출이 실패했을 수 있습니다.
+          if (token && targetUrlBase === `/me`) {
+              console.warn("내 정보를 가져오지 못했습니다. 로그아웃 처리합니다.");
+              localStorage.removeItem('accessToken');
+              setIsAdmin(false);
+          }
+          setUser(INITIAL_USER_DATA);
+      }
       
       if (treeRes.ok) setTagTree(await treeRes.json());
       else setTagTree([]);
@@ -163,23 +172,25 @@ export const AppProvider = ({ children }) => {
       setIsAdmin(true);
       window.history.replaceState({}, document.title, window.location.pathname); // 토큰 파라미터 숨기기
       showToast("로그인 성공! 환영합니다. 🎉");
-      fetchAllData();
+      fetchAllData(false, ""); // ⭐️ 로그인 직후 내 데이터를 강제로 불러옵니다.
     } else if (error) {
       // 2. 소셜 로그인 실패 시
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("로그인 실패: " + decodeURIComponent(error));
       fetchAllData();
     } else {
-      // 3. 일반 접속 시
+      // 3. 일반 접속 시 (새로고침 시)
       const savedToken = localStorage.getItem('accessToken');
-      if (savedToken) setIsAdmin(true);
+      if (savedToken) {
+          setIsAdmin(true); // ⭐️ 저장된 토큰이 있으면 관리자 모드 복구
+      }
       
       if (sharedHandle) {
         // 공유 링크로 남의 프로필에 들어왔을 때
         visitUserProfile(sharedHandle);
       } else {
         // 내 프로필(또는 기본 화면) 로드
-        fetchAllData();
+        fetchAllData(false, savedToken ? "" : null); // 토큰이 있다면 확실하게 내 것을 호출
       }
     }
   }, [fetchAllData, visitUserProfile, showToast]);
