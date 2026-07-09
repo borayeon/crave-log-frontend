@@ -150,26 +150,35 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiFetch]);
 
-  // 초기 로드 및 OAuth 인증 처리
+// ⭐️ 초기 로드 및 OAuth 인증 처리 (수정됨)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const error = params.get('error');
+    const sharedHandle = params.get('u'); // 주소창에서 u 파라미터 확인
 
     if (token) {
       localStorage.setItem('accessToken', token);
       setIsAdmin(true);
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("로그인 성공! 환영합니다. 🎉");
+      fetchAllData(); // 로그인 후 데이터 로드
     } else if (error) {
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("로그인 실패: " + decodeURIComponent(error));
+      fetchAllData();
     } else {
       const savedToken = localStorage.getItem('accessToken');
       if (savedToken) setIsAdmin(true);
+      
+      // ⭐️ 핵심: 공유 링크로 들어왔다면 그 사람의 데이터를 먼저 로드!
+      if (sharedHandle) {
+        visitUserProfile(sharedHandle); // 이 함수가 내부적으로 fetchAllData를 호출합니다.
+      } else {
+        fetchAllData(); // 일반 접속 시 기본값(내 프로필 혹은 전시 계정) 로드
+      }
     }
-    fetchAllData();
-  }, [fetchAllData, showToast]);
+  }, [fetchAllData, visitUserProfile, showToast]);
 
   // 로그아웃 처리 함수
   const handleLogout = useCallback(() => {

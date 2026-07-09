@@ -23,9 +23,10 @@ const ProfileView = () => {
   useEffect(() => {
     localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
   }, [tabOrder]);
-
-  // ⭐️ 공유하기 버튼 클릭 시 클립보드 복사 로직 적용
+  
+// ⭐️ 공유하기 버튼 클릭 시 클립보드 복사 로직
   const handleShare = () => {
+    // window.location.origin은 현재 사이트 주소(예: https://cravelog.me 또는 localhost:5173)를 자동으로 가져옵니다.
     const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user.handle}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
