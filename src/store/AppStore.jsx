@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+// 백엔드 API 기본 주소 (나중에 환경 변수로 빼는 것을 권장)
+export const API_BASE_URL = 'http://localhost:8080/api/v1';
 
+// 초기 비어있는 데이터 상태 (에러 방지용)
 const INITIAL_USER_DATA = {
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
   location: "위치를 설정해주세요", bio: "나를 표현하는 짧은 소개를 작성해보세요 🚀",
@@ -16,33 +18,33 @@ const AppContext = createContext();
 export const useAppStore = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
-  // 화면 및 UI 관련 상태
+  // UI 상태
   const [viewMode, setViewMode] = useState('profile');
   const [toastMessage, setToastMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 데이터 관련 상태
+  // 데이터 상태
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
   const [user, setUser] = useState(INITIAL_USER_DATA);
-  const [searchResults, setSearchResults] = useState([]);
-
-  // 권한 및 멀티 유저 방문 관련 상태
+  
+  // 권한 및 뷰 모드 상태
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
-  const [visitedHandle, setVisitedHandle] = useState(null); 
+  const [visitedHandle, setVisitedHandle] = useState(null); // 다른 사람 프로필 방문 시 아이디 저장
 
-  // 알림 토스트 메시지 함수
+  // 토스트 메시지 띄우기
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   }, []);
-  
-  // 공통 인증 Fetch 함수 (API 요청 시 토큰 자동 주입)  
+
+  // ⭐️ 공통 API 통신 함수 (토큰이 있으면 자동으로 Authorization 헤더에 넣어줌)
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
@@ -53,47 +55,32 @@ export const AppProvider = ({ children }) => {
     return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
   }, []);
 
-  // ⭐️ 통합 데이터 조회 로직 (자동 로그아웃 및 우회 처리 추가)
+  // ⭐️ 데이터 통합 로드 (isSilent: 로딩창 숨기기, handleOverride: 특정 유저 강제 지정)
   const fetchAllData = useCallback(async (isSilent = false, handleOverride = null) => {
     const token = localStorage.getItem('accessToken');
     let targetUrlBase = '';
-    let isFetchingMe = false; // 내 정보를 가져오는 중인지 확인하는 플래그
-    const defaultHandle = 'taekyeong.dev'; 
+    const defaultHandle = 'taekyeong.dev'; // 비로그인 접속 시 기본으로 보여줄 전시용 계정
     
-    // ⭐️ 파라미터로 명시적 핸들이 넘어오면 그것을 최우선으로 사용합니다.
+    // 1순위: 지정된 핸들, 2순위: 현재 방문 중인 핸들
     const currentHandle = handleOverride !== null ? handleOverride : visitedHandle;
 
     if (currentHandle && currentHandle !== "") {
-      targetUrlBase = `/users/${currentHandle}`;
+      targetUrlBase = `/users/${currentHandle}`; // 특정 유저 조회
     } else if (token) {
-      isFetchingMe = true;
-      targetUrlBase = `/me`;
+      targetUrlBase = `/me`; // 내 정보 조회
     } else {
-      targetUrlBase = `/users/${defaultHandle}`;
+      targetUrlBase = `/users/${defaultHandle}`; // 기본 계정 조회
     }
 
     try {
       if (!isSilent) setIsLoading(true);
       
-      // Promise.all 대신 개별 통신하여 상태 코드를 유연하게 체크합니다.
-      let profileRes = await apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false }));
-      let treeRes = await apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false }));
-      let recordsRes = await apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }));
+      const [profileRes, treeRes, recordsRes] = await Promise.all([
+          apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false })),
+          apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false })),
+          apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }))
+      ]);
 
-      // 🚨 핵심 로직: 내 정보('/me')를 요청했는데 실패했다면? (토큰 만료 등)
-      if (isFetchingMe && !profileRes.ok) {
-        console.warn("유효하지 않은 토큰입니다. 자동 로그아웃 후 전시용 계정으로 전환합니다.");
-        localStorage.removeItem('accessToken'); // 썩은 토큰 폐기
-        setIsAdmin(false); // 권한 즉시 박탈 (로그아웃 버튼 -> 로그인 버튼으로 변경됨)
-
-        // 전시용 계정으로 다시 데이터를 재요청!
-        targetUrlBase = `/users/${defaultHandle}`;
-        profileRes = await apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false }));
-        treeRes = await apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false }));
-        recordsRes = await apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }));
-      }
-
-      // 최종적으로 가져온 데이터 적용
       if (profileRes.ok) setUser(await profileRes.json());
       else setUser(INITIAL_USER_DATA);
       
@@ -104,103 +91,109 @@ export const AppProvider = ({ children }) => {
       else setRecords([]);
       
     } catch (error) {
-      console.error(error);
+      console.error("데이터 로드 중 에러:", error);
       setUser(INITIAL_USER_DATA); setTagTree([]); setRecords([]);
     } finally {
       if (!isSilent) setIsLoading(false);
     }
-  }, [apiFetch, visitedHandle]);
+  }, [apiFetch, visitedHandle]); 
 
-  // 다른 유저 프로필 방문 함수
+  // ⭐️ 특정 유저 프로필 방문
   const visitUserProfile = useCallback(async (targetHandle) => {
     setVisitedHandle(targetHandle); 
     setIsGuestMode(true); 
     setViewMode('profile');
     
-    // URL 주소창에 파라미터 추가 (뒤로가기/공유 최적화)
+    // 주소창 업데이트 (뒤로가기, 새로고침 대비)
     const newUrl = `${window.location.pathname}?u=${targetHandle}`;
     window.history.pushState({}, '', newUrl);
     
-    showToast(`${targetHandle}님의 공간으로 이동합니다 🚀`);
-    await fetchAllData(false, targetHandle); // 즉시 새 데이터 로드
-  }, [showToast, fetchAllData]);
+    await fetchAllData(false, targetHandle);
+  }, [fetchAllData]);
 
-  // ⭐️ 내 본래 프로필로 복귀하는 함수
+  // ⭐️ 내 프로필로 복귀
   const resetToMyProfile = useCallback(async () => {
     setVisitedHandle(null);
     setIsGuestMode(false);
     setViewMode('profile');
     
-    // URL 파라미터 초기화
+    // 주소창에서 파라미터 지우기
     window.history.replaceState({}, document.title, window.location.pathname);
     
-    showToast("내 프로필로 돌아왔습니다 🏠");
-    await fetchAllData(false, ""); // 즉시 내 데이터 로드 (오버라이드 무시)
-  }, [showToast, fetchAllData]);
+    await fetchAllData(false, "");
+  }, [fetchAllData]);
 
-  // 유저 검색 함수
+  // ⭐️ 검색 수행
   const searchUsers = useCallback(async (keyword) => {
+    if (!keyword.trim()) {
+      setSearchResults([]);
+      return;
+    }
     try {
       const res = await apiFetch(`/users/search?keyword=${encodeURIComponent(keyword)}`);
       if (res.ok) setSearchResults(await res.json());
       else setSearchResults([]);
-    } catch (error) {
-      console.error(error);
+    } catch(e) {
+      console.error("검색 에러:", e);
       setSearchResults([]);
     }
   }, [apiFetch]);
 
-// ⭐️ 초기 로드 및 OAuth 인증 처리 (수정됨)
+  // ⭐️ 로그아웃 처리
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('accessToken');
+    setIsAdmin(false);
+    setVisitedHandle(null);
+    setIsGuestMode(false);
+    setViewMode('profile');
+    window.history.replaceState({}, document.title, window.location.pathname);
+    fetchAllData(); // 로그아웃 후 기본 데이터(전시용 또는 빈 화면) 갱신
+  }, [fetchAllData]);
+
+  // ⭐️ 앱 초기 진입 시 로직 (URL 파라미터 기반 라우팅)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
+    const token = params.get('token'); // 카카오 로그인 직후 토큰
     const error = params.get('error');
-    const sharedHandle = params.get('u'); // 주소창에서 u 파라미터 확인
+    const sharedHandle = params.get('u'); // 공유 링크로 접속 시 아이디
 
     if (token) {
+      // 1. 소셜 로그인 성공 시
       localStorage.setItem('accessToken', token);
       setIsAdmin(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
+      window.history.replaceState({}, document.title, window.location.pathname); // 토큰 파라미터 숨기기
       showToast("로그인 성공! 환영합니다. 🎉");
-      fetchAllData(); // 로그인 후 데이터 로드
+      fetchAllData();
     } else if (error) {
+      // 2. 소셜 로그인 실패 시
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("로그인 실패: " + decodeURIComponent(error));
       fetchAllData();
     } else {
+      // 3. 일반 접속 시
       const savedToken = localStorage.getItem('accessToken');
       if (savedToken) setIsAdmin(true);
       
-      // ⭐️ 핵심: 공유 링크로 들어왔다면 그 사람의 데이터를 먼저 로드!
       if (sharedHandle) {
-        visitUserProfile(sharedHandle); // 이 함수가 내부적으로 fetchAllData를 호출합니다.
+        // 공유 링크로 남의 프로필에 들어왔을 때
+        visitUserProfile(sharedHandle);
       } else {
-        fetchAllData(); // 일반 접속 시 기본값(내 프로필 혹은 전시 계정) 로드
+        // 내 프로필(또는 기본 화면) 로드
+        fetchAllData();
       }
     }
   }, [fetchAllData, visitUserProfile, showToast]);
-
-  // 로그아웃 처리 함수
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('accessToken');
-    setIsAdmin(false);
-    setVisitedHandle(null); 
-    setIsGuestMode(false);
-    setViewMode('profile');
-    fetchAllData();
-  }, [fetchAllData]);
 
   return (
     <AppContext.Provider value={{ 
       viewMode, setViewMode, toastMessage, showToast, 
       searchQuery, setSearchQuery, searchResults, setSearchResults, searchUsers,
-      records, setRecords, isAdmin, setIsAdmin, isGuestMode, setIsGuestMode,
+      records, setRecords, tagTree, setTagTree, user, setUser,
+      isAdmin, setIsAdmin, isGuestMode, setIsGuestMode, 
+      visitedHandle, setVisitedHandle, visitUserProfile, resetToMyProfile,
       loginModalOpen, setLoginModalOpen, addRecordModalOpen, setAddRecordModalOpen,
-      tagTree, setTagTree, user, setUser,
-      isSidebarOpen, setIsSidebarOpen, 
-      apiFetch, fetchAllData, handleLogout, 
-      visitUserProfile, resetToMyProfile, visitedHandle,
-      isLoading
+      isSidebarOpen, setIsSidebarOpen, isLoading, setIsLoading,
+      apiFetch, fetchAllData, handleLogout
     }}>
       {children}
     </AppContext.Provider>
