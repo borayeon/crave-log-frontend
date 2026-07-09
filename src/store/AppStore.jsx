@@ -1,3 +1,4 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   User, History, Network, Sparkles, MapPin, Briefcase, 
   Lock, LogOut, ChevronRight, Search, Heart, Share2, 
