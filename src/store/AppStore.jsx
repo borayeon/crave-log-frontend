@@ -44,7 +44,7 @@ export const AppProvider = ({ children }) => {
     setTimeout(() => setToastMessage(''), 3000);
   }, []);
 
-  // ⭐️ 공통 API 통신 함수 (토큰이 있으면 자동으로 Authorization 헤더에 넣어줌)
+  // ⭐️ 공통 API 통신 함수
   const apiFetch = useCallback(async (endpoint, options = {}) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
@@ -55,11 +55,11 @@ export const AppProvider = ({ children }) => {
     return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
   }, []);
 
-  // ⭐️ 데이터 통합 로드 (isSilent: 로딩창 숨기기, handleOverride: 특정 유저 강제 지정)
+  // ⭐️ 데이터 통합 로드
   const fetchAllData = useCallback(async (isSilent = false, handleOverride = null) => {
     const token = localStorage.getItem('accessToken');
     let targetUrlBase = '';
-    const defaultHandle = 'taekyeong.dev'; // 비로그인 접속 시 기본으로 보여줄 전시용 계정
+    const defaultHandle = 'taekyeong.dev'; 
     
     // 1순위: 지정된 핸들, 2순위: 현재 방문 중인 핸들
     const currentHandle = handleOverride !== null ? handleOverride : visitedHandle;
@@ -67,7 +67,7 @@ export const AppProvider = ({ children }) => {
     if (currentHandle && currentHandle !== "") {
       targetUrlBase = `/users/${currentHandle}`; // 특정 유저 조회
     } else if (token) {
-      targetUrlBase = `/me`; // ⭐️ 토큰이 있으면 무조건 내 정보 조회
+      targetUrlBase = `/me`; // 토큰이 있으면 무조건 내 정보 조회
     } else {
       targetUrlBase = `/users/${defaultHandle}`; // 기본 계정 조회
     }
@@ -75,20 +75,36 @@ export const AppProvider = ({ children }) => {
     try {
       if (!isSilent) setIsLoading(true);
       
+      // 네트워크 에러 시 앱이 터지지 않고 상태값을 반환하도록 안전 장치 추가
+      const fetchSafe = (url) => apiFetch(url).catch(err => {
+          console.error("Network Fetch Error:", err);
+          return { ok: false, status: 0 }; 
+      });
+
       const [profileRes, treeRes, recordsRes] = await Promise.all([
-          apiFetch(`${targetUrlBase}/profile`).catch(() => ({ ok: false })),
-          apiFetch(`${targetUrlBase}/categories`).catch(() => ({ ok: false })),
-          apiFetch(`${targetUrlBase}/records`).catch(() => ({ ok: false }))
+          fetchSafe(`${targetUrlBase}/profile`),
+          fetchSafe(`${targetUrlBase}/categories`),
+          fetchSafe(`${targetUrlBase}/records`)
       ]);
 
       if (profileRes.ok) {
           setUser(await profileRes.json());
-      } else {
-          // ⭐️ 토큰이 유효하지 않아서 /me 호출이 실패했을 수 있습니다.
+          // ⭐️ 데이터 로드 성공 시 확실하게 관리자 모드 켜기
           if (token && targetUrlBase === `/me`) {
-              console.warn("내 정보를 가져오지 못했습니다. 로그아웃 처리합니다.");
-              localStorage.removeItem('accessToken');
-              setIsAdmin(false);
+              setIsAdmin(true);
+          }
+      } else {
+          // ⭐️ 무조건 로그아웃 시키지 않고, '인증 에러(401, 403)'일 때만 로그아웃!
+          if (token && targetUrlBase === `/me`) {
+              if (profileRes.status === 401 || profileRes.status === 403) {
+                  console.warn("인증이 만료되었습니다. 로그아웃 처리합니다.");
+                  localStorage.removeItem('accessToken');
+                  setIsAdmin(false);
+              } else {
+                  console.warn("서버 에러로 프로필 데이터를 불러오지 못했습니다. (로그인 유지)");
+                  // 백엔드 에러가 나더라도 로그인 UI(로그아웃 버튼, 프로필 설정 등)는 유지
+                  setIsAdmin(true); 
+              }
           }
           setUser(INITIAL_USER_DATA);
       }
@@ -113,7 +129,6 @@ export const AppProvider = ({ children }) => {
     setIsGuestMode(true); 
     setViewMode('profile');
     
-    // 주소창 업데이트 (뒤로가기, 새로고침 대비)
     const newUrl = `${window.location.pathname}?u=${targetHandle}`;
     window.history.pushState({}, '', newUrl);
     
@@ -126,9 +141,7 @@ export const AppProvider = ({ children }) => {
     setIsGuestMode(false);
     setViewMode('profile');
     
-    // 주소창에서 파라미터 지우기
     window.history.replaceState({}, document.title, window.location.pathname);
-    
     await fetchAllData(false, "");
   }, [fetchAllData]);
 
@@ -156,23 +169,23 @@ export const AppProvider = ({ children }) => {
     setIsGuestMode(false);
     setViewMode('profile');
     window.history.replaceState({}, document.title, window.location.pathname);
-    fetchAllData(); // 로그아웃 후 기본 데이터(전시용 또는 빈 화면) 갱신
+    fetchAllData(false, null); // 로그아웃 후 기본 데이터 갱신
   }, [fetchAllData]);
 
-  // ⭐️ 앱 초기 진입 시 로직 (URL 파라미터 기반 라우팅)
+  // ⭐️ 앱 초기 진입 시 로직
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('token'); // 카카오 로그인 직후 토큰
+    const token = params.get('token'); 
     const error = params.get('error');
-    const sharedHandle = params.get('u'); // 공유 링크로 접속 시 아이디
+    const sharedHandle = params.get('u'); 
 
     if (token) {
       // 1. 소셜 로그인 성공 시
       localStorage.setItem('accessToken', token);
       setIsAdmin(true);
-      window.history.replaceState({}, document.title, window.location.pathname); // 토큰 파라미터 숨기기
+      window.history.replaceState({}, document.title, window.location.pathname); 
       showToast("로그인 성공! 환영합니다. 🎉");
-      fetchAllData(false, ""); // ⭐️ 로그인 직후 내 데이터를 강제로 불러옵니다.
+      fetchAllData(false, ""); 
     } else if (error) {
       // 2. 소셜 로그인 실패 시
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -182,18 +195,19 @@ export const AppProvider = ({ children }) => {
       // 3. 일반 접속 시 (새로고침 시)
       const savedToken = localStorage.getItem('accessToken');
       if (savedToken) {
-          setIsAdmin(true); // ⭐️ 저장된 토큰이 있으면 관리자 모드 복구
+          setIsAdmin(true); 
       }
       
       if (sharedHandle) {
-        // 공유 링크로 남의 프로필에 들어왔을 때
         visitUserProfile(sharedHandle);
       } else {
-        // 내 프로필(또는 기본 화면) 로드
-        fetchAllData(false, savedToken ? "" : null); // 토큰이 있다면 확실하게 내 것을 호출
+        fetchAllData(false, savedToken ? "" : null); 
       }
     }
-  }, [fetchAllData, visitUserProfile, showToast]);
+    // ⭐️ 중요: 무한 루프를 막기 위해 의존성 배열을 완전히 비웠습니다.
+    // 이 useEffect는 브라우저를 처음 켰을 때, 새로고침 했을 때 딱 1번만 실행됩니다!
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
 
   return (
     <AppContext.Provider value={{ 
