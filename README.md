@@ -1,97 +1,187 @@
-CraveLog - Frontend (React)
+# CraveLog - Frontend (React)
 
-[프로젝트 메인 이미지 또는 데모 GIF]
+나만의 취향과 이야기를 차곡차곡 기록하고 공유하는 아카이빙 플랫폼 **CraveLog**의 프론트엔드 레포지토리입니다.
 
-나만의 취향과 이야기를 차곡차곡 기록하고 공유하는 아카이빙 플랫폼, CraveLog의 프론트엔드 웹 애플리케이션입니다.
+---
 
-✨ 프로젝트 소개 (About)
+# ✨ 프로젝트 소개 (About)
 
-CraveLog는 사용자가 자신의 직무(Developer, Career) 목표와 개인적인 취향(Idol, Favorites)을 하나의 링크로 모아 보여줄 수 있는 서비스입니다. 카테고리와 태그를 통해 기록을 체계적으로 관리하고, 직관적인 타임라인과 갤러리 뷰를 통해 과거의 기록을 예쁘게 열람할 수 있습니다.
+CraveLog는 사용자가 자신의 직무(Developer, Career) 정보와 개인적인 취향(Idol, Favorites)을 하나의 링크로 모아 아름답게 표현할 수 있는 서비스입니다.
 
-🔗 Live Demo (실제 배포된 Vercel 링크로 수정해주세요)
+태그 기반의 트리 구조를 통해 기록을 체계적으로 분류하고, 직관적인 타임라인 및 아카이브 뷰를 통해 사용자의 발자취를 우아하게 렌더링합니다.
 
-🚀 기술 스택 (Tech Stack)
+---
 
-Library: React (Vite 기반)
+# 🔗 Live Demo
 
-Styling: Tailwind CSS
+> 배포 주소를 입력하세요.
 
-Icons: Lucide React
+```text
+https://your-domain.com
+```
 
-State Management: React Context API
+---
 
-Deployment: Vercel
+# 🚀 기술 스택 (Tech Stack)
 
-🎯 주요 기능 (Key Features)
+## Frontend
 
-동적 프로필 (Dynamic Profile): 사용자 정보를 기반으로 탭 형식의 프로필 인터페이스 렌더링.
+- React 18
+- Vite
 
-프라이버시 컨트롤: 각 탭(Developer, Career, Idol)별 공개/비공개 설정 및 미리보기 모드 지원.
+## Styling
 
-트리 구조 태그 탐색기: 폴더(카테고리) 및 해시태그(태그) 기반의 기록 필터링 및 관리.
+- Tailwind CSS
 
-다양한 뷰 모드: 기록을 시간순으로 보여주는 Timeline View와 앨범처럼 모아보는 Archive View 제공.
+## Icons
 
-모달 기반 인터랙션: 페이지 이동 없이 카카오 로그인 및 새 기록 작성을 처리하는 모달 UI.
+- Lucide React
 
-이미지 처리: Base64 변환을 통한 파일 업로드 지원.
+## State Management
 
-📁 프로젝트 구조 (Project Structure)
+- Context API (`AppStore`)
 
+## Deployment
+
+- Vercel
+
+---
+
+# 🎯 주요 기능 (Key Features)
+
+## 👤 다이내믹 프로필 렌더링
+
+- URL 파라미터 (`?u=handle`) 기반 프로필 조회
+- 호스트와 게스트 뷰 자동 분리
+- 사용자별 커스텀 프로필 렌더링
+
+## 🔒 프라이버시 컨트롤
+
+- Developer
+- Career
+- Idol
+- Favorites
+
+각 탭별 공개 범위를 개별적으로 설정할 수 있습니다.
+
+## 🗂️ 다중 뷰 모드 지원
+
+### Timeline View
+
+- 시간 순 기록 표시
+- 카테고리 트리 편집 지원
+- 태그 기반 분류 시스템
+
+### Archive View
+
+- 앨범 형태의 갤러리 UI
+- 모달 기반 상세 보기
+- 콘텐츠 아카이빙
+
+## 🔎 최적화된 검색 시스템
+
+- 전체 사용자 검색
+- 전체 기록 검색
+- 빈 입력 예외 처리
+- 실시간 검색 경험 제공
+
+## 🔐 2-Step 인증 UI
+
+- 이메일 인증
+- 로그인/회원가입 자동 분기
+- 자연스러운 인증 플로우 제공
+
+---
+
+# 📁 디렉터리 구조 (Directory Structure)
+
+```text
 src/
+├── store/
+│   └── AppStore.jsx
+│       └── 통합 상태 관리 및 API 통신
+│
 ├── components/
-│   ├── common/      # 토스트, 로그인 모달, EmptyState 등 재사용 컴포넌트
-│   ├── features/    # 기록 추가 등 특정 도메인 로직이 포함된 컴포넌트
-│   └── layout/      # 네비게이션 바, 사이드바 등 화면의 뼈대를 이루는 컴포넌트
-├── pages/           # Profile, Edit Profile, Archive, Timeline 등 주요 화면
-├── store/           # Context API를 활용한 전역 상태 및 API 로직 관리 (AppStore.jsx)
-├── App.jsx          # 메인 엔트리 및 라우팅 역할 수행
-└── index.css        # Tailwind CSS 설정
+│   ├── common/
+│   │   └── Toast, AuthModal, EmptyState 등 재사용 컴포넌트
+│   │
+│   ├── layout/
+│   │   └── TopNavBar, Sidebar, MobileBottomNav
+│   │
+│   └── features/
+│       └── AddRecordModal 등 특정 기능 컴포넌트
+│
+├── pages/
+│   └── Profile, Edit, Timeline 등 주요 화면
+│
+├── App.jsx
+│   └── 애플리케이션 진입점 및 뷰 컨트롤러
+│
+└── index.css
+    └── 글로벌 스타일 (Tailwind)
+```
 
+---
 
-🛠️ 설치 및 실행 (Getting Started)
+# 🛠️ 설치 및 실행 (Getting Started)
 
-사전 요구 사항 (Prerequisites)
+## 1. 저장소 클론
 
-Node.js (v16 이상 권장)
-
-npm 또는 yarn
-
-로컬 환경 실행 방법 (Running Locally)
-
-Repository Clone:
-
+```bash
 git clone https://github.com/your-username/cravelog-frontend.git
+
 cd cravelog-frontend
+```
 
+## 2. 패키지 설치
 
-의존성 설치 (Install Dependencies):
-
+```bash
 npm install
-# 또는
-yarn install
+```
 
+## 3. 환경 변수 설정
 
-환경 변수 설정:
-프로젝트 루트 디렉토리에 .env 파일을 생성하고 백엔드 API 주소를 설정합니다.
+프로젝트 루트에 `.env` 파일을 생성하고 아래 내용을 추가합니다.
 
+```env
 VITE_API_BASE_URL=http://localhost:8080/api/v1
+```
 
+> 배포 환경에서는 `window.location`을 기반으로 API 주소가 동적으로 연결됩니다.
 
-개발 서버 실행 (Start Development Server):
+## 4. 개발 서버 실행
 
+```bash
 npm run dev
-# 또는
-yarn dev
+```
 
+---
 
-실행 후 제공되는 로컬 주소(보통 http://localhost:5173)로 접속합니다.
+# 🌐 배포 (Deployment)
 
-🚢 배포 (Deployment)
+프론트엔드는 Vercel을 통해 배포됩니다.
 
-이 프로젝트는 Vercel을 통해 배포되도록 최적화되어 있습니다.
-Vercel 대시보드에서 프로젝트를 Import 한 후, Environment Variables 항목에 VITE_API_BASE_URL 값을 운영 중인 백엔드 API 주소(예: https://your-api.onrender.com/api/v1)로 설정해야 정상적으로 통신합니다.
+```bash
+npm run build
+```
 
-📄 License
+빌드 결과물은 `dist/` 디렉터리에 생성됩니다.
 
-This project is licensed under the MIT License.
+---
+
+# 📸 스크린샷 (Screenshots)
+
+프로젝트 화면 이미지를 추가하세요.
+
+```text
+assets/
+├── home.png
+├── profile.png
+└── archive.png
+```
+
+---
+
+# 📄 라이선스 (License)
+
+이 프로젝트는 개인 포트폴리오 및 학습 목적으로 제작되었습니다.
