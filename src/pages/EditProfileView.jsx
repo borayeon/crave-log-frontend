@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle } from 'lucide-react';
+import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+// import path updated to ensure correct resolution
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
-  // ⭐️ 에러 해결: 단 한 번만 선언되도록 정리된 상태값들
+  // 에러 해결: 단 한 번만 선언되도록 정리된 상태값들
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     return {
@@ -22,6 +23,9 @@ const EditProfileView = () => {
 
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // ⭐️ 이미지 입력 방식 상태 추가 ('file' or 'url')
+  const [imageInputType, setImageInputType] = useState('file');
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -31,9 +35,21 @@ const EditProfileView = () => {
         if (!current[path[i]]) current[path[i]] = {};
         current = current[path[i]];
       }
-      current[path[path.length - 1]] = value; 
+      current[path[path.length - 1]] = value;
       return newData;
     });
+  };
+
+  // ⭐️ 파일 업로드 처리 핸들러 추가
+  const handleProfileImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateNested(["profileImageUrl"], reader.result); // Base64로 변환하여 폼 데이터에 저장
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSave = async () => {
@@ -146,59 +162,71 @@ const EditProfileView = () => {
           </div>
         )}
 
-{/* BASIC TAB */}
-{editTab === 'basic' && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
-    {renderInput("이름", ["name"], "예: 홍길동")}
+        {/* BASIC TAB */}
+        {editTab === 'basic' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
+            {renderInput("이름", ["name"], "예: 홍길동")}
+            {renderInput("닉네임/핸들", ["handle"], "예: gildong.dev")}
+            
+            {/* ⭐️ 파일 업로드 기능이 추가된 프로필 이미지 입력란 */}
+            <div className="md:col-span-2 p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100">
+                <div className="flex items-center justify-between mb-4">
+                    <label className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <ImageIcon size={14} className="text-zinc-400" /> 프로필 이미지
+                    </label>
+                    <div className="flex bg-zinc-100 p-0.5 rounded-lg">
+                        <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>파일 업로드</button>
+                        <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>웹 URL</button>
+                    </div>
+                </div>
 
-    {/* 닉네임(수정 불가) */}
-    <div>
-      <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">
-        닉네임 / 핸들
-      </label>
+                <div className="flex flex-col sm:flex-row items-center gap-5">
+                    {/* 실시간 미리보기 아바타 */}
+                    <div className="w-20 h-20 rounded-2xl bg-white border border-zinc-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                        {formData.profileImageUrl ? (
+                            <img src={formData.profileImageUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-zinc-400 text-xs font-black">{formData.name ? formData.name.charAt(0) : '?'}</span>
+                        )}
+                    </div>
 
-      <div className="relative mt-2">
-        <input
-          type="text"
-          value={formData.handle || ""}
-          readOnly
-          className="w-full bg-zinc-100 border border-zinc-200 rounded-xl px-4 py-3 pr-10 text-sm font-bold text-zinc-500 cursor-not-allowed select-all"
-        />
+                    <div className="flex-1 w-full">
+                        {imageInputType === 'file' ? (
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={handleProfileImageUpload} 
+                                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer shadow-sm" 
+                            />
+                        ) : (
+                            <input 
+                                type="text" 
+                                placeholder="https://..." 
+                                value={formData.profileImageUrl || ''} 
+                                onChange={e => updateNested(["profileImageUrl"], e.target.value)} 
+                                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm" 
+                            />
+                        )}
+                        <p className="text-[10px] font-medium text-zinc-400 mt-2 ml-1">
+                            정사각형 이미지를 권장합니다. (JPG, PNG)
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-        <Lock
-          size={16}
-          className="absolute right-3 top-1/2 -translate-y-1/2 -translate-y-1/2 text-zinc-400"
-        />
-      </div>
-
-      <p className="mt-2 text-xs text-zinc-400">
-        닉네임은 계정 생성 후 변경할 수 없습니다.
-      </p>
-    </div>
-
-    {renderInput("프로필 이미지 URL", ["profileImageUrl"], "https://...")}
-    {renderInput("직무/역할", ["role"], "예: Backend Developer")}
-    {renderInput("전공/소속", ["major"], "예: 컴퓨터공학")}
-    {renderInput("위치", ["location"], "예: Seoul, Korea")}
-    {renderInput("현재 상태", ["status"], "예: 구직 중, 여행 중")}
-
-    <div className="md:col-span-2">
-      <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">
-        한 줄 소개
-      </label>
-      <textarea
-        placeholder="나를 표현하는 멋진 문장을 적어주세요."
-        value={formData.bio}
-        onChange={e => updateNested(["bio"], e.target.value)}
-        rows={2}
-        className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-      />
-    </div>
-
-    {renderArrayTextarea("Tags (키워드)", ["tags"])}
-    {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
-  </div>
-)}
+            {renderInput("직무/역할", ["role"], "예: Backend Developer")}
+            {renderInput("전공/소속", ["major"], "예: 컴퓨터공학")}
+            {renderInput("위치", ["location"], "예: Seoul, Korea")}
+            {renderInput("현재 상태", ["status"], "예: 구직 중, 여행 중")}
+            
+            <div className="md:col-span-2">
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">한 줄 소개</label>
+                <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            </div>
+            {renderArrayTextarea("Tags (키워드)", ["tags"])}
+            {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
+          </div>
+        )}
 
         {/* DEVELOPER TAB */}
         {editTab === 'developer' && (
