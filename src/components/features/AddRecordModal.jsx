@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock, Youtube, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock, PlayCircle, Image as ImageIcon } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const AddRecordModal = () => {
