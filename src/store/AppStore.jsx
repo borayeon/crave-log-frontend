@@ -9,10 +9,10 @@ import {
   Rocket
 } from 'lucide-react';
 
-// ⭐️ 수정: 고정된 localhost 대신 Vercel 환경 변수를 사용하도록 변경합니다!
-// import.meta.env.VITE_API_BASE_URL은 환경변수에 세팅된 백엔드 주소를 가져옵니다.
-// 만약 환경 변수가 없으면(에러 방지), 기본값으로 localhost를 사용합니다.
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+// ⭐️ Myatyrõ: Roipuru window.location ani hag̃ua oiko jejavy
+export const API_BASE_URL = (typeof window !== 'undefined' && window.location.hostname === 'localhost') 
+  ? 'http://localhost:8080/api/v1' 
+  : 'https://crave-log-backend.onrender.com/api/v1';
 
 // --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
@@ -156,21 +156,29 @@ export const AppProvider = ({ children }) => {
     await fetchAllData(false, "");
   }, [fetchAllData]);
 
-  // ⭐️ 검색 수행
+  // ⭐️ 검색 수행 (빈칸 허용으로 수정 완료!)
   const searchUsers = useCallback(async (keyword) => {
-    if (!keyword.trim()) {
-      setSearchResults([]);
-      return;
-    }
     try {
-      const res = await apiFetch(`/users/search?keyword=${encodeURIComponent(keyword)}`);
-      if (res.ok) setSearchResults(await res.json());
-      else setSearchResults([]);
+      setIsLoading(true);
+      // 빈칸이든 아니든 무조건 백엔드로 요청하여 검색 수행 (백엔드가 빈칸이면 전체 반환함)
+      const res = await apiFetch(`/users/search?keyword=${encodeURIComponent(keyword.trim())}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data);
+        setSearchQuery(keyword.trim());
+        setViewMode('search'); // 검색 결과 화면으로 자동 이동
+      } else {
+        setSearchResults([]);
+        showToast("검색에 실패했습니다.");
+      }
     } catch(e) {
       console.error("검색 에러:", e);
       setSearchResults([]);
+      showToast("서버 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
     }
-  }, [apiFetch]);
+  }, [apiFetch, showToast]);
 
   // ⭐️ 로그아웃 처리
   const handleLogout = useCallback(() => {
