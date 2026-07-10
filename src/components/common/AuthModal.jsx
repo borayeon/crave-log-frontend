@@ -138,9 +138,11 @@ const AuthModal = () => {
     }
   };
 
-  // ⭐️ 카카오 로그인 리다이렉트 핸들러 추가
+// ⭐️ 카카오 로그인 리다이렉트 핸들러 수정
   const handleKakaoLogin = () => {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/kakao`;
+    // API_BASE_URL (예: https://.../api/v1) 에서 '/api/v1'을 제거하여 백엔드 루트 주소만 남깁니다.
+    const backendRootUrl = API_BASE_URL.replace('/api/v1', '');
+    window.location.href = `${backendRootUrl}/oauth2/authorization/kakao`;
   };
 
   return (
