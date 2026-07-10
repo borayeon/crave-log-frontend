@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mail, ArrowLeft, KeyRound, User as UserIcon, AtSign, Sparkles, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Mail, ArrowLeft, KeyRound, User as UserIcon, AtSign, Sparkles, CheckCircle2, MessageSquare } from 'lucide-react'; // ⭐️ MessageSquare 복구
 import { useAppStore, API_BASE_URL } from '../../store/AppStore';
 
 const AuthModal = () => {
   const { loginModalOpen, setLoginModalOpen, showToast, setIsAdmin, fetchAllData, setViewMode } = useAppStore();
   
-  // ⭐️ 단계 관리: 'EMAIL_CHECK' (1단계) -> 'PASSWORD_INPUT' (2단계) -> 'SIGNUP' (회원가입)
+  // 단계 관리: 'EMAIL_CHECK' (1단계) -> 'PASSWORD_INPUT' (2단계) -> 'SIGNUP' (회원가입)
   const [step, setStep] = useState('EMAIL_CHECK'); 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,23 +36,21 @@ const AuthModal = () => {
     }, 300); 
   };
 
-  // ⭐️ 1단계: 이메일 존재 여부 확인
+  // 1단계: 이메일 존재 여부 확인
   const handleCheckEmail = async (e) => {
     e.preventDefault();
     if (!email) return showToast("이메일을 입력해주세요.");
     
     setIsLoading(true);
     try {
-      // 백엔드의 이메일 체크 API 호출
       const res = await fetch(`${API_BASE_URL}/auth/check-email?email=${encodeURIComponent(email)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.exists) {
-            // 이메일이 존재하면 비밀번호 입력 단계로 이동
             setStep('PASSWORD_INPUT');
         } else {
-            // 이메일이 없으면 안내
             showToast("등록되지 않은 이메일입니다. 계정을 생성해주세요.");
+            setStep('SIGNUP'); // ⭐️ 바로 회원가입으로 넘겨주어 이탈 방지
         }
       } else {
          showToast("서버와 통신할 수 없습니다.");
@@ -65,7 +63,7 @@ const AuthModal = () => {
     }
   };
 
-  // ⭐️ 2단계: 비밀번호 입력 후 로그인 처리
+  // 2단계: 비밀번호 입력 후 로그인 처리
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!password) return showToast("비밀번호를 입력해주세요.");
@@ -80,7 +78,7 @@ const AuthModal = () => {
       
       if (res.ok) {
          const data = await res.json();
-         localStorage.setItem('accessToken', data.token); // 토큰 저장
+         localStorage.setItem('accessToken', data.token);
          setIsAdmin(true);
          await fetchAllData();
          setViewMode('profile');
@@ -96,13 +94,13 @@ const AuthModal = () => {
     }
   };
 
-  // ⭐️ 비밀번호 정규식 검증 함수 (영문, 숫자, 특수문자 포함 8자 이상)
+  // 비밀번호 정규식 검증 함수 (영문, 숫자, 특수문자 포함 8자 이상)
   const validatePassword = (pw) => {
       const regex = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{8,}$/;
       return regex.test(pw);
   };
 
-  // ⭐️ 3단계: 신규 회원가입 처리
+  // 3단계: 신규 회원가입 처리
   const handleSignup = async (e) => {
     e.preventDefault();
     if (!email || !password || !passwordConfirm || !name || !handle) return showToast("모든 항목을 입력해주세요.");
@@ -128,7 +126,7 @@ const AuthModal = () => {
       
       if (res.ok) {
           showToast("가입이 완료되었습니다! 로그인해주세요. 🎉");
-          setStep('PASSWORD_INPUT'); // 가입 성공 시 바로 비번 쳐서 로그인할 수 있게 이동
+          setStep('PASSWORD_INPUT');
           setPassword(''); setPasswordConfirm('');
       } else {
           showToast("회원가입에 실패했습니다.");
@@ -138,6 +136,11 @@ const AuthModal = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ⭐️ 카카오 로그인 리다이렉트 핸들러 추가
+  const handleKakaoLogin = () => {
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/kakao`;
   };
 
   return (
@@ -172,7 +175,7 @@ const AuthModal = () => {
             </p>
         </div>
 
-        {/* ⭐️ 1단계: 이메일 체크 폼 */}
+        {/* 1단계: 이메일 체크 폼 */}
         {step === 'EMAIL_CHECK' && (
             <form onSubmit={handleCheckEmail} className="w-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="relative mb-6">
@@ -191,19 +194,30 @@ const AuthModal = () => {
                   {isLoading ? '확인 중...' : '다음'}
                 </button>
                 
-                <div className="mt-6 flex flex-col gap-3">
-                    <button type="button" onClick={() => setStep('SIGNUP')} className="text-xs font-bold text-zinc-500 hover:text-indigo-600 transition-colors text-left pl-1">
-                        계정 생성
-                    </button>
-                    <div className="h-px bg-zinc-100 my-2"></div>
-                    <button type="button" className="w-full py-3 bg-[#FEE500] hover:bg-[#E5CF00] text-black rounded-xl font-black text-sm flex items-center justify-center gap-2 transition shadow-sm">
+                {/* ⭐️ 카카오 로그인 버튼 복구 및 디자인 보완 */}
+                <div className="mt-8 flex flex-col gap-4">
+                    <div className="relative flex items-center py-2">
+                        <div className="flex-grow border-t border-zinc-200"></div>
+                        <span className="flex-shrink-0 mx-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">or continue with</span>
+                        <div className="flex-grow border-t border-zinc-200"></div>
+                    </div>
+                    <button 
+                        type="button" 
+                        onClick={handleKakaoLogin} 
+                        className="w-full py-3.5 bg-[#FEE500] hover:bg-[#E5CF00] text-black rounded-xl font-black text-sm flex items-center justify-center gap-2 transition shadow-sm"
+                    >
                         <MessageSquare size={16} className="fill-black" /> 카카오 계정으로 로그인
+                    </button>
+                    
+                    {/* 계정 생성 링크를 버튼과 시각적으로 분리하여 하단에 배치 */}
+                    <button type="button" onClick={() => setStep('SIGNUP')} className="mt-2 text-xs font-bold text-zinc-500 hover:text-indigo-600 transition-colors text-center">
+                        아이디가 없으신가요? 계정 생성
                     </button>
                 </div>
             </form>
         )}
 
-        {/* ⭐️ 2단계: 비밀번호 입력 폼 */}
+        {/* 2단계: 비밀번호 입력 폼 */}
         {step === 'PASSWORD_INPUT' && (
             <form onSubmit={handleLogin} className="w-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="relative mb-6">
@@ -224,7 +238,7 @@ const AuthModal = () => {
             </form>
         )}
 
-        {/* ⭐️ 3단계: 신규 유저 회원가입 폼 */}
+        {/* 3단계: 신규 유저 회원가입 폼 */}
         {step === 'SIGNUP' && (
             <form onSubmit={handleSignup} className="w-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300 max-h-[50vh] overflow-y-auto px-1 pb-2 scrollbar-hide">
                 <div className="space-y-4 mb-6">
@@ -239,7 +253,6 @@ const AuthModal = () => {
                             <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="비밀번호" className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
                         </div>
-                        {/* ⭐️ 비밀번호 정규식 검증 피드백 UI */}
                         {password.length > 0 && (
                             <p className={`text-[10px] font-bold pl-2 mt-1.5 ${validatePassword(password) ? 'text-emerald-500' : 'text-rose-500'}`}>
                                 {validatePassword(password) ? '✓ 안전한 비밀번호입니다.' : '영문, 숫자, 특수문자 조합 8자 이상 입력해주세요.'}
