@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock } from 'lucide-react';
-import { useAppStore, API_BASE_URL } from '../../store/AppStore';
+import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock, Youtube, Image as ImageIcon } from 'lucide-react';
+import { useAppStore } from '../../store/AppStore';
 
 const AddRecordModal = () => {
   const { addRecordModalOpen, setAddRecordModalOpen, tagTree, fetchAllData, showToast, setViewMode, apiFetch } = useAppStore();
@@ -8,9 +8,10 @@ const AddRecordModal = () => {
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   const [imageUrl, setImageUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState(''); // ⭐️ 유튜브 URL 상태 추가
   const [content, setContent] = useState(''); 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isPublic, setIsPublic] = useState(true); // ⭐️ 공개 여부 상태 추가
+  const [isPublic, setIsPublic] = useState(true);
 
   const [isTagExpanded, setIsTagExpanded] = useState(false);
   const [imageInputType, setImageInputType] = useState('file');
@@ -38,9 +39,10 @@ const AddRecordModal = () => {
         title: title.trim(), 
         categoryName: selectedCategory?.name || '분류 없음', 
         recordDate: date.replace(/-/g, '.'),
-        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
+        imageUrl: imageUrl || (selectedCategory?.name !== '음악' ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop' : ''),
+        youtubeUrl: selectedCategory?.name === '음악' ? youtubeUrl.trim() : '', // ⭐️ '음악' 카테고리일 때만 유튜브 URL 전송
         content: content.trim(),
-        isPublic: isPublic, // ⭐️ 공개 여부 전송
+        isPublic: isPublic, 
         tagIds: numericTagIds
       };
       
@@ -49,7 +51,7 @@ const AddRecordModal = () => {
         await fetchAllData(); 
         showToast('새 기록이 성공적으로 추가되었습니다! 🎉'); 
         setAddRecordModalOpen(false); 
-        setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); setContent(''); setIsPublic(true);
+        setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); setYoutubeUrl(''); setContent(''); setIsPublic(true);
       }
       else showToast('기록 추가에 실패했습니다.');
     } catch (e) { console.error(e); showToast('서버 연동 중 오류가 발생했습니다.'); }
@@ -109,39 +111,58 @@ const AddRecordModal = () => {
                   )}
                   {selectedCategory && (selectedCategory.children || []).length === 0 && (<p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100">이 카테고리에는 아직 생성된 태그가 없습니다. 타임라인 트리 편집에서 태그를 먼저 추가해보세요.</p>)}
                   
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">이미지 첨부</label>
-                        <div className="flex bg-zinc-100 p-0.5 rounded-lg">
-                            <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>파일</button>
-                            <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>URL</button>
-                        </div>
-                    </div>
-
-                    {imageInputType === 'file' ? (
-                        <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleImageUpload} 
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" 
-                        />
-                    ) : (
-                        <input 
+                  {/* ⭐️ '음악' 카테고리 선택 시 UI 변경 */}
+                  {selectedCategory?.name === '음악' ? (
+                    <div className="animate-in fade-in slide-in-from-top-2 p-4 bg-red-50/50 border border-red-100 rounded-xl">
+                      <label className="text-xs font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                        <Youtube size={16} className="text-red-500" /> 유튜브 URL 연결
+                      </label>
+                      <input 
                         type="text" 
-                        value={imageUrl} 
-                        onChange={e => setImageUrl(e.target.value)} 
-                        placeholder="https://..." 
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
-                        />
-                    )}
-
-                    {imageUrl && (
-                      <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border border-zinc-200 shadow-sm relative group">
-                         <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
-                         <button onClick={() => setImageUrl('')} className="absolute top-1.5 right-1.5 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><CloseIcon size={12}/></button>
+                        placeholder="https://www.youtube.com/watch?v=..." 
+                        value={youtubeUrl}
+                        onChange={e => setYoutubeUrl(e.target.value)}
+                        className="w-full bg-white border border-red-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-red-500 outline-none shadow-sm"
+                      />
+                      <p className="text-[10px] text-red-500/70 font-bold mt-2 ml-1">유튜브 영상 링크를 붙여넣으면 아카이브에서 레코드판 디자인으로 렌더링됩니다. 🎵</p>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in">
+                      <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                            <ImageIcon size={14} className="text-zinc-400" /> 이미지 첨부
+                          </label>
+                          <div className="flex bg-zinc-100 p-0.5 rounded-lg">
+                              <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>파일</button>
+                              <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}>URL</button>
+                          </div>
                       </div>
-                    )}
-                  </div>
+
+                      {imageInputType === 'file' ? (
+                          <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleImageUpload} 
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" 
+                          />
+                      ) : (
+                          <input 
+                          type="text" 
+                          value={imageUrl} 
+                          onChange={e => setImageUrl(e.target.value)} 
+                          placeholder="https://..." 
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                          />
+                      )}
+
+                      {imageUrl && (
+                        <div className="mt-3 w-32 h-32 rounded-xl overflow-hidden border border-zinc-200 shadow-sm relative group">
+                           <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
+                           <button onClick={() => setImageUrl('')} className="absolute top-1.5 right-1.5 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><CloseIcon size={12}/></button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   <div>
                     <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">간단한 메모 (선택)</label>
