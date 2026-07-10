@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
-// import path updated to ensure correct resolution
+import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
-  // 에러 해결: 단 한 번만 선언되도록 정리된 상태값들
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     return {
@@ -24,7 +22,7 @@ const EditProfileView = () => {
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  // ⭐️ 이미지 입력 방식 상태 추가 ('file' or 'url')
+  // ⭐️ 이미지 입력 방식 상태 ('file' or 'url')
   const [imageInputType, setImageInputType] = useState('file');
 
   const updateNested = (path, value) => {
@@ -40,13 +38,13 @@ const EditProfileView = () => {
     });
   };
 
-  // ⭐️ 파일 업로드 처리 핸들러 추가
+  // ⭐️ 파일 업로드 처리 핸들러 (PC 파일 -> Base64 변환)
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateNested(["profileImageUrl"], reader.result); // Base64로 변환하여 폼 데이터에 저장
+        updateNested(["profileImageUrl"], reader.result); 
       };
       reader.readAsDataURL(file);
     }
@@ -128,6 +126,7 @@ const EditProfileView = () => {
         </div>
       </header>
 
+      {/* 탭 메뉴 */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
         {[
           { id: 'basic', label: '기본 정보' },
@@ -142,6 +141,8 @@ const EditProfileView = () => {
       </div>
 
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 mb-8">
+        
+        {/* 비공개 설정 (기본 탭 제외) */}
         {editTab !== 'basic' && (
           <div className="mb-8 p-5 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
             <div>
@@ -168,7 +169,7 @@ const EditProfileView = () => {
             {renderInput("이름", ["name"], "예: 홍길동")}
             {renderInput("닉네임/핸들", ["handle"], "예: gildong.dev")}
             
-            {/* ⭐️ 파일 업로드 기능이 추가된 프로필 이미지 입력란 */}
+            {/* ⭐️ 프로필 이미지 입력 영역 */}
             <div className="md:col-span-2 p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100">
                 <div className="flex items-center justify-between mb-4">
                     <label className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
@@ -181,7 +182,7 @@ const EditProfileView = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-5">
-                    {/* 실시간 미리보기 아바타 */}
+                    {/* 미리보기 아바타 */}
                     <div className="w-20 h-20 rounded-2xl bg-white border border-zinc-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
                         {formData.profileImageUrl ? (
                             <img src={formData.profileImageUrl} alt="Profile preview" className="w-full h-full object-cover" />
@@ -192,13 +193,26 @@ const EditProfileView = () => {
 
                     <div className="flex-1 w-full">
                         {imageInputType === 'file' ? (
-                            <input 
-                                type="file" 
-                                accept="image/*" 
-                                onChange={handleProfileImageUpload} 
-                                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer shadow-sm" 
-                            />
+                            // ⭐️ 커스텀 디자인된 파일 업로드 버튼
+                            <div className="flex flex-col gap-2">
+                                <label className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-white border border-zinc-200 text-zinc-700 rounded-xl text-sm font-bold hover:bg-zinc-50 cursor-pointer shadow-sm transition-all group">
+                                    <Upload size={16} className="text-zinc-400 group-hover:text-indigo-500 transition-colors" />
+                                    <span>PC에서 파일 찾기</span>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={handleProfileImageUpload} 
+                                        className="hidden" 
+                                    />
+                                </label>
+                                <span className="text-[11px] font-bold text-zinc-400 ml-1">
+                                    {formData.profileImageUrl && formData.profileImageUrl.startsWith('data:image') 
+                                      ? '✅ 업로드된 파일 적용됨' 
+                                      : '선택된 파일 없음'}
+                                </span>
+                            </div>
                         ) : (
+                            // 기존 URL 입력 방식
                             <input 
                                 type="text" 
                                 placeholder="https://..." 
