@@ -241,7 +241,7 @@ const AuthModal = () => {
                     <div className="flex-grow border-t border-zinc-200"></div>
                 </div>
                 <button type="button" onClick={handleKakaoLogin} className="w-full py-3.5 bg-[#FEE500] hover:bg-[#E5CF00] text-black rounded-xl font-black text-sm flex items-center justify-center gap-2 transition duration-300 shadow-sm">
-                    <MessageSquare size={16} className="fill-black" /> 카카오 계정으로 1초 만에 시작
+                    <MessageSquare size={16} className="fill-black" /> 카카오 계정으로 로그인
                 </button>
                 {/* ⭐️ 여기까지 */}
 
