@@ -35,6 +35,13 @@ const AuthModal = () => {
     }, 300); 
   };
 
+  // ⭐️ 카카오 로그인 리다이렉트 핸들러 추가
+  const handleKakaoLogin = () => {
+    // API_BASE_URL(예: http://localhost:8080/api/v1) 에서 '/api/v1'을 제거하고 oauth2 경로를 붙입니다.
+    const baseUrl = API_BASE_URL.replace('/api/v1', '');
+    window.location.href = `${baseUrl}/oauth2/authorization/kakao`;
+  };
+
   const handleCheckEmail = async (e) => {
     e.preventDefault();
     if (!email) return showToast("이메일을 입력해주세요.");
@@ -226,6 +233,18 @@ const AuthModal = () => {
                 <button disabled={isLoading} type="submit" className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white rounded-xl font-black text-sm transition duration-300 shadow-md">
                   {isLoading ? '확인 중...' : '다음'}
                 </button>
+
+                {/* ⭐️ 카카오 로그인 버튼 복구 영역 */}
+                <div className="relative flex items-center py-5">
+                    <div className="flex-grow border-t border-zinc-200"></div>
+                    <span className="flex-shrink-0 mx-4 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">or</span>
+                    <div className="flex-grow border-t border-zinc-200"></div>
+                </div>
+                <button type="button" onClick={handleKakaoLogin} className="w-full py-3.5 bg-[#FEE500] hover:bg-[#E5CF00] text-black rounded-xl font-black text-sm flex items-center justify-center gap-2 transition duration-300 shadow-sm">
+                    <MessageSquare size={16} className="fill-black" /> 카카오 계정으로 1초 만에 시작
+                </button>
+                {/* ⭐️ 여기까지 */}
+
                 <div className="mt-6 flex flex-col gap-3">
                     <button type="button" onClick={() => setStep('SIGNUP')} className="text-xs font-bold text-zinc-500 hover:text-indigo-600 transition-colors text-left pl-1">계정 생성</button>
                 </div>
