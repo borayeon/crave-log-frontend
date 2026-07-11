@@ -329,37 +329,6 @@ const EditProfileView = () => {
           </div>
         )}
       </div>
-
-      {/* Danger Zone */}
-      <div className="bg-rose-50 border border-rose-200 p-8 rounded-[2rem] mt-8 animate-in fade-in relative overflow-hidden">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-                <h3 className="text-lg font-black text-rose-600 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h3>
-                <p className="text-sm font-medium text-rose-700/80 mt-2">
-                    계정을 삭제하면 모든 프로필 정보와 기록이 영구적으로 삭제되며 복구할 수 없습니다.
-                </p>
-            </div>
-            <button 
-                onClick={() => setShowDeleteConfirm(true)}
-                className="shrink-0 px-6 py-3 bg-white text-rose-600 border border-rose-200 rounded-xl font-bold hover:bg-rose-600 hover:text-white transition-colors"
-            >
-                계정 삭제
-            </button>
-        </div>
-
-        {showDeleteConfirm && (
-            <div className="absolute inset-0 bg-rose-50/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center border border-rose-300 rounded-[2rem]">
-                <h4 className="text-xl font-black text-rose-900 mb-2">정말 삭제하시겠습니까?</h4>
-                <p className="text-sm font-medium text-rose-700 mb-6">모든 데이터가 즉시 파기됩니다.</p>
-                <div className="flex gap-3">
-                    <button onClick={() => setShowDeleteConfirm(false)} className="px-5 py-2.5 bg-white text-zinc-600 rounded-xl font-bold shadow-sm border border-zinc-200 hover:bg-zinc-50">
-                        취소하기
-                    </button>
-                        <button onClick={()=>{const arr=[...(formData.idol?.qna||[]), {q:"", a:""}]; updateNested(["idol","qna"], arr);}} className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl">+ 문답 추가</button>
-                    </div>
-                </div>
-            )}
-          </div>
     </div>
   );
 };
