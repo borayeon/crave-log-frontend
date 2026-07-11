@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X } from 'lucide-react';
+import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings } from 'lucide-react'; // ⭐️ Settings 추가
 import { useAppStore } from '../../store/AppStore';
 
 const TopNavBar = () => {
@@ -18,7 +18,8 @@ const TopNavBar = () => {
     edit_profile: '프로필 설정 (Set Profile)', 
     archive: '취향 보관함 (Taste Archive)', 
     timeline: '발자취 (Timeline)', 
-    search: '검색 결과 (Search)' 
+    search: '검색 결과 (Search)',
+    account_settings: '계정 설정 (Settings)' // ⭐️ 추가
   };
 
   const handleSearchSubmit = () => {
@@ -101,6 +102,15 @@ const TopNavBar = () => {
               <span>{(isGuestMode || visitedHandle) ? '내 프로필로 복귀' : '게스트 뷰 체험'}</span>
             </button>
 
+            {/* ⭐️ 설정 버튼 추가 */}
+            {(!isGuestMode && !visitedHandle) && (
+              <button 
+                onClick={() => setViewMode('account_settings')} 
+                className="hidden md:flex w-9 h-9 rounded-full bg-white border border-zinc-200 items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm md:mr-2" title="계정 설정">
+                <Settings size={16} />
+              </button>
+            )}
+            
             {(!isGuestMode && !visitedHandle) && (
               <button onClick={() => setAddRecordModalOpen(true)} className="px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5 md:mr-2">
                 <Plus size={14} /> <span className="hidden md:inline">새 기록</span>

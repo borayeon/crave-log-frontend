@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppProvider, useAppStore } from './store/AppStore';
-import { Sparkles, Loader2 } from 'lucide-react'; // ⭐️ 로딩 아이콘 추가
+import { Sparkles, Loader2 } from 'lucide-react'; 
 
 import Toast from './components/common/Toast';
 import AuthModal from './components/common/AuthModal';
@@ -13,9 +13,9 @@ import EditProfileView from './pages/EditProfileView';
 import ArchiveView from './pages/ArchiveView';
 import TimelineView from './pages/TimelineView';
 import SearchView from './pages/SearchView';
+import AccountSettingsView from './pages/AccountSettingsView'; // ⭐️ 계정 설정 컴포넌트 임포트
 
 const AppContent = () => {
-  // ⭐️ 상태 관리소에서 로딩 상태(isLoading)를 가져옵니다.
   const { viewMode, isLoading } = useAppStore();
 
   // 🚨 전역 로딩 화면: 데이터가 모두 준비되기 전까지는 사이드바나 네비게이션을 아예 그리지 않습니다!
@@ -49,6 +49,7 @@ const AppContent = () => {
            {viewMode === 'archive' && <ArchiveView />}
            {viewMode === 'timeline' && <TimelineView />}
            {viewMode === 'search' && <SearchView />}
+           {viewMode === 'account_settings' && <AccountSettingsView />} {/* ⭐️ 계정 설정 뷰 렌더링 연결 */}
          </div>
       </main>
 

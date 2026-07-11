@@ -355,13 +355,11 @@ const EditProfileView = () => {
                     <button onClick={() => setShowDeleteConfirm(false)} className="px-5 py-2.5 bg-white text-zinc-600 rounded-xl font-bold shadow-sm border border-zinc-200 hover:bg-zinc-50">
                         취소하기
                     </button>
-                    <button onClick={handleDeleteAccount} className="px-5 py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700">
-                        영구 삭제
-                    </button>
+                        <button onClick={()=>{const arr=[...(formData.idol?.qna||[]), {q:"", a:""}]; updateNested(["idol","qna"], arr);}} className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl">+ 문답 추가</button>
+                    </div>
                 </div>
-            </div>
-        )}
-      </div>
+            )}
+          </div>
     </div>
   );
 };
