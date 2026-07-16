@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload } from 'lucide-react';
+import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign } from 'lucide-react'; // ⭐️ AtSign 아이콘 추가
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
@@ -22,7 +22,7 @@ const EditProfileView = () => {
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  // ⭐️ 이미지 입력 방식 상태 ('file' or 'url')
+  // 이미지 입력 방식 상태 ('file' or 'url')
   const [imageInputType, setImageInputType] = useState('file');
 
   const updateNested = (path, value) => {
@@ -38,7 +38,7 @@ const EditProfileView = () => {
     });
   };
 
-  // ⭐️ 파일 업로드 처리 핸들러 (PC 파일 -> Base64 변환)
+  // 파일 업로드 처리 핸들러 (PC 파일 -> Base64 변환)
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -51,7 +51,16 @@ const EditProfileView = () => {
   };
 
   const handleSave = async () => {
+    // ⭐️ 필수 값 및 고유 아이디 유효성 검사 추가
+    if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
+    if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
+    
+    if (!/^[a-z0-9.]+$/.test(formData.handle)) {
+        return showToast('아이디는 영문 소문자, 숫자, 마침표(.)만 가능합니다.');
+    }
+
     try {
+      // ⭐️ 엔드포인트 확인: 만약 이전처럼 /me 였다면 /me 로 변경해주세요.
       const res = await apiFetch(`/me/profile`, {
         method: 'PUT',
         body: JSON.stringify(formData)
@@ -62,7 +71,9 @@ const EditProfileView = () => {
         setViewMode('profile');
         showToast("성공적으로 저장되었습니다! 🎉 이제 갤러리도 채워보세요.");
       } else {
-        showToast("프로필 저장에 실패했습니다.");
+        // ⭐️ 백엔드에서 던진 에러 메시지(중복 아이디 등) 띄우기
+        const data = await res.json();
+        showToast(data.message || "프로필 저장에 실패했습니다.");
       }
     } catch (e) {
       console.error(e);
@@ -167,9 +178,24 @@ const EditProfileView = () => {
         {editTab === 'basic' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
             {renderInput("이름", ["name"], "예: 홍길동")}
-            {renderInput("닉네임/핸들", ["handle"], "예: gildong.dev")}
             
-            {/* ⭐️ 프로필 이미지 입력 영역 */}
+            {/* ⭐️ 고유 아이디 입력 칸 (아이콘 적용을 위해 별도 구성) */}
+            <div>
+              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">고유 아이디 (URL 및 검색용)</label>
+              <div className="relative mt-2">
+                <AtSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input 
+                    type="text" 
+                    value={formData.handle || ''} 
+                    onChange={e => updateNested(["handle"], e.target.value.toLowerCase())}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                    placeholder="예: taekyeong.dev"
+                />
+              </div>
+              <p className="text-[10px] text-zinc-400 font-medium pl-1 mt-1.5">영문 소문자, 숫자, 마침표(.)만 사용할 수 있습니다.</p>
+            </div>
+            
+            {/* 프로필 이미지 입력 영역 */}
             <div className="md:col-span-2 p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100">
                 <div className="flex items-center justify-between mb-4">
                     <label className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
@@ -193,7 +219,6 @@ const EditProfileView = () => {
 
                     <div className="flex-1 w-full">
                         {imageInputType === 'file' ? (
-                            // ⭐️ 커스텀 디자인된 파일 업로드 버튼
                             <div className="flex flex-col gap-2">
                                 <label className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-white border border-zinc-200 text-zinc-700 rounded-xl text-sm font-bold hover:bg-zinc-50 cursor-pointer shadow-sm transition-all group">
                                     <Upload size={16} className="text-zinc-400 group-hover:text-indigo-500 transition-colors" />
@@ -235,7 +260,7 @@ const EditProfileView = () => {
             
             <div className="md:col-span-2">
                 <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">한 줄 소개</label>
-                <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio || ''} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             {renderArrayTextarea("Tags (키워드)", ["tags"])}
             {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
