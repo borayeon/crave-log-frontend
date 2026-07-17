@@ -30,7 +30,14 @@ const AddRecordModal = () => {
   };
 
   const selectedCategory = tagTree.find(c => String(c.id) === String(categoryId));
-
+// ⭐️ 핵심: 카테고리가 '음악'이 아니게 되면 유튜브 URL 찌꺼기 초기화
+  useEffect(() => {
+      if (selectedCategory && selectedCategory.name !== '음악') {
+          setYoutubeUrl('');
+      } else if (selectedCategory && selectedCategory.name === '음악') {
+          setImageUrl(''); // 반대로 음악일 땐 이미지 초기화
+      }
+  }, [categoryId, selectedCategory]);
   const handleSubmit = async () => {
     if (!title.trim() || !categoryId) { showToast('제목과 카테고리는 필수 입력 사항입니다.'); return; }
     try {
@@ -115,7 +122,7 @@ const AddRecordModal = () => {
                   {selectedCategory?.name === '음악' ? (
                     <div className="animate-in fade-in slide-in-from-top-2 p-4 bg-red-50/50 border border-red-100 rounded-xl">
                       <label className="text-xs font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                        <Youtube size={16} className="text-red-500" /> 유튜브 URL 연결
+                        <PlayCircle size={16} className="text-red-500" /> 유튜브 URL 연결
                       </label>
                       <input 
                         type="text" 
