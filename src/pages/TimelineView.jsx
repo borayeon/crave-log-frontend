@@ -1,9 +1,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock } from 'lucide-react';
+import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
+// ⭐️ 이미지 상수 정의
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+const MUSIC_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop'; // ⭐️ 음악 전용 대체 이미지 (멋진 DJ 턴테이블)
+
+// ⭐️ 유튜브 ID 추출 함수 (Shorts 등 다양한 링크 형태 완벽 지원)
+const getYoutubeId = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\/shorts\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
 
 const TimelineView = () => {
   const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
@@ -20,7 +30,6 @@ const TimelineView = () => {
   const filteredRecords = useMemo(() => {
     let filtered = safeRecords;
     
-    // ⭐️ 추가: 게스트 뷰 모드일 때는 비공개 기록을 강제로 숨깁니다!
     if (isGuestMode) {
       filtered = filtered.filter(r => r.isPublic !== false);
     }
@@ -48,7 +57,7 @@ const TimelineView = () => {
         const dateB = new Date(b.date?.replace(/\./g, '-') || 0);
         return dateB - dateA;
     });
-  }, [safeRecords, selectedFilter, safeTagTree, searchQuery, isGuestMode]); // ⭐️ 의존성 배열에 isGuestMode 추가
+  }, [safeRecords, selectedFilter, safeTagTree, searchQuery, isGuestMode]);
 
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
@@ -145,6 +154,7 @@ const TimelineView = () => {
 
       <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden flex flex-col md:flex-row gap-8">
         
+        {/* 우측 네비게이션 트리 */}
         <div className="w-full md:w-64 shrink-0 flex flex-col h-[40vh] md:h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
           <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -253,6 +263,7 @@ const TimelineView = () => {
           )}
         </div>
 
+        {/* 메인 리스트 영역 */}
         <div className="flex-1 min-w-0 overflow-y-auto pr-2 pl-2 md:pl-4 py-2 scrollbar-hide">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
@@ -267,52 +278,84 @@ const TimelineView = () => {
           )}
 
           <div className="relative border-l-2 border-dashed border-zinc-200 ml-3 md:ml-4 space-y-5 pb-10 mt-2">
-            {filteredRecords.map((item) => (
-              <div key={item.id} className="relative pl-6 md:pl-8 group">
-                <div className="absolute w-3 h-3 bg-white border-[3px] border-indigo-400 rounded-full -left-[5px] top-6 group-hover:border-indigo-600 group-hover:scale-150 transition-all duration-300 shadow-sm z-10" />
-                
-                <div className="bg-white border border-zinc-200/80 rounded-2xl p-3 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1">
+            {filteredRecords.map((item) => {
+              
+              // ⭐️ 음악 카테고리 여부와 썸네일 URL 동적 할당 로직 완벽 보강
+              const isMusic = item.category === '음악';
+              const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
+              
+              // ⭐️ 비디오 ID가 있으면 유튜브 썸네일을, 없으면(혹은 옛날 기록이면) 음악 전용 기본 이미지를, 일반 기록이면 일반 이미지를 렌더링
+              const imageUrlToRender = isMusic 
+                ? (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE)
+                : (item.image?.trim() ? item.image : DEFAULT_IMAGE);
+
+              return (
+                <div key={item.id} className="relative pl-6 md:pl-8 group">
+                  <div className="absolute w-3 h-3 bg-white border-[3px] border-indigo-400 rounded-full -left-[5px] top-6 group-hover:border-indigo-600 group-hover:scale-150 transition-all duration-300 shadow-sm z-10" />
                   
-                  <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden bg-zinc-100 relative shadow-inner">
-                    <img src={item.image?.trim() ? item.image : DEFAULT_IMAGE} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
-                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/90 backdrop-blur-sm text-zinc-900 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider">{item.category}</div>
-                  </div>
-                  
-                  <div className="flex-1 w-full text-left py-0.5 flex flex-col justify-center min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Calendar size={12} className="text-indigo-500" />
-                      <span className="text-[11px] md:text-xs font-black text-indigo-500 tracking-tight">{item.date}</span>
-                    </div>
+                  <div className="bg-white border border-zinc-200/80 rounded-2xl p-3 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1">
                     
-                    <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight mb-1 group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
-                      <span className="truncate">{item.title}</span>
-                      {/* ⭐️ 비공개 뱃지 */}
-                      {!item.isPublic && <Lock size={14} className="text-rose-500 shrink-0" title="비공개 기록" />} 
-                    </h3>
-                    
-                    {item.content && (
-                      <p className="text-xs text-zinc-500 font-medium mb-2 truncate">
-                        {item.content}
-                      </p>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-1.5 mt-auto">
-                      {(item.tags || []).slice(0, 3).map(tag => (
-                        <span key={tag} className="px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[9px] font-bold text-zinc-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-colors whitespace-nowrap">
-                          #{tag}
-                        </span>
-                      ))}
-                      {(item.tags || []).length > 3 && (
-                        <span className="px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[9px] font-bold text-zinc-400 whitespace-nowrap">
-                          +{(item.tags || []).length - 3}
-                        </span>
+                    {/* ⭐️ 이미지 렌더링 영역 (음악일 땐 둥근 레코드판 UI) */}
+                    <div className={`w-20 h-24 sm:w-24 sm:h-24 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner ${isMusic ? 'rounded-full border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700' : 'rounded-xl'}`}>
+                      <img 
+                        src={imageUrlToRender} 
+                        // 이미지가 엑박(404) 뜰 경우 방어 로직
+                        onError={(e) => { e.target.src = isMusic ? MUSIC_DEFAULT_IMAGE : DEFAULT_IMAGE; }} 
+                        alt={item.title} 
+                        className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isMusic ? 'scale-125' : 'group-hover:scale-105'}`} 
+                      />
+                      
+                      {/* 음악 카테고리일 때 가운데 구멍 표시 */}
+                      {isMusic && (
+                         <>
+                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-zinc-900 rounded-full border-2 border-zinc-700 flex items-center justify-center shadow-inner">
+                                <PlayCircle size={10} className="text-white/80 translate-x-[1px]" />
+                            </div>
+                         </>
+                      )}
+
+                      {!isMusic && (
+                        <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/90 backdrop-blur-sm text-zinc-900 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider">{item.category}</div>
                       )}
                     </div>
-                  </div>
+                    
+                    <div className="flex-1 w-full text-left py-0.5 flex flex-col justify-center min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Calendar size={12} className="text-indigo-500" />
+                        <span className="text-[11px] md:text-xs font-black text-indigo-500 tracking-tight">{item.date}</span>
+                      </div>
+                      
+                      <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight mb-1 group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                        {isMusic && <Disc size={16} className="text-zinc-400 shrink-0" />}
+                        <span className="truncate">{item.title}</span>
+                        {!item.isPublic && <Lock size={14} className="text-rose-500 shrink-0" title="비공개 기록" />} 
+                      </h3>
+                      
+                      {item.content && (
+                        <p className="text-xs text-zinc-500 font-medium mb-2 truncate">
+                          {item.content}
+                        </p>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-1.5 mt-auto">
+                        {(item.tags || []).slice(0, 3).map(tag => (
+                          <span key={tag} className="px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[9px] font-bold text-zinc-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-colors whitespace-nowrap">
+                            #{tag}
+                          </span>
+                        ))}
+                        {(item.tags || []).length > 3 && (
+                          <span className="px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[9px] font-bold text-zinc-400 whitespace-nowrap">
+                            +{(item.tags || []).length - 3}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
