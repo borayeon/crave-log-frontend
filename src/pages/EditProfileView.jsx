@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, GitHub, ExternalLink } from 'lucide-react'; // ⭐️ Github, ExternalLink 아이콘 추가
+import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, Link, ExternalLink } from 'lucide-react'; // ⭐️ Github, ExternalLink 아이콘 추가
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {

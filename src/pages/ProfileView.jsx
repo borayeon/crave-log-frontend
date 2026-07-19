@@ -3,7 +3,7 @@ import {
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
     ArrowRight, Heart, MessageSquare, Lock,
-    GitHub, ExternalLink
+    Link, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
