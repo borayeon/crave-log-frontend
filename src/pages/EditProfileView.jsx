@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, Github, ExternalLink } from 'lucide-react'; // ⭐️ Github, ExternalLink 아이콘 추가
+import {
+  Save,
+  Eye,
+  Lock,
+  Trash2,
+  AlertTriangle,
+  Image as ImageIcon,
+  Upload,
+  AtSign,
+  GitHub,
+  ExternalLink
+} from "lucide-react";
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
@@ -311,7 +322,7 @@ const EditProfileView = () => {
                                 </div>
                                 {/* ⭐️ 깃허브 링크 & 배포 링크 추가됨! */}
                                 <div className="flex items-center gap-2">
-                                    <Github size={16} className="text-zinc-400 shrink-0"/>
+                                    <GitHub size={16} className="text-zinc-400 shrink-0"/>
                                     <input 
                                         value={proj.githubUrl || ''} 
                                         onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
