@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote } from 'lucide-react'; // ⭐️ Quote 아이콘 추가
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+const MUSIC_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop';
 
-// ⭐️ 유튜브 URL에서 ID를 추출하는 헬퍼 함수
 const getYoutubeId = (url) => {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\/shorts\/)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
 };
@@ -20,7 +20,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [tagIds, setTagIds] = useState([]);
   const [date, setDate] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [youtubeUrl, setYoutubeUrl] = useState(''); // ⭐️ 유튜브 URL 상태
+  const [youtubeUrl, setYoutubeUrl] = useState(''); 
   const [content, setContent] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [isTagExpanded, setIsTagExpanded] = useState(true);
@@ -49,8 +49,8 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     if (record && isEditMode) {
       setTitle(record.title);
       setDate(record.date?.replace(/\./g, '-') || '');
-      setImageUrl(record.image);
-      setYoutubeUrl(record.youtubeUrl || ''); // ⭐️ 유튜브 URL 세팅
+      setImageUrl(record.image === DEFAULT_IMAGE ? '' : record.image); // ⭐️ 편집 모드일 때 기본 이미지는 빈칸으로 치환
+      setYoutubeUrl(record.youtubeUrl || ''); 
       setContent(record.content || '');
       setIsPublic(record.isPublic ?? true);
       setIsTagExpanded(true);
@@ -81,12 +81,13 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
       const selectedCategory = tagTree.find(c => String(c.id) === String(categoryId));
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
 
+      // ⭐️ 빈 이미지로 저장 허용 (프론트에서 빈 이미지를 빈 텍스트로 처리)
       const payload = {
         title: title.trim(),
         categoryName: selectedCategory?.name || '분류 없음',
         recordDate: date.replace(/-/g, '.'),
-        imageUrl: imageUrl || DEFAULT_IMAGE,
-        youtubeUrl: selectedCategory?.name === '음악' ? youtubeUrl.trim() : '', // ⭐️ '음악' 카테고리일 때만 유튜브 URL 전송
+        imageUrl: imageUrl.trim(), // 빈 문자열 허용
+        youtubeUrl: selectedCategory?.name === '음악' ? youtubeUrl.trim() : '', 
         content: content.trim(),
         isPublic: isPublic,
         tagIds: numericTagIds
@@ -124,41 +125,41 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-  // ⭐️ 유튜브 플레이어 렌더링을 위한 ID 추출
   const videoId = record.category === '음악' && !isEditMode ? getYoutubeId(record.youtubeUrl) : null;
+  const hasImage = record.image && record.image.trim() !== '' && record.image !== DEFAULT_IMAGE;
+  const isTextOnly = record.category !== '음악' && !hasImage; // 텍스트 전용 판별
 
   return (
     <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
       <div 
-        className="bg-zinc-950 md:bg-zinc-900 rounded-2xl w-full max-w-5xl h-[75vh] flex flex-col md:flex-row overflow-hidden shadow-2xl border border-zinc-800"
+        className="bg-zinc-950 md:bg-zinc-900 rounded-2xl w-full max-w-5xl h-[75vh] flex flex-col md:flex-row overflow-hidden shadow-2xl border border-zinc-800 relative"
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 text-white hover:text-zinc-300 transition-colors bg-black/50 rounded-full md:hidden backdrop-blur-md">
+        <button onClick={onClose} className="absolute top-4 right-4 z-[250] p-2 bg-black/50 hover:bg-white text-white hover:text-zinc-900 transition-colors rounded-full backdrop-blur-md shadow-lg border border-white/10">
             <CloseIcon size={20}/>
         </button>
 
-        <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full bg-black flex items-center justify-center relative border-r border-zinc-800 shrink-0">
+        <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full flex items-center justify-center relative border-r border-zinc-800 shrink-0 bg-black">
             {isEditMode ? (
                  <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-900">
                      <p className="text-zinc-400 mb-4 font-bold text-sm">이미지/영상 미리보기</p>
                      
-                     {/* ⭐️ 음악 카테고리일 때 썸네일 미리보기 */}
                      {tagTree.find(c => String(c.id) === String(categoryId))?.name === '음악' && getYoutubeId(youtubeUrl) ? (
-                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700">
+                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
                              <img src={`https://img.youtube.com/vi/${getYoutubeId(youtubeUrl)}/hqdefault.jpg`} alt="youtube thumbnail" className="max-w-full max-h-full object-contain" />
                          </div>
                      ) : imageUrl ? (
-                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700">
+                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
                              <img src={imageUrl} alt="preview" className="max-w-full max-h-full object-contain" />
                         </div>
                      ) : (
-                         <div className="w-full h-full border-2 border-dashed border-zinc-700 rounded-xl flex items-center justify-center text-zinc-600">
-                             소스 없음
+                         <div className="w-full h-full border-2 border-dashed border-zinc-700 rounded-xl flex items-center justify-center text-zinc-600 bg-black/50 flex-col gap-2">
+                             <ImageIcon size={24} className="opacity-50" />
+                             <span>이미지 없음 (텍스트 전용)</span>
                          </div>
                      )}
                  </div>
             ) : videoId ? (
-                // ⭐️ 유튜브 플레이어 렌더링
                 <iframe 
                     width="100%" 
                     height="100%" 
@@ -167,11 +168,27 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     frameBorder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                     allowFullScreen
-                    className="w-full h-full"
+                    className="w-full h-full border-none outline-none"
                 ></iframe>
+            ) : isTextOnly ? (
+                // ⭐️ 모달 좌측: 이미지가 없을 경우 멋진 텍스트 인용구 렌더링
+                <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-zinc-900 to-black flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
+                    <Quote size={80} className="absolute -top-4 -left-4 text-white/5" />
+                    <Quote size={80} className="absolute -bottom-4 -right-4 text-white/5 rotate-180" />
+                    
+                    <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-lg mb-6">
+                        {record.title}
+                    </h2>
+                    {record.content && (
+                      <p className="text-zinc-300 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">
+                          "{record.content}"
+                      </p>
+                    )}
+                </div>
             ) : (
+                // 일반 이미지
                 <img 
-                    src={record.image?.trim() ? record.image : DEFAULT_IMAGE} 
+                    src={record.image} 
                     onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
                     alt={record.title} 
                     className="w-full h-full object-contain" 
@@ -179,7 +196,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             )}
         </div>
 
-        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-zinc-950 text-zinc-200 overflow-hidden">
+        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-zinc-950 text-zinc-200 overflow-hidden relative z-10">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-800 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700">
@@ -200,12 +217,11 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 
                 <div className="flex items-center gap-1">
                     {!isEditMode && isAdmin && !isGuestMode && (
-                        <div className="flex items-center gap-1 mr-2">
+                        <div className="flex items-center gap-1 mr-6 md:mr-0">
                             <button onClick={() => setIsEditMode(true)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="수정"><Edit2 size={16}/></button>
                             <button onClick={handleDelete} className="p-2 text-zinc-400 hover:text-rose-500 transition-colors" title="삭제"><Trash2 size={16}/></button>
                         </div>
                     )}
-                    <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white transition-colors hidden md:block"><CloseIcon size={24}/></button>
                 </div>
             </div>
 
@@ -269,7 +285,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             </div>
                         )}
 
-                        {/* ⭐️ 음악 카테고리일 때 유튜브 링크 입력 UI 변경 */}
                         {tagTree.find(c => String(c.id) === String(categoryId))?.name === '음악' ? (
                           <div className="p-3 bg-red-950/30 border border-red-900/50 rounded-lg">
                             <label className="text-[10px] font-bold text-red-500 uppercase tracking-wider block mb-1.5">유튜브 URL 연결</label>
@@ -298,7 +313,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                   />
                               ) : (
                                   <input 
-                                      type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="새 이미지 URL" 
+                                      type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="선택: 새 이미지 URL을 입력하거나 비워두세요." 
                                       className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none" 
                                   />
                               )}
@@ -379,14 +394,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     </div>
                     <p className="text-sm font-bold text-white mb-1">CraveLog Archive</p>
                     <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{record.date}</p>
-                    
-                    <div className="mt-4 flex items-center gap-3 border-t border-zinc-800 pt-4">
-                        <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
-                             {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="me" className="w-full h-full object-cover"/> : null}
-                        </div>
-                        <input type="text" placeholder="Add a comment..." disabled className="bg-transparent flex-1 text-sm text-white outline-none placeholder-zinc-500" />
-                        <button className="text-sm font-bold text-indigo-400 opacity-50 cursor-not-allowed">Post</button>
-                    </div>
                 </div>
             )}
         </div>
@@ -527,11 +534,16 @@ const ArchiveView = () => {
         
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 pb-10">
             {displayRecords.map(item => {
-                // ⭐️ 음악 카테고리일 때 썸네일 UI 변경
-                if (item.category === '음악' && item.youtubeUrl) {
-                  const videoId = getYoutubeId(item.youtubeUrl);
-                  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : DEFAULT_IMAGE;
-                  
+                
+                const isMusic = item.category === '음악';
+                const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
+                const hasImage = item.image && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
+                
+                // ⭐️ 이미지가 없는 일반 텍스트 메모 기록인지 판별
+                const isTextOnly = !isMusic && !hasImage;
+                
+                if (isMusic) {
+                  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
                   return (
                     <div 
                       key={item.id} 
@@ -571,19 +583,48 @@ const ArchiveView = () => {
                   );
                 }
 
-                // 일반 카테고리의 기본 UI
+                // 일반 카테고리의 갤러리 뷰
                 return (
                   <div 
                     key={item.id} 
                     onClick={() => !isEditing && setSelectedRecord(item)}
-                    className={`group relative aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-100/50 bg-zinc-100 transition-all duration-500 ease-out transform ${!isEditing ? 'hover:scale-[1.04] hover:-translate-y-1 hover:shadow-2xl hover:z-10' : ''}`}
+                    className={`group relative aspect-[4/5] rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-100/50 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.04] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-200' : ''}`}
                   >
-                      <img 
-                          src={item.image?.trim() ? item.image : DEFAULT_IMAGE} 
-                          onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
-                          alt={item.title} 
-                          className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-110'}`} 
-                      />
+                      {/* ⭐️ 이미지가 없는 텍스트 전용 카드 (갤러리 뷰) */}
+                      {isTextOnly ? (
+                          <div className="w-full h-full bg-gradient-to-br from-indigo-50 via-white to-zinc-50 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+                              <Quote size={40} className="text-indigo-100 absolute top-4 left-4" />
+                              <div className="absolute top-4 left-4 px-2.5 py-1 bg-indigo-100/50 text-indigo-600 text-[10px] font-black rounded-md uppercase tracking-wider">{item.category}</div>
+                              <h3 className="text-lg font-black text-zinc-800 mb-2 mt-4 leading-tight group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                              {item.content && (
+                                <p className="text-xs font-medium text-zinc-500 line-clamp-4 leading-relaxed px-2">"{item.content}"</p>
+                              )}
+                          </div>
+                      ) : (
+                          // 일반 이미지 렌더링
+                          <>
+                            <div className="relative w-full flex-1 overflow-hidden bg-zinc-100">
+                                <img 
+                                    src={item.image} 
+                                    onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
+                                    alt={item.title} 
+                                    className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-110'}`} 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                                <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black rounded-lg shadow-sm uppercase tracking-wider">{item.category}</div>
+                            </div>
+                            <div className="p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100">
+                                <h4 className="text-sm font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
+                                {(item.tags || []).length > 0 && (
+                                  <div className="mt-1.5 flex flex-wrap gap-1.5 overflow-hidden h-4">
+                                    {item.tags.slice(0, 2).map(tag => (
+                                      <span key={tag} className="text-[10px] font-bold text-zinc-400 truncate max-w-[60px]">#{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
+                            </div>
+                          </>
+                      )}
 
                       {!item.isPublic && (
                         <div className="absolute top-3 right-3 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20">
@@ -598,42 +639,6 @@ const ArchiveView = () => {
                           >
                           <Trash2 size={16} />
                           </button>
-                      )}
-
-                      {!isEditing && (
-                          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 md:p-5">
-                              
-                              <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0 transition-all duration-500 delay-100">
-                                  <Sparkles size={14} />
-                              </div>
-
-                              <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
-                                  <h3 className="text-white text-lg md:text-xl font-black truncate drop-shadow-md mb-1.5">
-                                      {item.title}
-                                  </h3>
-                                  
-                                  <div className="flex items-center gap-1.5 text-zinc-300 text-xs font-medium mb-3">
-                                      <Calendar size={12} />
-                                      <span>{item.date}</span>
-                                  </div>
-                                  
-                                  <div className="flex flex-wrap gap-1.5 h-6 overflow-hidden">
-                                      <span className="px-2 py-0.5 bg-rose-500/80 text-white text-[10px] font-black rounded-md backdrop-blur-sm border border-rose-400/50">
-                                          {item.category}
-                                      </span>
-                                      {(item.tags || []).slice(0, 2).map(tag => (
-                                          <span key={tag} className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded-md backdrop-blur-sm border border-white/10 truncate max-w-[80px]">
-                                              #{tag}
-                                          </span>
-                                      ))}
-                                      {(item.tags || []).length > 2 && (
-                                          <span className="px-2 py-0.5 bg-white/10 text-zinc-300 text-[10px] font-bold rounded-md backdrop-blur-sm">
-                                              +{(item.tags || []).length - 2}
-                                          </span>
-                                      )}
-                                  </div>
-                              </div>
-                          </div>
                       )}
                   </div>
                 );
