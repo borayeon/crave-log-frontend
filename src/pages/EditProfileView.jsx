@@ -311,7 +311,7 @@ const EditProfileView = () => {
                                 </div>
                                 {/* ⭐️ 깃허브 링크 & 배포 링크 추가됨! */}
                                 <div className="flex items-center gap-2">
-                                    <GitHub size={16} className="text-zinc-400 shrink-0"/>
+                                    <Link size={16} className="text-zinc-400 shrink-0"/>
                                     <input 
                                         value={proj.githubUrl || ''} 
                                         onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
