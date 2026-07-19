@@ -40,7 +40,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   };
 
   useEffect(() => {
-    if (record && !isEditMode) {
+    if (record) {
       setIsEditMode(false);
     }
   }, [record]);
