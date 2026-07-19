@@ -3,7 +3,7 @@ import {
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
     ArrowRight, Heart, MessageSquare, Lock,
-    Github, ExternalLink
+    GitHub, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -292,7 +292,7 @@ const ProfileView = () => {
                                         <div className="flex gap-2 text-zinc-400">
                                             {proj.githubUrl && (
                                                 <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors" title="GitHub Repository">
-                                                    <Github size={18} />
+                                                    <GitHub size={18} />
                                                 </a>
                                             )}
                                             {proj.liveUrl && (
