@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
-    ArrowRight, Heart, MessageSquare, Lock 
+    ArrowRight, Heart, MessageSquare, Lock,
+    Github, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -216,42 +217,101 @@ const ProfileView = () => {
           ) : (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   
-                  {/* Developer Tab */}
-                  {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
-                      <div className="space-y-6">
-                          <div className="bg-zinc-900 text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800">
-                              <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-6">
-                                  <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
-                              </p>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div className="bg-zinc-800/50 p-5 rounded-2xl border border-zinc-700/50">
-                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
-                                      <ul className="space-y-2 text-sm font-mono">
-                                          <li><span className="text-indigo-400">Backend:</span> {user.developer?.techStack?.backend}</li>
-                                          <li><span className="text-indigo-400">Database:</span> {user.developer?.techStack?.db}</li>
-                                          <li><span className="text-rose-400">Frontend:</span> {user.developer?.techStack?.frontend}</li>
-                                          <li><span className="text-yellow-400">Tools:</span> {user.developer?.techStack?.tools}</li>
-                                      </ul>
-                                  </div>
-                                  <div className="bg-zinc-800/50 p-5 rounded-2xl border border-zinc-700/50">
-                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Currently Learning</h4>
-                                      <div className="flex flex-wrap gap-2">
-                                          {(user.developer?.learning || []).map(l => <span key={l} className="px-2.5 py-1 bg-zinc-950 border border-zinc-700 rounded-md text-xs font-bold font-mono">{l}</span>)}
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
+{/* Developer Tab */}
+            {activeTab === 'developer' && (
+                <div className="space-y-6">
+                    {/* 상단 About Me & Tech Stack */}
+                    <div className="bg-[#0D1117] text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800 relative overflow-hidden">
+                        {/* 장식용 터미널 버튼 */}
+                        <div className="absolute top-4 left-4 flex gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                        </div>
+                        
+                        <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-8 mt-4">
+                            <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* ⭐️ 기술 스택 뱃지형 렌더링 */}
+                            <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <Code size={14}/> Tech Stack
+                                </h4>
+                                <div className="space-y-4 text-sm font-mono">
+                                    {['backend', 'db', 'frontend', 'tools'].map(type => {
+                                        const stackString = user.developer?.techStack?.[type];
+                                        if (!stackString) return null;
+                                        return (
+                                            <div key={type}>
+                                                <span className={`text-[10px] uppercase font-bold mr-2 ${type === 'backend' ? 'text-indigo-400' : type === 'db' ? 'text-emerald-400' : type === 'frontend' ? 'text-rose-400' : 'text-yellow-400'}`}>
+                                                    {type}:
+                                                </span>
+                                                <div className="inline-flex flex-wrap gap-1.5 align-middle mt-1">
+                                                    {stackString.split(',').map((tech, i) => (
+                                                        <span key={i} className="px-2 py-0.5 bg-[#21262D] border border-zinc-700 rounded text-xs font-medium text-zinc-200 hover:border-zinc-500 transition-colors cursor-default">
+                                                            {tech.trim()}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                            
+                            <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <Rocket size={14}/> Currently Learning
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {(user.developer?.learning || []).map(l => (
+                                        <span key={l} className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-bold font-mono">
+                                            {l}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {(user.developer?.projects || []).map((proj, idx) => (
-                                  <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm flex flex-col justify-center">
-                                      <h4 className="text-lg font-black text-zinc-900 mb-2">{proj.name}</h4>
-                                      <p className="text-sm text-zinc-500 font-medium">{proj.desc}</p>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                  )}
+                    {/* ⭐️ 프로젝트 카드 업데이트 */}
+                    <div>
+                        <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2">
+                            <Folder size={20} className="text-indigo-500" /> Featured Projects
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {(user.developer?.projects || []).map((proj, idx) => (
+                                <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col group">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h4 className="text-xl font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                                            {proj.name}
+                                        </h4>
+                                        {/* 프로젝트 링크 아이콘 */}
+                                        <div className="flex gap-2 text-zinc-400">
+                                            {proj.githubUrl && (
+                                                <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors" title="GitHub Repository">
+                                                    <Github size={18} />
+                                                </a>
+                                            )}
+                                            {proj.liveUrl && (
+                                                <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors" title="Live Preview">
+                                                    <ExternalLink size={18} />
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-zinc-500 font-medium leading-relaxed flex-1">
+                                        {proj.desc}
+                                    </p>
+                                    {/* (옵션) 사용 스택을 프로젝트별로 달았다면 여기에 렌더링 가능 */}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
                   {/* Career Tab */}
                   {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (

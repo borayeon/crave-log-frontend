@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign } from 'lucide-react'; // ⭐️ AtSign 아이콘 추가
+import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, Github, ExternalLink } from 'lucide-react'; // ⭐️ Github, ExternalLink 아이콘 추가
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
@@ -22,7 +22,6 @@ const EditProfileView = () => {
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  // 이미지 입력 방식 상태 ('file' or 'url')
   const [imageInputType, setImageInputType] = useState('file');
 
   const updateNested = (path, value) => {
@@ -38,7 +37,6 @@ const EditProfileView = () => {
     });
   };
 
-  // 파일 업로드 처리 핸들러 (PC 파일 -> Base64 변환)
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -51,7 +49,6 @@ const EditProfileView = () => {
   };
 
   const handleSave = async () => {
-    // ⭐️ 필수 값 및 고유 아이디 유효성 검사 추가
     if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
     if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
     
@@ -60,7 +57,6 @@ const EditProfileView = () => {
     }
 
     try {
-      // ⭐️ 엔드포인트 확인: 만약 이전처럼 /me 였다면 /me 로 변경해주세요.
       const res = await apiFetch(`/me/profile`, {
         method: 'PUT',
         body: JSON.stringify(formData)
@@ -71,7 +67,6 @@ const EditProfileView = () => {
         setViewMode('profile');
         showToast("성공적으로 저장되었습니다! 🎉 이제 갤러리도 채워보세요.");
       } else {
-        // ⭐️ 백엔드에서 던진 에러 메시지(중복 아이디 등) 띄우기
         const data = await res.json();
         showToast(data.message || "프로필 저장에 실패했습니다.");
       }
@@ -179,7 +174,7 @@ const EditProfileView = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
             {renderInput("이름", ["name"], "예: 홍길동")}
             
-            {/* ⭐️ 고유 아이디 입력 칸 (아이콘 적용을 위해 별도 구성) */}
+            {/* 고유 아이디 입력 칸 */}
             <div>
               <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">고유 아이디 (URL 및 검색용)</label>
               <div className="relative mt-2">
@@ -237,7 +232,6 @@ const EditProfileView = () => {
                                 </span>
                             </div>
                         ) : (
-                            // 기존 URL 입력 방식
                             <input 
                                 type="text" 
                                 placeholder="https://..." 
@@ -284,15 +278,67 @@ const EditProfileView = () => {
             {renderArrayTextarea("Currently Learning (학습 중인 기술)", ["developer", "learning"])}
             
             <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
-                <h3 className="font-black text-zinc-800">Projects</h3>
-                {(formData.developer?.projects || []).map((proj, idx) => (
-                    <div key={idx} className="flex gap-2">
-                        <input value={proj.name} onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} className="w-1/3 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold outline-none" placeholder="프로젝트명" />
-                        <input value={proj.desc} onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} className="flex-1 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="설명" />
-                        <button onClick={()=>{const arr=[...(formData.developer?.projects||[])]; arr.splice(idx,1); updateNested(["developer","projects"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={18}/></button>
-                    </div>
-                ))}
-                <button onClick={()=>{const arr=[...(formData.developer?.projects||[]), {name:"", desc:""}]; updateNested(["developer","projects"], arr);}} className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl">+ 프로젝트 추가</button>
+                <h3 className="font-black text-zinc-800">Featured Projects</h3>
+                <p className="text-[10px] text-zinc-500 font-medium -mt-3 mb-4">대표 프로젝트를 등록하고 링크를 연결해 포트폴리오를 완성하세요.</p>
+                
+                <div className="space-y-4">
+                    {(formData.developer?.projects || []).map((proj, idx) => (
+                        <div key={idx} className="bg-white p-4 rounded-xl border border-zinc-200 shadow-sm relative">
+                            {/* ⭐️ 삭제 버튼 */}
+                            <button 
+                                onClick={()=>{const arr=[...(formData.developer?.projects||[])]; arr.splice(idx,1); updateNested(["developer","projects"], arr);}} 
+                                className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
+                            >
+                                <Trash2 size={16}/>
+                            </button>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-8">
+                                {/* ⭐️ 프로젝트명 & 설명 */}
+                                <div className="md:col-span-2 space-y-3">
+                                    <input 
+                                        value={proj.name} 
+                                        onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black outline-none focus:border-indigo-400" 
+                                        placeholder="프로젝트 이름 (예: CraveLog 아카이빙 플랫폼)" 
+                                    />
+                                    <textarea 
+                                        value={proj.desc} 
+                                        onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-medium outline-none resize-none focus:border-indigo-400" 
+                                        placeholder="프로젝트 한 줄 설명 및 담당 역할" 
+                                        rows={2}
+                                    />
+                                </div>
+                                {/* ⭐️ 깃허브 링크 & 배포 링크 추가됨! */}
+                                <div className="flex items-center gap-2">
+                                    <Github size={16} className="text-zinc-400 shrink-0"/>
+                                    <input 
+                                        value={proj.githubUrl || ''} 
+                                        onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-indigo-400" 
+                                        placeholder="GitHub URL (선택)" 
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <ExternalLink size={16} className="text-indigo-400 shrink-0"/>
+                                    <input 
+                                        value={proj.liveUrl || ''} 
+                                        onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].liveUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-indigo-400" 
+                                        placeholder="배포된 라이브 링크 (선택)" 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {/* ⭐️ 빈 프로젝트 생성 시 링크 필드 포함 */}
+                <button 
+                    onClick={()=>{const arr=[...(formData.developer?.projects||[]), {name:"", desc:"", githubUrl:"", liveUrl:""}]; updateNested(["developer","projects"], arr);}} 
+                    className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center w-full md:w-auto mt-2"
+                >
+                    + 새 프로젝트 추가
+                </button>
             </div>
           </div>
         )}
@@ -352,6 +398,39 @@ const EditProfileView = () => {
                 <button onClick={()=>{const arr=[...(formData.idol?.qna||[]), {q:"", a:""}]; updateNested(["idol","qna"], arr);}} className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl">+ 문답 추가</button>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* ⭐️ Danger Zone 복구 완료 */}
+      <div className="bg-rose-50 border border-rose-200 p-8 rounded-[2rem] mt-8 animate-in fade-in relative overflow-hidden">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <h3 className="text-lg font-black text-rose-600 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h3>
+                <p className="text-sm font-medium text-rose-700/80 mt-2">
+                    계정을 삭제하면 모든 프로필 정보와 기록이 영구적으로 삭제되며 복구할 수 없습니다.
+                </p>
+            </div>
+            <button 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="shrink-0 px-6 py-3 bg-white text-rose-600 border border-rose-200 rounded-xl font-bold hover:bg-rose-600 hover:text-white transition-colors"
+            >
+                계정 삭제
+            </button>
+        </div>
+
+        {showDeleteConfirm && (
+            <div className="absolute inset-0 bg-rose-50/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center border border-rose-300 rounded-[2rem]">
+                <h4 className="text-xl font-black text-rose-900 mb-2">정말 삭제하시겠습니까?</h4>
+                <p className="text-sm font-medium text-rose-700 mb-6">모든 데이터가 즉시 파기됩니다.</p>
+                <div className="flex gap-3">
+                    <button onClick={() => setShowDeleteConfirm(false)} className="px-5 py-2.5 bg-white text-zinc-600 rounded-xl font-bold shadow-sm border border-zinc-200 hover:bg-zinc-50">
+                        취소하기
+                    </button>
+                    <button onClick={handleDeleteAccount} className="px-5 py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700">
+                        영구 삭제
+                    </button>
+                </div>
+            </div>
         )}
       </div>
     </div>
