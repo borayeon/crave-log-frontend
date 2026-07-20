@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, Link, ExternalLink } from 'lucide-react'; // ⭐️ Github, ExternalLink 아이콘 추가
+import { Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, Link, ExternalLink, Loader2 } from 'lucide-react'; // ⭐️ Github, ExternalLink 아이콘 추가
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
@@ -23,6 +23,7 @@ const EditProfileView = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const [imageInputType, setImageInputType] = useState('file');
+  const [isLoading, setIsLoading] = useState(false);
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -48,13 +49,16 @@ const EditProfileView = () => {
     }
   };
 
-  const handleSave = async () => {
+const handleSave = async () => {
     if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
     if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
     
     if (!/^[a-z0-9.]+$/.test(formData.handle)) {
         return showToast('아이디는 영문 소문자, 숫자, 마침표(.)만 가능합니다.');
     }
+
+    // ⭐️ 시작할 때 버튼 잠금 & 로딩 표시
+    setIsLoading(true);
 
     try {
       const res = await apiFetch(`/me/profile`, {
@@ -73,6 +77,9 @@ const EditProfileView = () => {
     } catch (e) {
       console.error(e);
       showToast("서버 연결에 실패했습니다.");
+    } finally {
+      // ⭐️ 성공하든 실패하든 끝날 때 로딩 해제 (매우 중요)
+      setIsLoading(false);
     }
   };
 
@@ -115,7 +122,7 @@ const EditProfileView = () => {
     );
   };
 
-  return (
+return (
     <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
       <header className="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
@@ -126,8 +133,17 @@ const EditProfileView = () => {
           <button onClick={() => setViewMode('profile')} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm">
              취소
           </button>
-          <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
-            <Save size={16} /> 저장하기
+          
+          {/* ⭐️ 변경: 로딩 중일 때 비활성화 및 텍스트/아이콘 변경 */}
+          <button 
+            onClick={handleSave} 
+            disabled={isLoading}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm flex items-center gap-2 ${
+                isLoading ? 'bg-indigo-400 text-white/80 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+          >
+            {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+            {isLoading ? '저장 중...' : '저장하기'}
           </button>
         </div>
       </header>
@@ -316,7 +332,7 @@ const EditProfileView = () => {
                                         value={proj.githubUrl || ''} 
                                         onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
                                         className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-indigo-400" 
-                                        placeholder="GitHub URL (선택)" 
+                                        placeholder="URL (선택)" 
                                     />
                                 </div>
                                 <div className="flex items-center gap-2">

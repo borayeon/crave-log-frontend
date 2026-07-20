@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -25,7 +25,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [isPublic, setIsPublic] = useState(true);
   const [isTagExpanded, setIsTagExpanded] = useState(true);
   const [imageInputType, setImageInputType] = useState('file');
-
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAppStore(); 
 
   const handleImageUpload = (e) => {
@@ -76,7 +76,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
       showToast('제목과 카테고리는 필수 입력 사항입니다.');
       return;
     }
-
+    setIsLoading(true);
     try {
       const selectedCategory = tagTree.find(c => String(c.id) === String(categoryId));
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
@@ -109,6 +109,9 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     } catch (e) {
       console.error(e);
       showToast('서버 연결 중 오류가 발생했습니다.');
+    } finally {
+        // ⭐️ 종료 시 로딩 해제
+        setIsLoading(false);
     }
   };
 
@@ -379,7 +382,17 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                  <div className="p-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
                     <div className="flex gap-2">
                         <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-lg font-bold text-sm hover:bg-zinc-800 transition">취소</button>
-                        <button onClick={handleSave} className="flex-1 py-2.5 bg-zinc-100 text-zinc-900 rounded-lg font-black text-sm hover:bg-white transition flex items-center justify-center gap-2">저장 완료</button>
+                        {/* ⭐️ 변경: 로딩 중일 때 비활성화 및 텍스트/아이콘 변경 */}
+                        <button 
+                            onClick={handleSave} 
+                            disabled={isLoading}
+                            className={`flex-1 py-2.5 rounded-lg font-black text-sm transition flex items-center justify-center gap-2 ${
+                                isLoading ? 'bg-zinc-400 text-zinc-800 cursor-not-allowed' : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                            }`}
+                        >
+                            {isLoading && <Loader2 size={16} className="animate-spin" />}
+                            {isLoading ? '저장 중...' : '저장 완료'}
+                        </button>
                     </div>
                  </div>
             ) : (

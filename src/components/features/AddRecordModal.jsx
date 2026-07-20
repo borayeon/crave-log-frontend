@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock, PlayCircle, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock, PlayCircle, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const AddRecordModal = () => {
@@ -13,6 +13,7 @@ const AddRecordModal = () => {
   const [content, setContent] = useState(''); 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isPublic, setIsPublic] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isTagExpanded, setIsTagExpanded] = useState(false);
   const [imageInputType, setImageInputType] = useState('file');
@@ -45,6 +46,8 @@ const AddRecordModal = () => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !categoryId) { showToast('제목과 카테고리는 필수 입력 사항입니다.'); return; }
+    setIsLoading(true);
+    
     try {
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
       const payload = {
@@ -52,7 +55,7 @@ const AddRecordModal = () => {
         categoryName: selectedCategory?.name || '분류 없음', 
         recordDate: date.replace(/-/g, '.'),
         imageUrl: imageUrl || (selectedCategory?.name !== '음악' ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop' : ''),
-        youtubeUrl: selectedCategory?.name === '음악' ? youtubeUrl.trim() : '', // ⭐️ '음악' 카테고리일 때만 유튜브 URL 전송
+        youtubeUrl: selectedCategory?.name === '음악' ? youtubeUrl.trim() : '',
         content: content.trim(),
         isPublic: isPublic, 
         tagIds: numericTagIds
@@ -66,7 +69,12 @@ const AddRecordModal = () => {
         setTitle(''); setCategoryId(''); setTagIds([]); setImageUrl(''); setYoutubeUrl(''); setContent(''); setIsPublic(true);
       }
       else showToast('기록 추가에 실패했습니다.');
-    } catch (e) { console.error(e); showToast('서버 연동 중 오류가 발생했습니다.'); }
+    } catch (e) { 
+        console.error(e); showToast('서버 연동 중 오류가 발생했습니다.'); 
+    } finally {
+        // ⭐️ 종료 시 로딩 해제
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -202,7 +210,16 @@ const AddRecordModal = () => {
                     </button>
                   </div>
                 </div>
-                <button onClick={handleSubmit} className="w-full mt-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm transition duration-300 shadow-md flex items-center justify-center gap-2"><Plus size={18} /> 보관함에 기록 저장하기</button>
+          <button 
+            onClick={handleSubmit} 
+            disabled={isLoading}
+            className={`w-full mt-8 py-4 rounded-xl font-black text-sm transition duration-300 shadow-md flex items-center justify-center gap-2 ${
+                isLoading ? 'bg-indigo-400 text-white/80 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            }`}
+        >
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />} 
+            {isLoading ? '처리 중...' : '보관함에 기록 저장하기'}
+        </button>
             </>
         )}
       </div>
