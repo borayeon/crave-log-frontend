@@ -13,14 +13,14 @@ const TopNavBar = () => {
   // 모바일 검색창 팝업 상태 관리
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
-  const titleMap = { 
-    profile: '인덱스 (Index)', 
-    edit_profile: '프로필 설정 (Set Profile)', 
-    archive: '취향 보관함 (Taste Archive)', 
-    timeline: '발자취 (Timeline)', 
-    search: '검색 결과 (Search)',
-    account_settings: '계정 설정 (Settings)' // ⭐️ 추가
-  };
+const titleMap = {
+  profile: '프로필 (Profile)',
+  edit_profile: '프로필 설정 (Set Profile)',
+  archive: '컬렉션 (Collection)',
+  timeline: '타임라인 (Timeline)',
+  search: '검색 결과 (Search)',
+  account_settings: '계정 설정 (Settings)'
+};
 
   const handleSearchSubmit = () => {
     searchUsers(searchQuery);
@@ -54,11 +54,46 @@ const TopNavBar = () => {
       )}
 
       {/* 기본 네비게이션 좌측 (로고 및 타이틀) */}
-      <div className="flex items-center gap-3 shrink-0">
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hidden md:flex w-9 h-9 rounded-xl bg-zinc-50 items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"><Menu size={18} /></button>
-        <div className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600"><Sparkles size={14} /></div>
-        <h2 className="text-sm font-black text-zinc-800 tracking-tight flex items-center gap-2"><span className="hidden md:inline text-zinc-400">CraveLog / </span>{titleMap[viewMode] || '검색'}</h2>
-      </div>
+<div className="flex items-center gap-3 shrink-0">
+  <button
+    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+    className="hidden md:flex w-9 h-9 rounded-xl bg-zinc-50 items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"
+  >
+    <Menu size={18} />
+  </button>
+
+  <button
+    onClick={() => {
+      if (visitedHandle) {
+        resetToMyProfile();
+      } else {
+        setViewMode('profile');
+      }
+    }}
+    className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors"
+  >
+    <Sparkles size={14} />
+  </button>
+
+  <h2 className="text-sm font-black text-zinc-800 tracking-tight flex items-center gap-2">
+    <button
+      onClick={() => {
+        if (visitedHandle) {
+          resetToMyProfile();
+        } else {
+          setViewMode('profile');
+        }
+      }}
+      className="hidden md:inline text-zinc-400 hover:text-indigo-600 transition-colors"
+    >
+      CraveLog
+    </button>
+
+    <span className="hidden md:inline text-zinc-300">/</span>
+
+    {titleMap[viewMode] || '검색'}
+  </h2>
+</div>
       
       {/* 우측 아이콘 메뉴들 */}
       <div className="flex items-center justify-end gap-2 md:gap-3 flex-1">

@@ -4,32 +4,35 @@ import { useAppStore } from '../../store/AppStore';
 
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen } = useAppStore();
+  
+  // ⭐️ 1. 명칭 직관적으로 변경
   const navItems = [
-    { id: 'profile', icon: <User size={20} />, label: '인덱스', desc: '나의 프로필' },
-    { id: 'archive', icon: <Network size={20} />, label: '취향 보관함', desc: '내가 좋아하는 것들' },
-    { id: 'timeline', icon: <History size={20} />, label: '발자취', desc: '시간순 기록' },
+    { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
+    { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
+    { id: 'timeline', icon: <History size={20} />, label: '타임라인', desc: '시간순 기록장' },
   ];
 
   return (
     <>
-      {/* 1. 레이아웃 스페이서: 메인 콘텐츠가 밀리지 않게 자리만 잡아주는 투명한 박스 */}
       <div className={`hidden md:block shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-72' : 'w-20'}`} />
 
-      {/* 2. 실제 사이드바 (고정(Fixed)되어 마우스 오버 시 메인 콘텐츠 위로 부드럽게 튀어나옴) */}
       <aside 
         className={`hidden md:flex flex-col h-full bg-[#F8FAFC] border-r border-zinc-200/60 text-zinc-600 fixed left-0 top-0 bottom-0 z-[60] transition-all duration-300 group overflow-hidden ${
           isSidebarOpen ? 'w-72' : 'w-20 hover:w-72 hover:shadow-2xl'
         }`}
       >
-        {/* 내부 컨텐츠의 너비를 72(288px)로 고정하여 글씨가 찌그러지지 않게 방어 */}
         <div className="w-72 flex flex-col h-full">
           
-          {/* Logo Area */}
-          <div className="h-20 flex items-center px-5 gap-3 mt-2 shrink-0">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-white text-indigo-600 border border-zinc-200 shrink-0">
-              <Sparkles size={18} />
+          {/* ⭐️ 2. 로고 영역을 버튼처럼 클릭 가능하게 변경 (홈으로 이동) */}
+          <div 
+            onClick={() => setViewMode('profile')}
+            className="h-20 flex items-center px-5 gap-3 mt-2 shrink-0 cursor-pointer group/logo"
+            title="홈으로 가기"
+          >
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-white text-indigo-600 border border-zinc-200 shrink-0 group-hover/logo:bg-indigo-50 transition-colors">
+              <Sparkles size={18} className="group-hover/logo:scale-110 transition-transform" />
             </div>
-            <h1 className={`text-xl font-black tracking-tight text-zinc-900 transition-opacity duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            <h1 className={`text-xl font-black tracking-tight text-zinc-900 transition-all duration-300 whitespace-nowrap group-hover/logo:text-indigo-600 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               CraveLog.
             </h1>
           </div>
