@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
-    ArrowRight, Heart, MessageSquare, Lock,
-    ExternalLink
+    ArrowRight, Heart, MessageSquare, Lock, 
+    ExternalLink, Folder // ⭐️ 마지막에 Folder 추가!
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
