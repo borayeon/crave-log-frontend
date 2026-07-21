@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, Github, ExternalLink, Loader2,
-  Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon
+  Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
+  Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
+  Terminal // ⭐️ Github 대신 Terminal 아이콘을 사용합니다!
 } from 'lucide-react'; 
 import { useAppStore } from '../store/AppStore';
 
@@ -27,7 +28,7 @@ const EditProfileView = () => {
   const [imageInputType, setImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
 
-  // ⭐️ 미리보기 모달 상태
+  // 미리보기 모달 상태
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
 
@@ -152,7 +153,6 @@ const EditProfileView = () => {
             <button onClick={() => setViewMode('profile')} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm">
               취소
             </button>
-            {/* ⭐️ 미리보기 버튼 추가 */}
             <button onClick={() => setShowPreview(true)} className="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-xl text-sm font-bold hover:bg-zinc-200 transition shadow-sm flex items-center gap-1.5 border border-zinc-200">
               <Eye size={16} /> 미리보기
             </button>
@@ -343,12 +343,13 @@ const EditProfileView = () => {
                                       />
                                   </div>
                                   <div className="flex items-center gap-2">
-                                      <Github size={16} className="text-zinc-400 shrink-0"/>
+                                      {/* ⭐️ Github 대신 Terminal 사용 */}
+                                      <Terminal size={16} className="text-zinc-400 shrink-0"/>
                                       <input 
                                           value={proj.githubUrl || ''} 
                                           onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
                                           className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-indigo-400" 
-                                          placeholder="GitHub URL (선택)" 
+                                          placeholder="저장소 URL (선택)" 
                                       />
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -466,12 +467,11 @@ const EditProfileView = () => {
         </div>
       </div>
 
-      {/* ⭐️ 미리보기 모달 전체 렌더링 영역 */}
+      {/* 미리보기 모달 */}
       {showPreview && (
         <div className="fixed inset-0 bg-zinc-950/80 z-[200] overflow-y-auto p-4 md:p-10 flex flex-col items-center animate-in fade-in backdrop-blur-sm">
           <div className="w-full max-w-5xl bg-[#F8FAFC] rounded-[2rem] shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
             
-            {/* 상단 닫기/저장 액션바 */}
             <div className="bg-white px-6 py-4 flex justify-between items-center border-b border-zinc-200 sticky top-0 z-50">
               <h3 className="font-black text-lg text-zinc-800 flex items-center gap-2">
                 <Eye size={20} className="text-indigo-500" />
@@ -488,9 +488,7 @@ const EditProfileView = () => {
               </div>
             </div>
 
-            {/* 렌더링 본문 (ProfileView UI 기반) */}
             <div className="p-6 md:p-10 flex-1 overflow-y-auto">
-              {/* Top SNS Profile Area */}
               <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8 items-center md:items-start mb-6 relative overflow-hidden">
                   <div className={`shrink-0 text-center`}>
                       <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
@@ -582,7 +580,7 @@ const EditProfileView = () => {
                                         </div>
                                     </div>
                                     <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
-                                        <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Rocket size={14}/> Currently Learning</h4>
+                                        <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Code size={14}/> Currently Learning</h4>
                                         <div className="flex flex-wrap gap-2">
                                             {(formData.developer?.learning || []).map(l => (
                                                 <span key={l} className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-bold font-mono">{l}</span>
@@ -592,14 +590,14 @@ const EditProfileView = () => {
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2"><Folder size={20} className="text-indigo-500" /> Featured Projects</h3>
+                                <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2"><Code size={20} className="text-indigo-500" /> Featured Projects</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {(formData.developer?.projects || []).map((proj, idx) => (
                                         <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col group">
                                             <div className="flex justify-between items-start mb-3">
                                                 <h4 className="text-xl font-black text-zinc-900">{proj.name}</h4>
                                                 <div className="flex gap-2 text-zinc-400">
-                                                    {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors"><Github size={18} /></a>}
+                                                    {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors"><Terminal size={18} /></a>}
                                                     {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors"><ExternalLink size={18} /></a>}
                                                 </div>
                                             </div>

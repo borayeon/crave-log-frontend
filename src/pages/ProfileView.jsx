@@ -3,7 +3,7 @@ import {
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
     ArrowRight, Heart, MessageSquare, Lock, 
-    ExternalLink, Folder // ⭐️ 마지막에 Folder 추가!
+    ExternalLink, Terminal // ⭐️ Github 대신 Terminal 아이콘 사용!
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -25,7 +25,7 @@ const ProfileView = () => {
     localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
   }, [tabOrder]);
   
-// ⭐️ 공유하기 버튼 클릭 시 클립보드 복사 로직
+  // 공유하기 버튼 클릭 시 클립보드 복사 로직
   const handleShare = () => {
     // window.location.origin은 현재 사이트 주소(예: https://cravelog.me 또는 localhost:5173)를 자동으로 가져옵니다.
     const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user.handle}`;
@@ -61,7 +61,7 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, user.privacy, availableTabs]);
 
-  // ⭐️ 드래그 앤 드롭 핸들러들
+  // 드래그 앤 드롭 핸들러들
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
     e.dataTransfer.effectAllowed = 'move';
@@ -118,7 +118,6 @@ const ProfileView = () => {
         </div>
       </header>
 
-      {}
       {/* Top SNS Profile Area */}
       <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8 items-center md:items-start mb-6 relative overflow-hidden">
         {isProfileEmpty && !isAdmin && (
@@ -135,7 +134,7 @@ const ProfileView = () => {
         <div className={`shrink-0 text-center ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
             <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
                 <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden">
-                    {/* ⭐️ 프로필 사진 렌더링 로직 반영 */}
+                    {/* 프로필 사진 렌더링 로직 반영 */}
                     {user.profileImageUrl ? (
                         <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -177,10 +176,9 @@ const ProfileView = () => {
         </div>
       </div>
 
-      {}
       {!isProfileEmpty && (
         <>
-          {/* Detail Tabs (⭐️ div 태그와 커서 설정 변경) */}
+          {/* Detail Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
             {availableTabs.map(tab => (
                 <div 
@@ -203,7 +201,6 @@ const ProfileView = () => {
             ))}
           </div>
 
-          {}
           {/* Tab Contents */}
           {availableTabs.length === 0 && isGuest ? (
               // 모든 정보가 비공개일 때 빈 화면 렌더링
@@ -217,101 +214,98 @@ const ProfileView = () => {
           ) : (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   
-{/* Developer Tab */}
-            {activeTab === 'developer' && (
-                <div className="space-y-6">
-                    {/* 상단 About Me & Tech Stack */}
-                    <div className="bg-[#0D1117] text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800 relative overflow-hidden">
-                        {/* 장식용 터미널 버튼 */}
-                        <div className="absolute top-4 left-4 flex gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                        </div>
-                        
-                        <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-8 mt-4">
-                            <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
-                        </p>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* ⭐️ 기술 스택 뱃지형 렌더링 */}
-                            <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <Code size={14}/> Tech Stack
-                                </h4>
-                                <div className="space-y-4 text-sm font-mono">
-                                    {['backend', 'db', 'frontend', 'tools'].map(type => {
-                                        const stackString = user.developer?.techStack?.[type];
-                                        if (!stackString) return null;
-                                        return (
-                                            <div key={type}>
-                                                <span className={`text-[10px] uppercase font-bold mr-2 ${type === 'backend' ? 'text-indigo-400' : type === 'db' ? 'text-emerald-400' : type === 'frontend' ? 'text-rose-400' : 'text-yellow-400'}`}>
-                                                    {type}:
-                                                </span>
-                                                <div className="inline-flex flex-wrap gap-1.5 align-middle mt-1">
-                                                    {stackString.split(',').map((tech, i) => (
-                                                        <span key={i} className="px-2 py-0.5 bg-[#21262D] border border-zinc-700 rounded text-xs font-medium text-zinc-200 hover:border-zinc-500 transition-colors cursor-default">
-                                                            {tech.trim()}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                            
-                            <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <Rocket size={14}/> Currently Learning
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {(user.developer?.learning || []).map(l => (
-                                        <span key={l} className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-bold font-mono">
-                                            {l}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                  {/* Developer Tab */}
+                  {activeTab === 'developer' && (
+                      <div className="space-y-6">
+                          {/* 상단 About Me & Tech Stack */}
+                          <div className="bg-[#0D1117] text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800 relative overflow-hidden">
+                              <div className="absolute top-4 left-4 flex gap-1.5">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                              </div>
+                              
+                              <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-8 mt-4">
+                                  <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
+                              </p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                          <Code size={14}/> Tech Stack
+                                      </h4>
+                                      <div className="space-y-4 text-sm font-mono">
+                                          {['backend', 'db', 'frontend', 'tools'].map(type => {
+                                              const stackString = user.developer?.techStack?.[type];
+                                              if (!stackString) return null;
+                                              return (
+                                                  <div key={type}>
+                                                      <span className={`text-[10px] uppercase font-bold mr-2 ${type === 'backend' ? 'text-indigo-400' : type === 'db' ? 'text-emerald-400' : type === 'frontend' ? 'text-rose-400' : 'text-yellow-400'}`}>
+                                                          {type}:
+                                                      </span>
+                                                      <div className="inline-flex flex-wrap gap-1.5 align-middle mt-1">
+                                                          {stackString.split(',').map((tech, i) => (
+                                                              <span key={i} className="px-2 py-0.5 bg-[#21262D] border border-zinc-700 rounded text-xs font-medium text-zinc-200 hover:border-zinc-500 transition-colors cursor-default">
+                                                                  {tech.trim()}
+                                                              </span>
+                                                          ))}
+                                                      </div>
+                                                  </div>
+                                              )
+                                          })}
+                                      </div>
+                                  </div>
+                                  
+                                  <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                          <Code size={14}/> Currently Learning
+                                      </h4>
+                                      <div className="flex flex-wrap gap-2">
+                                          {(user.developer?.learning || []).map(l => (
+                                              <span key={l} className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-bold font-mono">
+                                                  {l}
+                                              </span>
+                                          ))}
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
 
-                    {/* ⭐️ 프로젝트 카드 업데이트 */}
-                    <div>
-                        <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2">
-                            <Folder size={20} className="text-indigo-500" /> Featured Projects
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(user.developer?.projects || []).map((proj, idx) => (
-                                <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col group">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <h4 className="text-xl font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
-                                            {proj.name}
-                                        </h4>
-                                        {/* 프로젝트 링크 아이콘 */}
-                                        <div className="flex gap-2 text-zinc-400">
-                                            {proj.githubUrl && (
-                                                <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors" title="GitHub Repository">
-                                                    <Link size={18} />
-                                                </a>
-                                            )}
-                                            {proj.liveUrl && (
-                                                <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors" title="Live Preview">
-                                                    <ExternalLink size={18} />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-zinc-500 font-medium leading-relaxed flex-1">
-                                        {proj.desc}
-                                    </p>
-                                    {/* (옵션) 사용 스택을 프로젝트별로 달았다면 여기에 렌더링 가능 */}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+                          {/* 프로젝트 카드 업데이트 */}
+                          <div>
+                              <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2">
+                                  <Code size={20} className="text-indigo-500" /> Featured Projects
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {(user.developer?.projects || []).map((proj, idx) => (
+                                      <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col group">
+                                          <div className="flex justify-between items-start mb-3">
+                                              <h4 className="text-xl font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                                                  {proj.name}
+                                              </h4>
+                                              {/* ⭐️ 프로젝트 링크 아이콘 (Terminal 사용) */}
+                                              <div className="flex gap-2 text-zinc-400">
+                                                  {proj.githubUrl && (
+                                                      <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors" title="Repository">
+                                                          <Terminal size={18} />
+                                                      </a>
+                                                  )}
+                                                  {proj.liveUrl && (
+                                                      <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors" title="Live Preview">
+                                                          <ExternalLink size={18} />
+                                                      </a>
+                                                  )}
+                                              </div>
+                                          </div>
+                                          <p className="text-sm text-zinc-500 font-medium leading-relaxed flex-1">
+                                              {proj.desc}
+                                          </p>
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      </div>
+                  )}
 
                   {/* Career Tab */}
                   {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (
