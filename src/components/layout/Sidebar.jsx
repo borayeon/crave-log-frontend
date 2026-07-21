@@ -3,7 +3,7 @@ import { User, Network, History, Sparkles, Rocket } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const Sidebar = () => {
-  const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen } = useAppStore();
+  const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
   // ⭐️ 1. 명칭 직관적으로 변경
   const navItems = [
@@ -25,7 +25,10 @@ const Sidebar = () => {
           
           {/* ⭐️ 2. 로고 영역을 버튼처럼 클릭 가능하게 변경 (홈으로 이동) */}
           <div 
-            onClick={() => setViewMode('profile')}
+            onClick={() => {
+              if (visitedHandle) resetToMyProfile();
+              setViewMode('profile');
+            }}
             className="h-20 flex items-center px-5 gap-3 mt-2 shrink-0 cursor-pointer group/logo"
             title="홈으로 가기"
           >

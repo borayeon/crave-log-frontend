@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings } from 'lucide-react'; // ⭐️ Settings 추가
+import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const TopNavBar = () => {
@@ -13,14 +13,15 @@ const TopNavBar = () => {
   // 모바일 검색창 팝업 상태 관리
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
-const titleMap = {
-  profile: '프로필 (Profile)',
-  edit_profile: '프로필 설정 (Set Profile)',
-  archive: '컬렉션 (Collection)',
-  timeline: '타임라인 (Timeline)',
-  search: '검색 결과 (Search)',
-  account_settings: '계정 설정 (Settings)'
-};
+  // ⭐️ 1. 직관적으로 바뀐 명칭 적용
+  const titleMap = { 
+    profile: '프로필 (Profile)', 
+    edit_profile: '프로필 설정 (Set Profile)', 
+    archive: '컬렉션 (Collection)', 
+    timeline: '타임라인 (Timeline)', 
+    search: '검색 결과 (Search)',
+    account_settings: '계정 설정 (Settings)'
+  };
 
   const handleSearchSubmit = () => {
     searchUsers(searchQuery);
@@ -54,46 +55,29 @@ const titleMap = {
       )}
 
       {/* 기본 네비게이션 좌측 (로고 및 타이틀) */}
-<div className="flex items-center gap-3 shrink-0">
-  <button
-    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-    className="hidden md:flex w-9 h-9 rounded-xl bg-zinc-50 items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"
-  >
-    <Menu size={18} />
-  </button>
+      <div className="flex items-center gap-3 shrink-0">
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hidden md:flex w-9 h-9 rounded-xl bg-zinc-50 items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"><Menu size={18} /></button>
+        
+        {/* ⭐️ 2. 모바일용 아이콘 로고를 홈 버튼으로 변경 */}
+        <button 
+          onClick={() => { if(visitedHandle) resetToMyProfile(); setViewMode('profile'); }}
+          className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors"
+        >
+          <Sparkles size={14} />
+        </button>
 
-  <button
-    onClick={() => {
-      if (visitedHandle) {
-        resetToMyProfile();
-      } else {
-        setViewMode('profile');
-      }
-    }}
-    className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors"
-  >
-    <Sparkles size={14} />
-  </button>
-
-  <h2 className="text-sm font-black text-zinc-800 tracking-tight flex items-center gap-2">
-    <button
-      onClick={() => {
-        if (visitedHandle) {
-          resetToMyProfile();
-        } else {
-          setViewMode('profile');
-        }
-      }}
-      className="hidden md:inline text-zinc-400 hover:text-indigo-600 transition-colors"
-    >
-      CraveLog
-    </button>
-
-    <span className="hidden md:inline text-zinc-300">/</span>
-
-    {titleMap[viewMode] || '검색'}
-  </h2>
-</div>
+        {/* ⭐️ 3. 상단 텍스트 'CraveLog'를 누르면 홈으로 가도록 변경 */}
+        <h2 className="text-sm font-black text-zinc-800 tracking-tight flex items-center gap-2">
+          <button 
+            onClick={() => { if(visitedHandle) resetToMyProfile(); setViewMode('profile'); }}
+            className="hidden md:inline text-zinc-400 hover:text-indigo-600 transition-colors"
+          >
+            CraveLog
+          </button>
+          <span className="hidden md:inline text-zinc-300">/</span>
+          {titleMap[viewMode] || '검색'}
+        </h2>
+      </div>
       
       {/* 우측 아이콘 메뉴들 */}
       <div className="flex items-center justify-end gap-2 md:gap-3 flex-1">
@@ -113,7 +97,7 @@ const titleMap = {
           />
         </div>
 
-        {/* ⭐️ 모바일용 검색 돋보기 아이콘 */}
+        {/* 모바일용 검색 돋보기 아이콘 */}
         <button 
           onClick={() => setIsMobileSearchOpen(true)} 
           className="sm:hidden w-9 h-9 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors"
@@ -137,7 +121,7 @@ const titleMap = {
               <span>{(isGuestMode || visitedHandle) ? '내 프로필로 복귀' : '게스트 뷰 체험'}</span>
             </button>
 
-            {/* ⭐️ 설정 버튼 추가 */}
+            {/* 계정 설정 버튼 */}
             {(!isGuestMode && !visitedHandle) && (
               <button 
                 onClick={() => setViewMode('account_settings')} 
@@ -146,12 +130,14 @@ const titleMap = {
               </button>
             )}
             
+            {/* 새 기록 버튼 */}
             {(!isGuestMode && !visitedHandle) && (
               <button onClick={() => setAddRecordModalOpen(true)} className="px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5 md:mr-2">
                 <Plus size={14} /> <span className="hidden md:inline">새 기록</span>
               </button>
             )}
             
+            {/* 마이페이지 버튼 */}
             <button onClick={() => { 
                 if(visitedHandle) resetToMyProfile();
                 setViewMode('profile'); 
@@ -159,6 +145,8 @@ const titleMap = {
               className="hidden sm:flex w-9 h-9 rounded-full bg-zinc-50 items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm" title="마이페이지">
               <User size={16} />
             </button>
+
+            {/* 로그아웃 버튼 */}
             <button onClick={() => { handleLogout(); showToast("로그아웃 되었습니다. 👋"); }} className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-rose-600 hover:bg-rose-50 transition shadow-sm" title="로그아웃">
               <LogOut size={16} />
             </button>
