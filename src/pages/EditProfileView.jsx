@@ -126,14 +126,14 @@ const EditProfileView = () => {
     </div>
   );
 
-  const renderArrayTextarea = (label, path) => {
+ const renderArrayTextarea = (label, path) => {
     const arr = path.reduce((o, i) => (o || {})[i] || [], formData);
     return (
       <div>
         <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
         <textarea
-          value={arr.join(', ')}
-          onChange={e => updateNested(path, e.target.value.split(',').map(s => s.trim()))}
+          value={arr.join(',')} // 보여질 때 콤마 뒤 공백 제거
+          onChange={e => updateNested(path, e.target.value.split(','))} // ⭐️ .map(s => s.trim()) 제거
           rows={2}
           className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
         />
