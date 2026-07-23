@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'; 
 import { useAppStore } from '../store/AppStore';
 
-const EditProfileView = () => {
+const EditProfileView= () => {
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
   const [formData, setFormData] = useState(() => {
