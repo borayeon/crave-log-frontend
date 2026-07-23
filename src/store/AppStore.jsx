@@ -9,10 +9,7 @@ import {
   Rocket
 } from 'lucide-react';
 
-// ⭐️ Myatyrõ: Roipuru window.location ani hag̃ua oiko jejavy
-export const API_BASE_URL = (typeof window !== 'undefined' && window.location.hostname === 'localhost') 
-  ? 'http://localhost:8080/api/v1' 
-  : 'https://crave-log-backend.onrender.com/api/v1';
+export const API_BASE_URL = 'http://192.168.219.124:8080/api/v1';
 
 // --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
