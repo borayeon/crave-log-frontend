@@ -9,8 +9,11 @@ import {
   Rocket
 } from 'lucide-react';
 
-// 환경변수가 있으면(Vercel) 그걸 쓰고, 없으면 로컬 백엔드 주소를 사용합니다.
-export const API_BASE_URL = "http://localhost:8080/api/v1";
+JavaScript
+// 브라우저 주소창이 'localhost'면 내 PC 백엔드를, 아니면 진짜 클라우드플레어 터널을 부릅니다!
+export const API_BASE_URL = (typeof window !== 'undefined' && window.location.hostname === 'localhost') 
+  ? 'http://localhost:8080/api/v1' 
+  : 'https://api.cravelog.me/api/v1';
 // --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
