@@ -35,6 +35,10 @@ const EditProfileView= () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeVisionTab, setActiveVisionTab] = useState(0);
 
+  // 아이디 중복 확인 상태
+  const [isCheckingHandle, setIsCheckingHandle] = useState(false);
+  const [isHandleAvailable, setIsHandleAvailable] = useState(true);
+
   // 미리보기 모달 상태
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
@@ -90,12 +94,41 @@ const EditProfileView= () => {
     }
   };
 
+  const handleCheckDuplicateHandle = async () => {
+    if (!formData.handle?.trim()) return showToast('아이디를 입력해주세요.');
+    if (!/^[a-z0-9.]+$/.test(formData.handle)) {
+        return showToast('아이디는 영문 소문자, 숫자, 마침표(.)만 가능합니다.');
+    }
+
+    if (formData.handle === user.handle) {
+        setIsHandleAvailable(true);
+        return showToast('현재 사용 중인 내 아이디입니다. ✅');
+    }
+
+    setIsCheckingHandle(true);
+    try {
+      // ⭐️ 실제 백엔드 연동 시: const res = await apiFetch(`/users/check-handle?handle=${formData.handle}`);
+      // 현재는 가상 지연 후 성공 처리되도록 구현 (백엔드 API 연결 전)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsHandleAvailable(true);
+      showToast('사용 가능한 아이디입니다! ✅');
+    } catch (error) {
+      setIsHandleAvailable(false);
+      showToast('중복 확인 중 오류가 발생했습니다.');
+    } finally {
+      setIsCheckingHandle(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
     if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
     
     if (!/^[a-z0-9.]+$/.test(formData.handle)) {
         return showToast('아이디는 영문 소문자, 숫자, 마침표(.)만 가능합니다.');
+    }
+    if (!isHandleAvailable && formData.handle !== user.handle) {
+        return showToast('아이디 중복 확인을 진행해주세요.');
     }
 
     setIsLoading(true);
@@ -236,17 +269,36 @@ const EditProfileView= () => {
               {/* 고유 아이디 입력 칸 */}
               <div>
                 <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">고유 아이디 (URL 및 검색용)</label>
-                <div className="relative mt-2">
-                  <AtSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-                  <input 
-                      type="text" 
-                      value={formData.handle || ''} 
-                      onChange={e => updateNested(["handle"], e.target.value.toLowerCase())}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
-                      placeholder="예: taekyeong.dev"
-                  />
+                <div className="flex gap-2 mt-2">
+                  <div className="relative flex-1">
+                    <AtSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                    <input 
+                        type="text" 
+                        value={formData.handle || ''} 
+                        onChange={e => {
+                            const val = e.target.value.toLowerCase();
+                            updateNested(["handle"], val);
+                            if (val !== user.handle) setIsHandleAvailable(false);
+                            else setIsHandleAvailable(true);
+                        }}
+                        className={`w-full bg-zinc-50 border rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors ${!isHandleAvailable && formData.handle !== user.handle ? 'border-rose-400' : 'border-zinc-200'}`} 
+                        placeholder="예: taekyeong.dev"
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={handleCheckDuplicateHandle}
+                    disabled={isCheckingHandle || !formData.handle}
+                    className="shrink-0 px-4 py-3 bg-zinc-900 text-white text-sm font-bold rounded-xl hover:bg-zinc-800 transition disabled:bg-zinc-400 flex items-center justify-center min-w-[90px] shadow-sm"
+                  >
+                    {isCheckingHandle ? <Loader2 size={16} className="animate-spin" /> : '중복 확인'}
+                  </button>
                 </div>
-                <p className="text-[10px] text-zinc-400 font-medium pl-1 mt-1.5">영문 소문자, 숫자, 마침표(.)만 사용할 수 있습니다.</p>
+                <p className={`text-[10px] font-medium pl-1 mt-1.5 ${!isHandleAvailable && formData.handle !== user.handle ? 'text-rose-500' : 'text-zinc-400'}`}>
+                    {!isHandleAvailable && formData.handle !== user.handle 
+                        ? '아이디 중복 확인이 필요합니다.' 
+                        : '영문 소문자, 숫자, 마침표(.)만 사용할 수 있습니다.'}
+                </p>
               </div>
               
               {/* 프로필 이미지 입력 영역 */}
