@@ -104,6 +104,21 @@ const ProfileView = () => {
     { icon: <Monitor size={20}/>, name: "Steam", url: "https://steam.com", color: "bg-blue-900 text-white" }
   ];
 
+  const getPlatformStyles = (platform) => {
+    switch(platform) {
+        case 'github': return { icon: <GithubIcon size={20}/>, color: "bg-zinc-800 text-white" };
+        case 'instagram': return { icon: <InstagramIcon size={20}/>, color: "bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-500 text-white" };
+        case 'blog': return { icon: <Globe size={20}/>, color: "bg-emerald-500 text-white" };
+        case 'steam': return { icon: <Monitor size={20}/>, color: "bg-blue-900 text-white" };
+        case 'notion': return { icon: <PenTool size={20}/>, color: "bg-zinc-100 text-zinc-900 border border-zinc-200" };
+        case 'x': return { icon: <CloseIcon size={20}/>, color: "bg-black text-white" };
+        case 'facebook': return { icon: <Globe size={20}/>, color: "bg-blue-600 text-white" };
+        default: return { icon: <LinkIcon size={20}/>, color: "bg-zinc-100 text-zinc-600 border border-zinc-200" };
+    }
+  };
+
+  const displayLinks = user.links?.length > 0 ? user.links.map(l => ({ ...l, ...getPlatformStyles(l.platform) })) : dummyLinks;
+
   const dummyQna = [
     { q: "개발을 시작하게 된 계기는?", a: "내가 만든 무언가가 실제로 동작하고 사람들에게 도움을 주는 과정이 너무 짜릿했습니다." },
     { q: "쉬는 날엔 주로 뭘 하나요?", a: "밀린 넷플릭스를 보거나, 근처 조용한 카페에서 책을 읽습니다." },
@@ -500,7 +515,7 @@ const ProfileView = () => {
         {/* 🌟 NEW: Bento 4 - Social Links (가로 배치형) */}
         <div className="md:col-span-2 bg-zinc-900 rounded-3xl p-6 shadow-sm border border-zinc-800 flex items-center justify-center md:justify-start gap-4 flex-wrap overflow-hidden relative">
             <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-            {dummyLinks.map((link, idx) => (
+            {displayLinks.map((link, idx) => (
                 <a 
                     key={idx} href={link.url} target="_blank" rel="noopener noreferrer" 
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 hover:-translate-y-1 transition-all ${link.color}`}
