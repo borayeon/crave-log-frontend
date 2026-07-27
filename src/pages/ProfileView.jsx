@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { 
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
-    ArrowRight, Heart, MessageSquare, Lock, X as CloseIcon, Info
+    ArrowRight, Heart, MessageSquare, Lock, X as CloseIcon, Info,
+    LayoutGrid, List // ⭐️ 뷰 전환 아이콘 추가
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
+  
+  // ⭐️ 뷰 모드 및 팝업 상태 관리
   const [activeTab, setActiveTab] = useState('developer'); 
-
-  // ⭐️ 벤토 박스 팝업 상태 관리
+  const [detailViewMode, setDetailViewMode] = useState('tabs'); // 'tabs' or 'grid'
+  const [detailPopup, setDetailPopup] = useState(null); // 'developer', 'career', 'idol'
   const [bentoPopup, setBentoPopup] = useState(null);
 
   const isGuest = !isAdmin || isGuestMode;
@@ -77,9 +80,134 @@ const ProfileView = () => {
     setDraggedTab(null);
   };
 
+  /* ⭐️ 코드 중복 방지를 위한 각 디테일 영역 렌더링 함수 */
+  const renderDeveloperContent = () => (
+    <div className="space-y-6">
+        <div className="bg-zinc-900 text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800">
+            <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-6">
+                <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-zinc-800/50 p-5 rounded-2xl border border-zinc-700/50">
+                    <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
+                    <ul className="space-y-2 text-sm font-mono">
+                        <li><span className="text-indigo-400">Backend:</span> {user.developer?.techStack?.backend}</li>
+                        <li><span className="text-indigo-400">Database:</span> {user.developer?.techStack?.db}</li>
+                        <li><span className="text-rose-400">Frontend:</span> {user.developer?.techStack?.frontend}</li>
+                        <li><span className="text-yellow-400">Tools:</span> {user.developer?.techStack?.tools}</li>
+                    </ul>
+                </div>
+                <div className="bg-zinc-800/50 p-5 rounded-2xl border border-zinc-700/50">
+                    <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Currently Learning</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {(user.developer?.learning || []).map(l => <span key={l} className="px-2.5 py-1 bg-zinc-950 border border-zinc-700 rounded-md text-xs font-bold font-mono">{l}</span>)}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {(user.developer?.projects || []).map((proj, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm flex flex-col justify-center hover:shadow-md transition-shadow cursor-pointer">
+                    <h4 className="text-lg font-black text-zinc-900 mb-2">{proj.name}</h4>
+                    <p className="text-sm text-zinc-500 font-medium">{proj.desc}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+  );
+
+  const renderCareerContent = () => (
+    <div className="space-y-6">
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8">
+            <div className="flex-1 space-y-6">
+                <div>
+                    <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Target Job</h4>
+                    <p className="text-xl font-black text-indigo-600">{user.career?.targetJob}</p>
+                </div>
+                <div>
+                    <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {(user.career?.techStack || []).map(t => <span key={t} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-black rounded-lg border border-indigo-100">{t}</span>)}
+                    </div>
+                </div>
+                <div>
+                    <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Interests</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {(user.career?.interests || []).map(i => <span key={i} className="px-3 py-1.5 bg-zinc-50 text-zinc-600 text-xs font-black rounded-lg border border-zinc-200">{i}</span>)}
+                    </div>
+                </div>
+            </div>
+            
+            <div className="w-full md:w-1/3 space-y-4">
+                <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Short Term Goal</h4>
+                    <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.short}</p>
+                </div>
+                <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Mid Term Goal</h4>
+                    <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.mid}</p>
+                </div>
+                <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Long Term Goal</h4>
+                    <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.long}</p>
+                </div>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {(user.career?.strengths || []).map((str, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm">
+                    <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center font-black mb-4">{idx+1}</div>
+                    <h4 className="text-base font-black text-zinc-900 mb-2">{str.title}</h4>
+                    <p className="text-xs text-zinc-500 leading-relaxed font-medium">{str.desc}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+  );
+
+  const renderIdolContent = () => (
+    <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 bg-gradient-to-br from-rose-50 to-pink-50 p-8 rounded-[2rem] shadow-sm border border-rose-100">
+                <h3 className="text-xl font-black text-rose-900 mb-6 flex items-center gap-2"><Sparkles size={20} className="text-rose-400"/> Profile</h3>
+                <div className="space-y-4 text-sm">
+                    <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Nickname</span><span className="font-black text-rose-900">{user.idol?.nickname}</span></div>
+                    <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Birthday</span><span className="font-black text-rose-900">{user.idol?.birthday}</span></div>
+                    <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Age</span><span className="font-black text-rose-900">{user.idol?.age}</span></div>
+                    <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Specialty</span><span className="font-black text-rose-900">{user.idol?.specialty}</span></div>
+                    <div className="flex justify-between pb-2"><span className="font-bold text-rose-400">Hobbies</span><span className="font-black text-rose-900 text-right">{user.idol?.hobbies}</span></div>
+                </div>
+            </div>
+
+            <div className="md:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
+                <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><Heart size={20} className="text-rose-500 fill-rose-500"/> Favorites</h3>
+                <div className="grid grid-cols-2 gap-6">
+                    <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Colors</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.colors || []).map(c=><span key={c} className="px-3 py-1 bg-zinc-50 rounded-lg text-xs font-bold text-zinc-700">{c}</span>)}</div></div>
+                    <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Foods</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.foods || []).map(c=><span key={c} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                    <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Games</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.games || []).map(c=><span key={c} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                    <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Music</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.music || []).map(c=><span key={c} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
+            <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
+            <div className="space-y-6">
+                {(user.idol?.qna || []).map((item, idx) => (
+                    <div key={idx} className="flex flex-col gap-2">
+                        <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
+                        <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+  );
+
   return (
     <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
-      {}
+      {/* --- HEADER --- */}
       <header className="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight">Index</h1>
@@ -103,10 +231,9 @@ const ProfileView = () => {
         </div>
       </header>
 
-      {}
-      <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 ${shouldBlur ? 'opacity-30 blur-[2px] pointer-events-none' : ''}`}>
-        
-        {/* Bento 1: 메인 프로필 (화이트 톤, 여백 강조) */}
+      {/* --- BENTO BOX (Basic Info) --- */}
+      <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 ${shouldBlur ? 'opacity-30 blur-[2px] pointer-events-none' : ''}`}>
+        {/* Bento 1: 메인 프로필 */}
         <div 
             onClick={() => setBentoPopup('profile')}
             className="md:col-span-2 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-200/80 cursor-pointer hover:bg-zinc-50/50 hover:border-zinc-300 transition-all duration-300 group flex flex-col justify-center relative"
@@ -130,7 +257,6 @@ const ProfileView = () => {
                     <p className="text-sm text-zinc-500 font-medium leading-relaxed mb-4 line-clamp-2">
                         {user?.bio || "아직 작성된 한 줄 소개가 없습니다."}
                     </p>
-                    {/* 너무 많은 태그 방지: 최대 3개만 표시 */}
                     <div className="flex flex-wrap justify-center sm:justify-start gap-1.5">
                         {(user?.tags || []).slice(0, 3).map(tag => (
                             <span key={tag} className="px-2.5 py-1 bg-zinc-50 border border-zinc-100 text-zinc-600 text-[11px] font-bold rounded-md">#{tag}</span>
@@ -145,7 +271,7 @@ const ProfileView = () => {
             </div>
         </div>
 
-        {/* Bento 2: 퀵 인포 (미니멀 리스트 뷰) */}
+        {/* Bento 2: 퀵 인포 */}
         <div 
             onClick={() => setBentoPopup('info')}
             className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-200/80 cursor-pointer hover:bg-zinc-50/50 hover:border-zinc-300 transition-all duration-300 group relative flex flex-col justify-center gap-5"
@@ -177,7 +303,7 @@ const ProfileView = () => {
             </div>
         </div>
 
-        {/* Bento 3: 현재 목표 (시선 분산 방지를 위해 점선 테두리로 가볍게 처리) */}
+        {/* Bento 3: 현재 목표 */}
         <div 
             onClick={() => setBentoPopup('goals')}
             className="md:col-span-3 bg-zinc-50/50 rounded-3xl p-6 md:px-8 border-2 border-dashed border-zinc-200 cursor-pointer hover:bg-zinc-100/50 hover:border-zinc-300 transition-all duration-300 group flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8"
@@ -201,7 +327,7 @@ const ProfileView = () => {
         </div>
       </div>
 
-      {}
+      {/* --- EMPTY STATE BLUR --- */}
       {isProfileEmpty && !isAdmin && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center mt-20">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4 shadow-sm"><User size={32}/></div>
@@ -213,7 +339,7 @@ const ProfileView = () => {
           </div>
       )}
 
-      {}
+      {/* --- BENTO POPUP MODALS --- */}
       {bentoPopup && (
         <div className="fixed inset-0 z-[200] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setBentoPopup(null)}>
             <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -277,161 +403,111 @@ const ProfileView = () => {
         </div>
       )}
 
-      {}
+      {/* --- DETAIL PROFILES AREA --- */}
       {!isProfileEmpty && (
-        <>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50 mt-4">
-            {availableTabs.map(tab => (
-                <div 
-                    key={tab.id} 
-                    draggable={!isGuest}
-                    onDragStart={(e) => handleDragStart(e, tab.id)}
-                    onDragOver={handleDragOver}
-                    onDragEnter={handleDragEnter}
-                    onDrop={(e) => handleDrop(e, tab.id)}
-                    onDragEnd={() => setDraggedTab(null)}
-                    onClick={() => setActiveTab(tab.id)} 
-                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
-                        !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-                    } ${
-                        activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
-                    } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
-                >
-                    {tab.icon} {tab.label} {user.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
-                </div>
-            ))}
+        <div className="mt-8 relative z-0">
+          
+          {/* ⭐️ View Toggle Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-black text-zinc-900">Detail Profiles</h3>
+            <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200/50">
+              <button 
+                onClick={() => setDetailViewMode('tabs')} 
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${detailViewMode === 'tabs' ? 'bg-white text-zinc-900 shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'}`}
+              >
+                <List size={14}/> <span className="text-[11px] uppercase tracking-wider">Tabs</span>
+              </button>
+              <button 
+                onClick={() => setDetailViewMode('grid')} 
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${detailViewMode === 'grid' ? 'bg-white text-zinc-900 shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'}`}
+              >
+                <LayoutGrid size={14}/> <span className="text-[11px] uppercase tracking-wider">Grid</span>
+              </button>
+            </div>
           </div>
 
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* Developer Tab */}
-            {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
-                <div className="space-y-6">
-                    <div className="bg-zinc-900 text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800">
-                        <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-6">
-                            <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-zinc-800/50 p-5 rounded-2xl border border-zinc-700/50">
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
-                                <ul className="space-y-2 text-sm font-mono">
-                                    <li><span className="text-indigo-400">Backend:</span> {user.developer?.techStack?.backend}</li>
-                                    <li><span className="text-indigo-400">Database:</span> {user.developer?.techStack?.db}</li>
-                                    <li><span className="text-rose-400">Frontend:</span> {user.developer?.techStack?.frontend}</li>
-                                    <li><span className="text-yellow-400">Tools:</span> {user.developer?.techStack?.tools}</li>
-                                </ul>
-                            </div>
-                            <div className="bg-zinc-800/50 p-5 rounded-2xl border border-zinc-700/50">
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Currently Learning</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {(user.developer?.learning || []).map(l => <span key={l} className="px-2.5 py-1 bg-zinc-950 border border-zinc-700 rounded-md text-xs font-bold font-mono">{l}</span>)}
-                                </div>
-                            </div>
-                        </div>
+          {/* ⭐️ Tab Mode (기존 방식) */}
+          {detailViewMode === 'tabs' && (
+            <>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50 mt-4">
+                  {availableTabs.map(tab => (
+                      <div 
+                          key={tab.id} 
+                          draggable={!isGuest}
+                          onDragStart={(e) => handleDragStart(e, tab.id)}
+                          onDragOver={handleDragOver}
+                          onDragEnter={handleDragEnter}
+                          onDrop={(e) => handleDrop(e, tab.id)}
+                          onDragEnd={() => setDraggedTab(null)}
+                          onClick={() => setActiveTab(tab.id)} 
+                          className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
+                              !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                          } ${
+                              activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
+                          } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
+                      >
+                          {tab.icon} {tab.label} {user.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
+                      </div>
+                  ))}
+                </div>
+
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && renderDeveloperContent()}
+                  {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && renderCareerContent()}
+                  {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && renderIdolContent()}
+                </div>
+            </>
+          )}
+
+          {/* ⭐️ Grid Mode (새로운 네모난 카드 방식) */}
+          {detailViewMode === 'grid' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 animate-in fade-in duration-300">
+               {availableTabs.map(tab => (
+                 <div 
+                    key={tab.id}
+                    onClick={() => setDetailPopup(tab.id)}
+                    className="group relative aspect-square bg-white rounded-[2rem] border border-zinc-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-6 text-center overflow-hidden"
+                 >
+                    {/* 카드 상단 데코레이션 라인 */}
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:scale-110 group-hover:bg-indigo-50 group-hover:text-indigo-500 group-hover:border-indigo-100 transition-all duration-500 mb-5 shadow-sm">
+                        {React.cloneElement(tab.icon, { size: 28 })}
+                    </div>
+                    <h4 className="text-lg font-black text-zinc-800 mb-2">{tab.label}</h4>
+                    
+                    {/* Hover 시 나타나는 안내 문구 */}
+                    <div className="absolute bottom-6 flex items-center gap-1.5 text-xs font-bold text-indigo-500 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-75">
+                        자세히 보기 <ArrowRight size={14}/>
+                    </div>
+                 </div>
+               ))}
+            </div>
+          )}
+
+          {/* ⭐️ Detail Popup Modal (Grid 모드에서 클릭 시 뜸) */}
+          {detailPopup && (
+            <div className="fixed inset-0 z-[200] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setDetailPopup(null)}>
+                <div className="bg-[#F8FAFC] w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[2rem] shadow-2xl flex flex-col relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    
+                    {/* 모달 헤더 */}
+                    <div className="flex items-center justify-between px-8 py-5 border-b border-zinc-200 bg-white shrink-0">
+                        <h3 className="text-lg font-black text-zinc-900 flex items-center gap-2">
+                           {allTabsMap[detailPopup]?.icon} {allTabsMap[detailPopup]?.label}
+                        </h3>
+                        <button onClick={() => setDetailPopup(null)} className="p-2 text-zinc-400 hover:bg-zinc-100 rounded-full transition"><CloseIcon size={20}/></button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {(user.developer?.projects || []).map((proj, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm flex flex-col justify-center hover:shadow-md transition-shadow cursor-pointer">
-                                <h4 className="text-lg font-black text-zinc-900 mb-2">{proj.name}</h4>
-                                <p className="text-sm text-zinc-500 font-medium">{proj.desc}</p>
-                            </div>
-                        ))}
+                    {/* 모달 본문 (기존 Tab 콘텐츠 재사용) */}
+                    <div className="p-8 overflow-y-auto flex-1">
+                        {detailPopup === 'developer' && renderDeveloperContent()}
+                        {detailPopup === 'career' && renderCareerContent()}
+                        {detailPopup === 'idol' && renderIdolContent()}
                     </div>
                 </div>
-            )}
-
-            {/* Career Tab */}
-            {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (
-                <div className="space-y-6">
-                    <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8">
-                        <div className="flex-1 space-y-6">
-                            <div>
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Target Job</h4>
-                                <p className="text-xl font-black text-indigo-600">{user.career?.targetJob}</p>
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {(user.career?.techStack || []).map(t => <span key={t} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-black rounded-lg border border-indigo-100">{t}</span>)}
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Interests</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {(user.career?.interests || []).map(i => <span key={i} className="px-3 py-1.5 bg-zinc-50 text-zinc-600 text-xs font-black rounded-lg border border-zinc-200">{i}</span>)}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="w-full md:w-1/3 space-y-4">
-                            <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Short Term Goal</h4>
-                                <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.short}</p>
-                            </div>
-                            <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Mid Term Goal</h4>
-                                <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.mid}</p>
-                            </div>
-                            <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Long Term Goal</h4>
-                                <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.long}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {(user.career?.strengths || []).map((str, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm">
-                                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center font-black mb-4">{idx+1}</div>
-                                <h4 className="text-base font-black text-zinc-900 mb-2">{str.title}</h4>
-                                <p className="text-xs text-zinc-500 leading-relaxed font-medium">{str.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Idol Tab */}
-            {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-1 bg-gradient-to-br from-rose-50 to-pink-50 p-8 rounded-[2rem] shadow-sm border border-rose-100">
-                            <h3 className="text-xl font-black text-rose-900 mb-6 flex items-center gap-2"><Sparkles size={20} className="text-rose-400"/> Profile</h3>
-                            <div className="space-y-4 text-sm">
-                                <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Nickname</span><span className="font-black text-rose-900">{user.idol?.nickname}</span></div>
-                                <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Birthday</span><span className="font-black text-rose-900">{user.idol?.birthday}</span></div>
-                                <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Age</span><span className="font-black text-rose-900">{user.idol?.age}</span></div>
-                                <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Specialty</span><span className="font-black text-rose-900">{user.idol?.specialty}</span></div>
-                                <div className="flex justify-between pb-2"><span className="font-bold text-rose-400">Hobbies</span><span className="font-black text-rose-900 text-right">{user.idol?.hobbies}</span></div>
-                            </div>
-                        </div>
-
-                        <div className="md:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
-                            <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><Heart size={20} className="text-rose-500 fill-rose-500"/> Favorites</h3>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Colors</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.colors || []).map(c=><span key={c} className="px-3 py-1 bg-zinc-50 rounded-lg text-xs font-bold text-zinc-700">{c}</span>)}</div></div>
-                                <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Foods</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.foods || []).map(c=><span key={c} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
-                                <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Games</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.games || []).map(c=><span key={c} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
-                                <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Music</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.music || []).map(c=><span key={c} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
-                        <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
-                        <div className="space-y-6">
-                            {(user.idol?.qna || []).map((item, idx) => (
-                                <div key={idx} className="flex flex-col gap-2">
-                                    <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
-                                    <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-          </div>
-        </>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
