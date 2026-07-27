@@ -466,7 +466,8 @@ const ProfileView = () => {
                  <div 
                     key={tab.id}
                     onClick={() => setDetailPopup(tab.id)}
-                    className="group relative aspect-square bg-white rounded-[2rem] border border-zinc-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-6 text-center overflow-hidden"
+                    // ⭐️ 변경: active:scale-95 를 추가하여 누를 때 실제로 꾹 눌리는 손맛을 줍니다.
+                    className="group relative aspect-square bg-white rounded-[2rem] border border-zinc-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-6 text-center overflow-hidden"
                  >
                     {/* 카드 상단 데코레이션 라인 */}
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -487,19 +488,21 @@ const ProfileView = () => {
 
           {/* ⭐️ Detail Popup Modal (Grid 모드에서 클릭 시 뜸) */}
           {detailPopup && (
-            <div className="fixed inset-0 z-[200] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setDetailPopup(null)}>
-                <div className="bg-[#F8FAFC] w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[2rem] shadow-2xl flex flex-col relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            // ⭐️ 변경: 배경 블러 효과를 조금 더 은은하게(bg-zinc-950/40, backdrop-blur-md) 조정하고 부드럽게 나타나게 합니다.
+            <div className="fixed inset-0 z-[200] bg-zinc-950/40 backdrop-blur-md flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300" onClick={() => setDetailPopup(null)}>
+                {/* ⭐️ 변경: duration-500, ease-out, zoom-in-90, slide-in-from-bottom-8 조합으로 밑에서부터 쫀득하게 부풀어오르는 효과 */}
+                <div className="bg-[#F8FAFC] w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[2rem] shadow-2xl flex flex-col relative animate-in fade-in zoom-in-90 slide-in-from-bottom-8 duration-500 ease-out" onClick={e => e.stopPropagation()}>
                     
                     {/* 모달 헤더 */}
-                    <div className="flex items-center justify-between px-8 py-5 border-b border-zinc-200 bg-white shrink-0">
+                    <div className="flex items-center justify-between px-8 py-5 border-b border-zinc-200 bg-white shrink-0 z-10">
                         <h3 className="text-lg font-black text-zinc-900 flex items-center gap-2">
                            {allTabsMap[detailPopup]?.icon} {allTabsMap[detailPopup]?.label}
                         </h3>
                         <button onClick={() => setDetailPopup(null)} className="p-2 text-zinc-400 hover:bg-zinc-100 rounded-full transition"><CloseIcon size={20}/></button>
                     </div>
 
-                    {/* 모달 본문 (기존 Tab 콘텐츠 재사용) */}
-                    <div className="p-8 overflow-y-auto flex-1">
+                    {/* ⭐️ 변경: 본문 콘텐츠 영역에 delay-150을 주어, 모달 배경이 먼저 쫙 펴진 뒤 글씨가 스르륵 나타나게 합니다. */}
+                    <div className="p-8 overflow-y-auto flex-1 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-both">
                         {detailPopup === 'developer' && renderDeveloperContent()}
                         {detailPopup === 'career' && renderCareerContent()}
                         {detailPopup === 'idol' && renderIdolContent()}
