@@ -4,9 +4,13 @@ import {
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
     ArrowRight, Heart, MessageSquare, Lock, X as CloseIcon, Info,
     LayoutGrid, List, HelpCircle, Palette, Compass, Quote, PenTool,
-    Github, Instagram, Globe, Twitter, Youtube, Monitor
+    Globe, Monitor
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
+
+// ⭐️ Lucide에서 삭제된 브랜드 아이콘들을 SVG로 직접 만들어줍니다.
+const GithubIcon = ({ size = 20 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3-.3 6-1.5 6-6.5a5.4 5.4 0 0 0-1.5-3.8 5.3 5.3 0 0 0-.1-3.8s-1.2-.4-3.9 1.4a13.3 13.3 0 0 0-7 0C6.2 1.5 5 1.9 5 1.9a5.3 5.3 0 0 0-.1 3.8A5.4 5.4 0 0 0 3 12.5c0 5 3 6.2 6 6.5a4.8 4.8 0 0 0-1 3.2v4"></path></svg>);
+const InstagramIcon = ({ size = 20 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>);
 
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isSidebarOpen } = useAppStore();
@@ -97,9 +101,9 @@ const ProfileView = () => {
   // 🌟 Dummy Data for New Tabs (UI 확인용)
   // ==========================================
   const dummyLinks = [
-    { icon: <Github size={20}/>, name: "GitHub", url: "https://github.com", color: "bg-zinc-800 text-white" },
+    { icon: <GithubIcon size={20}/>, name: "GitHub", url: "https://github.com", color: "bg-zinc-800 text-white" },
     { icon: <Globe size={20}/>, name: "Blog", url: "https://velog.io", color: "bg-emerald-500 text-white" },
-    { icon: <Instagram size={20}/>, name: "Instagram", url: "https://instagram.com", color: "bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-500 text-white" },
+    { icon: <InstagramIcon size={20}/>, name: "Instagram", url: "https://instagram.com", color: "bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-500 text-white" },
     { icon: <Monitor size={20}/>, name: "Steam", url: "https://steam.com", color: "bg-blue-900 text-white" }
   ];
 
