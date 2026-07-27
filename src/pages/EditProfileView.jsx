@@ -107,11 +107,17 @@ const EditProfileView= () => {
 
     setIsCheckingHandle(true);
     try {
-      // ⭐️ 실제 백엔드 연동 시: const res = await apiFetch(`/users/check-handle?handle=${formData.handle}`);
-      // 현재는 가상 지연 후 성공 처리되도록 구현 (백엔드 API 연결 전)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setIsHandleAvailable(true);
-      showToast('사용 가능한 아이디입니다! ✅');
+      // ⭐️ 퍼블릭 프로필 조회 API를 활용하여 중복 체크
+      // 해당 핸들(아이디)로 프로필이 조회되면(200) 중복, 안 되면(404 등) 사용 가능
+      const res = await apiFetch(`/users/${formData.handle}/profile`);
+      
+      if (res.ok) {
+        setIsHandleAvailable(false);
+        showToast('이미 사용 중인 아이디입니다. ❌ 다른 아이디를 입력해주세요.');
+      } else {
+        setIsHandleAvailable(true);
+        showToast('사용 가능한 아이디입니다! ✅');
+      }
     } catch (error) {
       setIsHandleAvailable(false);
       showToast('중복 확인 중 오류가 발생했습니다.');
