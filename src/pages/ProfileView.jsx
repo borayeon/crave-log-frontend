@@ -3,17 +3,17 @@ import {
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
     ArrowRight, Heart, MessageSquare, Lock, X as CloseIcon, Info,
-    LayoutGrid, List // ⭐️ 뷰 전환 아이콘 추가
+    LayoutGrid, List 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
+  // ⭐️ isSidebarOpen 상태를 가져와서 팝업 위치 보정에 사용합니다.
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isSidebarOpen } = useAppStore();
   
-  // ⭐️ 뷰 모드 및 팝업 상태 관리
   const [activeTab, setActiveTab] = useState('developer'); 
-  const [detailViewMode, setDetailViewMode] = useState('tabs'); // 'tabs' or 'grid'
-  const [detailPopup, setDetailPopup] = useState(null); // 'developer', 'career', 'idol'
+  const [detailViewMode, setDetailViewMode] = useState('tabs');
+  const [detailPopup, setDetailPopup] = useState(null); 
   const [bentoPopup, setBentoPopup] = useState(null);
 
   const isGuest = !isAdmin || isGuestMode;
@@ -80,7 +80,6 @@ const ProfileView = () => {
     setDraggedTab(null);
   };
 
-  /* ⭐️ 코드 중복 방지를 위한 각 디테일 영역 렌더링 함수 */
   const renderDeveloperContent = () => (
     <div className="space-y-6">
         <div className="bg-zinc-900 text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800">
@@ -341,8 +340,13 @@ const ProfileView = () => {
 
       {/* --- BENTO POPUP MODALS --- */}
       {bentoPopup && (
-        <div className="fixed inset-0 z-[200] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setBentoPopup(null)}>
-            <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div 
+            // ⭐️ 사이드바 폭(w-72/w-20)을 고려하여 패딩(pl-72/pl-20)을 적용해 중앙 정렬을 맞춥니다. 블러는 제거하고 검정색 60%로 변경.
+            className={`fixed inset-0 z-[200] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-300 transition-all ${isSidebarOpen ? 'md:pl-72' : 'md:pl-20'}`} 
+            onClick={() => setBentoPopup(null)}
+        >
+            {/* ⭐️ 크기를 화면 꽉 차는 w-full 대신 w-[90%]로 변경해 주변 투명한 배경이 보이도록 조절 */}
+            <div className="bg-white rounded-[2rem] w-[90%] max-w-md p-8 shadow-2xl relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setBentoPopup(null)} className="absolute top-6 right-6 p-2 text-zinc-400 hover:bg-zinc-100 rounded-full transition"><CloseIcon size={20}/></button>
                 
                 {bentoPopup === 'profile' && (
@@ -407,7 +411,6 @@ const ProfileView = () => {
       {!isProfileEmpty && (
         <div className="mt-8 relative z-0">
           
-          {/* ⭐️ View Toggle Header */}
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-black text-zinc-900">Detail Profiles</h3>
             <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200/50">
@@ -426,7 +429,6 @@ const ProfileView = () => {
             </div>
           </div>
 
-          {/* ⭐️ Tab Mode (기존 방식) */}
           {detailViewMode === 'tabs' && (
             <>
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50 mt-4">
@@ -459,17 +461,14 @@ const ProfileView = () => {
             </>
           )}
 
-          {/* ⭐️ Grid Mode (새로운 네모난 카드 방식) */}
           {detailViewMode === 'grid' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 animate-in fade-in duration-300">
                {availableTabs.map(tab => (
                  <div 
                     key={tab.id}
                     onClick={() => setDetailPopup(tab.id)}
-                    // ⭐️ 변경: active:scale-95 를 추가하여 누를 때 실제로 꾹 눌리는 손맛을 줍니다.
                     className="group relative aspect-square bg-white rounded-[2rem] border border-zinc-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-6 text-center overflow-hidden"
                  >
-                    {/* 카드 상단 데코레이션 라인 */}
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:scale-110 group-hover:bg-indigo-50 group-hover:text-indigo-500 group-hover:border-indigo-100 transition-all duration-500 mb-5 shadow-sm">
@@ -477,7 +476,6 @@ const ProfileView = () => {
                     </div>
                     <h4 className="text-lg font-black text-zinc-800 mb-2">{tab.label}</h4>
                     
-                    {/* Hover 시 나타나는 안내 문구 */}
                     <div className="absolute bottom-6 flex items-center gap-1.5 text-xs font-bold text-indigo-500 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-75">
                         자세히 보기 <ArrowRight size={14}/>
                     </div>
@@ -486,14 +484,16 @@ const ProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ Detail Popup Modal (Grid 모드에서 클릭 시 뜸) */}
+          {/* ⭐️ Detail Popup Modal */}
           {detailPopup && (
-            // ⭐️ 변경: 배경 블러 효과를 조금 더 은은하게(bg-zinc-950/40, backdrop-blur-md) 조정하고 부드럽게 나타나게 합니다.
-            <div className="fixed inset-0 z-[200] bg-zinc-950/40 backdrop-blur-md flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300" onClick={() => setDetailPopup(null)}>
-                {/* ⭐️ 변경: duration-500, ease-out, zoom-in-90, slide-in-from-bottom-8 조합으로 밑에서부터 쫀득하게 부풀어오르는 효과 */}
-                <div className="bg-[#F8FAFC] w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[2rem] shadow-2xl flex flex-col relative animate-in fade-in zoom-in-90 slide-in-from-bottom-8 duration-500 ease-out" onClick={e => e.stopPropagation()}>
+            <div 
+                // ⭐️ 사이드바 폭(w-72/w-20)을 고려하여 패딩(pl-72/pl-20)을 적용해 팝업을 중앙 정렬합니다. 블러는 완전히 제거했습니다.
+                className={`fixed inset-0 z-[200] bg-zinc-950/60 flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300 transition-all ${isSidebarOpen ? 'md:pl-72' : 'md:pl-20'}`} 
+                onClick={() => setDetailPopup(null)}
+            >
+                {/* ⭐️ 크기를 w-full 대신 w-[95%]로 변경해 팝업 주위로 여유 공간을 주어 투명한 배경이 돋보이게 합니다. */}
+                <div className="bg-[#F8FAFC] w-[95%] max-w-4xl max-h-[85vh] overflow-hidden rounded-[2rem] shadow-2xl flex flex-col relative animate-in fade-in zoom-in-90 slide-in-from-bottom-8 duration-500 ease-out" onClick={e => e.stopPropagation()}>
                     
-                    {/* 모달 헤더 */}
                     <div className="flex items-center justify-between px-8 py-5 border-b border-zinc-200 bg-white shrink-0 z-10">
                         <h3 className="text-lg font-black text-zinc-900 flex items-center gap-2">
                            {allTabsMap[detailPopup]?.icon} {allTabsMap[detailPopup]?.label}
@@ -501,7 +501,6 @@ const ProfileView = () => {
                         <button onClick={() => setDetailPopup(null)} className="p-2 text-zinc-400 hover:bg-zinc-100 rounded-full transition"><CloseIcon size={20}/></button>
                     </div>
 
-                    {/* ⭐️ 변경: 본문 콘텐츠 영역에 delay-150을 주어, 모달 배경이 먼저 쫙 펴진 뒤 글씨가 스르륵 나타나게 합니다. */}
                     <div className="p-8 overflow-y-auto flex-1 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-both">
                         {detailPopup === 'developer' && renderDeveloperContent()}
                         {detailPopup === 'career' && renderCareerContent()}
