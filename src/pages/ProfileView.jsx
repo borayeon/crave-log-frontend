@@ -1,29 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
 Code, Briefcase, HeartHandshake, Edit2,
 User, HelpCircle, Palette, Compass, Quote, PenTool,
-Globe, ChevronDown, ChevronUp, Share
+Globe, Share, Github, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const ProfileView = () => {
 const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
-const [expandedSection, setExpandedSection] = useState(null);
 
 const isGuest = !isAdmin || isGuestMode;
 const isProfileEmpty = user?.name === "손님" && (user?.tags || []).length === 0;
 const shouldBlur = isProfileEmpty && !isAdmin;
-
-const sections = [
-    { id: 'developer', icon: <Code size={18} />, label: 'Developer', content: renderDeveloperContent },
-    { id: 'career', icon: <Briefcase size={18} />, label: 'Career', content: renderCareerContent },
-    { id: 'idol', icon: <HeartHandshake size={18} />, label: 'TMI & Favorites', content: renderIdolContent },
-    { id: 'qna', icon: <HelpCircle size={18} />, label: 'Q&A', content: renderQnaContent },
-    { id: 'hobby', icon: <Palette size={18} />, label: 'Hobby', content: renderHobbyContent },
-    { id: 'vision', icon: <Compass size={18} />, label: 'Mandalart', content: renderVisionContent },
-    { id: 'quotes', icon: <Quote size={18} />, label: 'Quotes', content: renderQuotesContent },
-    { id: 'guestbook', icon: <PenTool size={18} />, label: 'Guestbook', content: renderGuestbookContent },
-].filter(tab => !isGuest || user?.privacy?.[tab.id] !== false);
 
 const handleShare = () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle}`;
@@ -32,10 +20,6 @@ const handleShare = () => {
     }).catch(() => {
         showToast("링크 복사에 실패했습니다.");
     });
-};
-
-const toggleSection = (id) => {
-    setExpandedSection(prev => prev === id ? null : id);
 };
 
 // ==========================================
@@ -51,230 +35,244 @@ const displayQuotes = user?.quotes?.length ? user.quotes : [{ text: "아무것�
 const featuredQuote = displayQuotes[Math.floor(Math.random() * displayQuotes.length)];
 
 // ==========================================
-// 🌟 Minimal Render Functions (Content Only)
+// 🌟 Section Renderers (Fully Visible)
 // ==========================================
-function renderDeveloperContent() {
-    return (
-        <div className="space-y-6 text-sm text-zinc-700">
+const renderDeveloper = () => (
+    <section id="developer" className="scroll-mt-24">
+        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
+            <Code className="text-zinc-400" size={24}/> Developer
+        </h3>
+        <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-zinc-100 shadow-sm space-y-8">
             {user?.developer?.about && (
-                <p className="leading-relaxed whitespace-pre-wrap">{user.developer.about}</p>
+                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">
+                    {user.developer.about}
+                </p>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-zinc-100">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div>
-                    <h4 className="font-bold text-zinc-900 mb-3">Tech Stack</h4>
-                    <ul className="space-y-2">
-                        <li className="flex gap-2"><span className="text-zinc-400 w-16">Backend</span> {user?.developer?.techStack?.backend || '-'}</li>
-                        <li className="flex gap-2"><span className="text-zinc-400 w-16">Database</span> {user?.developer?.techStack?.db || '-'}</li>
-                        <li className="flex gap-2"><span className="text-zinc-400 w-16">Frontend</span> {user?.developer?.techStack?.frontend || '-'}</li>
+                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Tech Stack</h4>
+                    <ul className="space-y-3 text-sm">
+                        <li className="flex gap-4"><span className="font-bold text-zinc-900 w-20">Backend</span><span className="text-zinc-600">{user?.developer?.techStack?.backend || '-'}</span></li>
+                        <li className="flex gap-4"><span className="font-bold text-zinc-900 w-20">Database</span><span className="text-zinc-600">{user?.developer?.techStack?.db || '-'}</span></li>
+                        <li className="flex gap-4"><span className="font-bold text-zinc-900 w-20">Frontend</span><span className="text-zinc-600">{user?.developer?.techStack?.frontend || '-'}</span></li>
                     </ul>
                 </div>
-                <div>
-                    <h4 className="font-bold text-zinc-900 mb-3">Projects</h4>
-                    <ul className="space-y-3">
-                        {(user?.developer?.projects || []).map((proj, idx) => (
-                            <li key={idx}>
-                                <p className="font-bold text-zinc-800">{proj.name}</p>
-                                <p className="text-zinc-500 text-xs mt-1">{proj.desc}</p>
-                            </li>
-                        ))}
-                    </ul>
+                
+                {user?.developer?.projects?.length > 0 && (
+                    <div>
+                        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Projects</h4>
+                        <div className="space-y-4">
+                            {user.developer.projects.map((proj, idx) => (
+                                <div key={idx} className="group">
+                                    <h5 className="font-bold text-zinc-900 flex items-center gap-2">
+                                        {proj.name}
+                                        {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><Github size={14}/></a>}
+                                        {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><ExternalLink size={14}/></a>}
+                                    </h5>
+                                    <p className="text-xs text-zinc-500 mt-1">{proj.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    </section>
+);
+
+const renderCareer = () => (
+    <section id="career" className="scroll-mt-24">
+        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
+            <Briefcase className="text-zinc-400" size={24}/> Career
+        </h3>
+        <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-zinc-100 shadow-sm space-y-6">
+            <div>
+                <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Target Role</h4>
+                <p className="text-lg font-black text-zinc-900">{user?.career?.targetJob || '미설정'}</p>
+            </div>
+            
+            <div className="pt-4 border-t border-zinc-50">
+                <h4 className="text-xs font-bold text-zinc-900 mb-4">Career Goals</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-zinc-50 p-4 rounded-2xl">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Short Term</span>
+                        <p className="text-sm font-medium text-zinc-800">{user?.career?.careerGoals?.short || '-'}</p>
+                    </div>
+                    <div className="bg-zinc-50 p-4 rounded-2xl">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Mid Term</span>
+                        <p className="text-sm font-medium text-zinc-800">{user?.career?.careerGoals?.mid || '-'}</p>
+                    </div>
+                    <div className="bg-zinc-50 p-4 rounded-2xl">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Long Term</span>
+                        <p className="text-sm font-medium text-zinc-800">{user?.career?.careerGoals?.long || '-'}</p>
+                    </div>
                 </div>
             </div>
         </div>
-    );
-}
+    </section>
+);
 
-function renderCareerContent() {
-    return (
-        <div className="space-y-6 text-sm text-zinc-700">
-            <p><span className="font-bold text-zinc-900">Target:</span> {user?.career?.targetJob || '미설정'}</p>
-            <div className="pt-4 border-t border-zinc-100">
-                <h4 className="font-bold text-zinc-900 mb-3">Career Goals</h4>
-                <ul className="space-y-2">
-                    <li><span className="text-zinc-400 w-12 inline-block">Short</span> {user?.career?.careerGoals?.short || '-'}</li>
-                    <li><span className="text-zinc-400 w-12 inline-block">Mid</span> {user?.career?.careerGoals?.mid || '-'}</li>
-                    <li><span className="text-zinc-400 w-12 inline-block">Long</span> {user?.career?.careerGoals?.long || '-'}</li>
-                </ul>
-            </div>
-        </div>
-    );
-}
-
-function renderIdolContent() {
-    return (
-        <div className="grid grid-cols-2 gap-4 text-sm text-zinc-700">
-            <div><span className="block text-xs text-zinc-400 mb-1">Nickname</span> <span className="font-medium text-zinc-900">{user?.idol?.nickname || '-'}</span></div>
-            <div><span className="block text-xs text-zinc-400 mb-1">Specialty</span> <span className="font-medium text-zinc-900">{user?.idol?.specialty || '-'}</span></div>
-            <div><span className="block text-xs text-zinc-400 mb-1">Favorite Color</span> <span className="font-medium text-zinc-900">{(user?.idol?.favorites?.colors || []).join(', ') || '-'}</span></div>
-            <div><span className="block text-xs text-zinc-400 mb-1">Favorite Music</span> <span className="font-medium text-zinc-900">{(user?.idol?.favorites?.music || []).join(', ') || '-'}</span></div>
-        </div>
-    );
-}
-
-function renderQnaContent() {
-    const qnas = user?.qna?.length ? user.qna : [{ q: "나를 한 단어로 표현한다면?", a: "꾸준함." }];
-    return (
-        <div className="space-y-4 text-sm">
-            {qnas.map((item, idx) => (
-                <div key={idx} className="bg-zinc-50 p-4 rounded-xl">
-                    <p className="font-bold text-zinc-900 mb-1">Q. {item.q}</p>
-                    <p className="text-zinc-600 leading-relaxed">{item.a}</p>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function renderHobbyContent() {
-    const hobby = user?.hobby?.title ? user.hobby : { title: "기록과 산책", description: "조용한 동네를 걷습니다.", keywords: ["산책", "기록"] };
-    return (
-        <div className="text-sm text-zinc-700">
-            <h4 className="font-bold text-zinc-900 mb-2">{hobby.title}</h4>
-            <p className="leading-relaxed mb-4">{hobby.description}</p>
-            <div className="flex gap-2">
-                {(hobby.keywords || []).map(kw => <span key={kw} className="text-xs text-zinc-500 bg-zinc-100 px-2 py-1 rounded-md">#{kw}</span>)}
-            </div>
-        </div>
-    );
-}
-
-function renderVisionContent() {
+const renderVision = () => {
     const core = user?.vision?.core || "핵심 목표";
     const subs = user?.vision?.subs || Array(8).fill("서브 목표");
     return (
-        <div className="text-center py-4">
-            <div className="inline-block p-4 border border-zinc-200 rounded-full mb-6">
-                <p className="text-xs text-zinc-400 mb-1">Core Vision</p>
-                <p className="font-black text-zinc-900 text-lg">{core}</p>
+        <section id="vision" className="scroll-mt-24">
+            <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
+                <Compass className="text-zinc-400" size={24}/> Vision
+            </h3>
+            <div className="bg-zinc-900 p-8 md:p-10 rounded-[2rem] shadow-md text-center">
+                <div className="inline-block p-4 border border-zinc-700/50 rounded-2xl mb-8 bg-zinc-800/50 backdrop-blur-sm">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Core Goal</p>
+                    <p className="font-black text-white text-xl md:text-2xl">{core}</p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto">
+                    {subs.map((sub, idx) => (
+                        <span key={idx} className="px-3 py-1.5 bg-zinc-800 text-zinc-300 text-xs font-bold rounded-lg border border-zinc-700">
+                            {sub}
+                        </span>
+                    ))}
+                </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 max-w-sm mx-auto">
-                {subs.map((sub, idx) => (
-                    <span key={idx} className="px-3 py-1.5 bg-zinc-50 border border-zinc-100 text-zinc-600 text-xs rounded-lg">{sub}</span>
-                ))}
+        </section>
+    );
+};
+
+const renderIdol = () => (
+    <section id="idol" className="scroll-mt-24">
+        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
+            <HeartHandshake className="text-zinc-400" size={24}/> TMI & Favorites
+        </h3>
+        <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-zinc-100 shadow-sm grid grid-cols-2 gap-y-6 gap-x-4">
+            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Nickname</span> <span className="text-sm font-bold text-zinc-900">{user?.idol?.nickname || '-'}</span></div>
+            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Specialty</span> <span className="text-sm font-bold text-zinc-900">{user?.idol?.specialty || '-'}</span></div>
+            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Favorite Color</span> <span className="text-sm font-bold text-zinc-900">{(user?.idol?.favorites?.colors || []).join(', ') || '-'}</span></div>
+            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Favorite Music</span> <span className="text-sm font-bold text-zinc-900">{(user?.idol?.favorites?.music || []).join(', ') || '-'}</span></div>
+        </div>
+    </section>
+);
+
+const renderHobby = () => {
+    const hobby = user?.hobby?.title ? user.hobby : { title: "기록과 산책", description: "조용한 동네를 걷습니다.", keywords: ["산책", "기록"] };
+    return (
+        <section id="hobby" className="scroll-mt-24">
+            <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
+                <Palette className="text-zinc-400" size={24}/> Hobby
+            </h3>
+            <div className="bg-zinc-50 p-6 md:p-8 rounded-[2rem] border border-zinc-100">
+                <h4 className="text-lg font-black text-zinc-900 mb-3">{hobby.title}</h4>
+                <p className="text-sm text-zinc-600 leading-relaxed mb-6">{hobby.description}</p>
+                <div className="flex flex-wrap gap-2">
+                    {(hobby.keywords || []).map(kw => <span key={kw} className="px-3 py-1 bg-white text-zinc-700 border border-zinc-200 text-xs font-bold rounded-lg">#{kw}</span>)}
+                </div>
             </div>
-        </div>
+        </section>
     );
-}
-
-function renderQuotesContent() {
-    return (
-        <div className="text-center py-6">
-            <p className="text-lg font-medium text-zinc-800 italic leading-relaxed mb-4">"{featuredQuote.text}"</p>
-            <p className="text-xs font-bold text-zinc-400">- {featuredQuote.author}</p>
-        </div>
-    );
-}
-
-function renderGuestbookContent() {
-    return (
-        <div className="text-center py-8">
-            <p className="text-sm text-zinc-500 mb-4">방명록 기능이 곧 활성화됩니다.</p>
-            <button className="px-4 py-2 border border-zinc-200 text-zinc-900 text-xs font-bold rounded-full hover:bg-zinc-50">
-                기록 남기기
-            </button>
-        </div>
-    );
-}
+};
 
 // ==========================================
-// 🌟 Ultra Minimal Main Layout
+// 🌟 Main Split Layout
 // ==========================================
 return (
-    <div className="max-w-2xl mx-auto w-full p-4 md:p-8 animate-in fade-in duration-500 pb-24 font-sans">
+    <div className="max-w-6xl mx-auto w-full p-4 md:p-8 animate-in fade-in duration-500 pb-24 font-sans">
         
-        {/* Top Minimal Actions */}
-        <div className="flex justify-end gap-3 mb-10">
+        {/* Top Actions */}
+        <div className="flex justify-end gap-3 mb-8">
             {!isProfileEmpty && (
-                <button onClick={handleShare} className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition">
-                    <Share size={16} />
+                <button onClick={handleShare} className="px-4 py-2 rounded-full bg-white border border-zinc-200 flex items-center gap-2 text-zinc-600 text-xs font-bold hover:bg-zinc-50 transition">
+                    <Share size={14} /> 공유
                 </button>
             )}
             {isAdmin && !isGuestMode ? (
-                <button onClick={() => setViewMode('edit_profile')} className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition">
-                    <Edit2 size={16} />
+                <button onClick={() => setViewMode('edit_profile')} className="px-4 py-2 rounded-full bg-zinc-900 flex items-center gap-2 text-white text-xs font-bold hover:bg-zinc-800 transition">
+                    <Edit2 size={14} /> 편집
                 </button>
             ) : !isAdmin ? (
-                <button onClick={() => setLoginModalOpen(true)} className="px-4 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white text-sm font-bold hover:bg-zinc-800 transition">
+                <button onClick={() => setLoginModalOpen(true)} className="px-4 py-2 rounded-full bg-zinc-900 flex items-center text-white text-xs font-bold hover:bg-zinc-800 transition">
                     내 프로필 만들기
                 </button>
             ) : null}
         </div>
 
-        <main className={shouldBlur ? 'opacity-30 blur-[2px] pointer-events-none' : ''}>
+        <div className={`flex flex-col md:flex-row gap-10 md:gap-16 ${shouldBlur ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
             
-            {/* 1. Profile Header (Linktree Style) */}
-            <header className="flex flex-col items-center text-center mb-12">
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-zinc-100 border border-zinc-200 mb-6">
+            {/* 👈 LEFT COLUMN: Sticky Profile */}
+            <aside className="w-full md:w-80 shrink-0 md:sticky md:top-24 h-max flex flex-col items-center md:items-start text-center md:text-left">
+                <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] overflow-hidden bg-white shadow-sm border border-zinc-200 mb-6 rotate-3 hover:rotate-0 transition-transform duration-300">
                     {user?.profileImageUrl ? (
                         <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-300">
+                        <div className="w-full h-full flex items-center justify-center text-5xl font-black text-zinc-200 bg-zinc-50">
                             {isProfileEmpty ? '?' : user?.name?.charAt(0)}
                         </div>
                     )}
                 </div>
                 
-                <h1 className="text-2xl font-black text-zinc-900 mb-1">{user?.name || '사용자'}</h1>
-                {user?.handle && <p className="text-sm font-medium text-zinc-400 mb-4">@{user.handle}</p>}
+                <h1 className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight mb-2">{user?.name || '사용자'}</h1>
+                {user?.handle && <p className="text-sm font-bold text-zinc-400 mb-6">@{user.handle}</p>}
                 
-                <p className="text-sm text-zinc-600 leading-relaxed max-w-md mx-auto mb-6">
+                <p className="text-sm text-zinc-600 leading-relaxed font-medium mb-8 max-w-sm">
                     {user?.bio || "아직 작성된 한 줄 소개가 없습니다."}
                 </p>
 
-                <div className="flex flex-wrap justify-center gap-2 mb-6">
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-8">
                     {(user?.tags || []).map(tag => (
-                        <span key={tag} className="px-3 py-1 bg-zinc-100 text-zinc-600 text-xs font-medium rounded-full">#{tag}</span>
+                        <span key={tag} className="px-3 py-1.5 bg-zinc-100 text-zinc-600 text-xs font-bold rounded-lg">#{tag}</span>
                     ))}
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {displayLinks.map((link, idx) => (
                         <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" 
-                           className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors" title={link.name}>
-                            <Globe size={20} />
+                           className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-colors shadow-sm" title={link.name}>
+                            <Globe size={18} />
                         </a>
                     ))}
                 </div>
-            </header>
 
-            {/* 2. Accordion List Sections */}
-            <div className="space-y-3">
-                {sections.map((section) => {
-                    const isExpanded = expandedSection === section.id;
-                    return (
-                        <div key={section.id} className="border border-zinc-200 rounded-2xl overflow-hidden bg-white transition-all duration-300">
-                            <button 
-                                onClick={() => toggleSection(section.id)}
-                                className="w-full px-6 py-5 flex items-center justify-between bg-white hover:bg-zinc-50 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="text-zinc-400">{section.icon}</div>
-                                    <span className="font-bold text-zinc-900 text-sm">{section.label}</span>
+                {/* Featured Quote under profile */}
+                <div className="mt-12 pt-8 border-t border-zinc-200 w-full hidden md:block">
+                    <Quote className="text-zinc-300 mb-3" size={24}/>
+                    <p className="text-sm font-medium text-zinc-700 italic leading-relaxed">"{featuredQuote.text}"</p>
+                </div>
+            </aside>
+
+            {/* 👉 RIGHT COLUMN: Scrollable Content */}
+            <main className="flex-1 space-y-16 md:space-y-24 pb-20">
+                {(!isGuest || user?.privacy?.developer !== false) && renderDeveloper()}
+                {(!isGuest || user?.privacy?.career !== false) && renderCareer()}
+                {(!isGuest || user?.privacy?.vision !== false) && renderVision()}
+                {(!isGuest || user?.privacy?.hobby !== false) && renderHobby()}
+                {(!isGuest || user?.privacy?.idol !== false) && renderIdol()}
+                
+                {/* Q&A Section */}
+                {(!isGuest || user?.privacy?.qna !== false) && (
+                    <section id="qna" className="scroll-mt-24">
+                        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
+                            <HelpCircle className="text-zinc-400" size={24}/> Q&A
+                        </h3>
+                        <div className="space-y-4">
+                            {(user?.qna?.length ? user.qna : [{ q: "나를 한 단어로 표현한다면?", a: "꾸준함." }]).map((item, idx) => (
+                                <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm">
+                                    <p className="font-black text-zinc-900 mb-2 text-sm">Q. {item.q}</p>
+                                    <p className="text-sm text-zinc-600 leading-relaxed font-medium">{item.a}</p>
                                 </div>
-                                <div className="text-zinc-400">
-                                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                                </div>
-                            </button>
-                            
-                            {isExpanded && (
-                                <div className="px-6 pb-6 pt-2 animate-in slide-in-from-top-2 fade-in duration-200">
-                                    {section.content()}
-                                </div>
-                            )}
+                            ))}
                         </div>
-                    );
-                })}
-            </div>
-        </main>
+                    </section>
+                )}
+            </main>
+
+        </div>
 
         {/* Empty State Overlay */}
         {isProfileEmpty && !isAdmin && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-16 h-16 bg-zinc-100 text-zinc-400 rounded-full flex items-center justify-center mb-6"><User size={32}/></div>
-                <h3 className="text-xl font-black text-zinc-900 mb-3">아직 프로필이 없습니다</h3>
-                <p className="text-sm font-medium text-zinc-500 mb-8 max-w-sm">로그인 후 나만의 정보를 입력해보세요.</p>
-                <button onClick={() => setLoginModalOpen(true)} className="px-6 py-3 bg-zinc-900 text-white rounded-full text-sm font-bold shadow-md hover:bg-zinc-800 transition">
-                    시작하기
+            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm p-6 text-center">
+                <div className="w-20 h-20 bg-zinc-100 text-zinc-400 rounded-full flex items-center justify-center mb-6 shadow-sm"><User size={40}/></div>
+                <h3 className="text-2xl font-black text-zinc-900 mb-3">아직 프로필이 없습니다</h3>
+                <p className="text-base font-medium text-zinc-500 mb-8 max-w-sm">로그인 후 나만의 직무, 목표, 취향 정보를 입력하고 완벽한 이력서를 완성해보세요.</p>
+                <button onClick={() => setLoginModalOpen(true)} className="px-8 py-4 bg-zinc-900 text-white rounded-full text-sm font-black shadow-xl hover:bg-zinc-800 transition transform hover:scale-105">
+                    내 프로필 만들기
                 </button>
             </div>
         )}
