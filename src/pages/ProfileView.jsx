@@ -2,9 +2,16 @@ import React from 'react';
 import {
 Code, Briefcase, HeartHandshake, Edit2,
 User, HelpCircle, Palette, Compass, Quote, PenTool,
-Globe, Share, Github, ExternalLink
+Globe, Share, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
+
+// 🌟 커스텀 깃허브 아이콘 (lucide-react 브랜드 로고 삭제 대응)
+const GithubIcon = ({ size = 24, className = "" }) => (
+
+
+
+);
 
 const ProfileView = () => {
 const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
@@ -67,7 +74,7 @@ const renderDeveloper = () => (
                                 <div key={idx} className="group">
                                     <h5 className="font-bold text-zinc-900 flex items-center gap-2">
                                         {proj.name}
-                                        {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><Github size={14}/></a>}
+                                        {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><GithubIcon size={14}/></a>}
                                         {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><ExternalLink size={14}/></a>}
                                     </h5>
                                     <p className="text-xs text-zinc-500 mt-1">{proj.desc}</p>
@@ -225,7 +232,7 @@ return (
                     {displayLinks.map((link, idx) => (
                         <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" 
                            className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-colors shadow-sm" title={link.name}>
-                            <Globe size={18} />
+                            {link.platform === 'github' ? <GithubIcon size={18} /> : <Globe size={18} />}
                         </a>
                     ))}
                 </div>
