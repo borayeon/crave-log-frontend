@@ -1,17 +1,19 @@
 import React from 'react';
 import {
 Code, Briefcase, HeartHandshake, Edit2,
-User, HelpCircle, Palette, Compass, Quote, PenTool,
+User, HelpCircle, Palette, Compass, Quote,
 Globe, Share, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
-// 🌟 커스텀 깃허브 아이콘 (lucide-react 브랜드 로고 삭제 대응)
-const GithubIcon = ({ size = 24, className = "" }) => (
+// 🌟 커스텀 깃허브 아이콘 (복사 시 증발 방지를 위해 return 명시)
+const GithubIcon = ({ size = 24, className = "" }) => {
+return (
 
 
 
 );
+};
 
 const ProfileView = () => {
 const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
