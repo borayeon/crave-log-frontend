@@ -1,294 +1,408 @@
-import React from 'react';
-import {
-Code, Briefcase, HeartHandshake, Edit2,
-User, HelpCircle, Palette, Compass, Quote,
-Globe, Share, ExternalLink
+import React, { useState, useEffect } from 'react';
+import { 
+    Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
+    Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
+    ArrowRight, Heart, MessageSquare, Lock, 
+    ExternalLink, Terminal // ⭐️ Github 대신 Terminal 아이콘 사용!
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
-// 🌟 커스텀 깃허브 아이콘 (복사 시 증발 방지를 위해 return 명시)
-const GithubIcon = ({ size = 24, className = "" }) => {
-return (
-
-
-
-);
-};
-
 const ProfileView = () => {
-const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
+  const [activeTab, setActiveTab] = useState('developer'); 
 
-const isGuest = !isAdmin || isGuestMode;
-const isProfileEmpty = user?.name === "손님" && (user?.tags || []).length === 0;
-const shouldBlur = isProfileEmpty && !isAdmin;
+  // 게스트 판단 로직: 비로그인 상태이거나, 호스트가 '게스트 뷰' 버튼을 켰을 때
+  const isGuest = !isAdmin || isGuestMode;
 
-const handleShare = () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle}`;
+  // 탭 순서를 로컬 스토리지에 저장하고 드래그 앤 드롭 상태를 관리합니다.
+  const [tabOrder, setTabOrder] = useState(() => {
+    const saved = localStorage.getItem('cravelog_tab_order');
+    return saved ? JSON.parse(saved) : ['developer', 'career', 'idol'];
+  });
+  const [draggedTab, setDraggedTab] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
+  }, [tabOrder]);
+  
+  // 공유하기 버튼 클릭 시 클립보드 복사 로직
+  const handleShare = () => {
+    // window.location.origin은 현재 사이트 주소(예: https://cravelog.me 또는 localhost:5173)를 자동으로 가져옵니다.
+    const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user.handle}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
-        showToast("프로필 링크가 클립보드에 복사되었습니다.");
-    }).catch(() => {
-        showToast("링크 복사에 실패했습니다.");
+      showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
+    }).catch(err => {
+      console.error("클립보드 복사 실패:", err);
+      showToast("링크 복사에 실패했습니다.");
     });
-};
+  };
 
-// ==========================================
-// 🌟 Dummy Data & Helpers
-// ==========================================
-const dummyLinks = [
-    { platform: 'github', name: "GitHub", url: "https://github.com" },
-    { platform: 'blog', name: "Blog", url: "https://velog.io" }
-];
+  const isProfileEmpty = user.name === "손님" && (user.tags || []).length === 0;
+  const shouldBlur = isProfileEmpty && !isAdmin;
 
-const displayLinks = user?.links?.length > 0 ? user.links : dummyLinks;
-const displayQuotes = user?.quotes?.length ? user.quotes : [{ text: "아무것도 하지 않으면 아무 일도 일어나지 않는다.", author: "Anonymous" }];
-const featuredQuote = displayQuotes[Math.floor(Math.random() * displayQuotes.length)];
+  const allTabsMap = {
+    developer: { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
+    career: { id: 'career', icon: <Briefcase size={16}/>, label: 'Career Info' },
+    idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
+  };
 
-// ==========================================
-// 🌟 Section Renderers (Fully Visible)
-// ==========================================
-const renderDeveloper = () => (
-    <section id="developer" className="scroll-mt-24">
-        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
-            <Code className="text-zinc-400" size={24}/> Developer
-        </h3>
-        <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-zinc-100 shadow-sm space-y-8">
-            {user?.developer?.about && (
-                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">
-                    {user.developer.about}
-                </p>
-            )}
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <div>
-                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Tech Stack</h4>
-                    <ul className="space-y-3 text-sm">
-                        <li className="flex gap-4"><span className="font-bold text-zinc-900 w-20">Backend</span><span className="text-zinc-600">{user?.developer?.techStack?.backend || '-'}</span></li>
-                        <li className="flex gap-4"><span className="font-bold text-zinc-900 w-20">Database</span><span className="text-zinc-600">{user?.developer?.techStack?.db || '-'}</span></li>
-                        <li className="flex gap-4"><span className="font-bold text-zinc-900 w-20">Frontend</span><span className="text-zinc-600">{user?.developer?.techStack?.frontend || '-'}</span></li>
-                    </ul>
-                </div>
-                
-                {user?.developer?.projects?.length > 0 && (
-                    <div>
-                        <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Projects</h4>
-                        <div className="space-y-4">
-                            {user.developer.projects.map((proj, idx) => (
-                                <div key={idx} className="group">
-                                    <h5 className="font-bold text-zinc-900 flex items-center gap-2">
-                                        {proj.name}
-                                        {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><GithubIcon size={14}/></a>}
-                                        {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noreferrer" className="text-zinc-300 hover:text-zinc-900"><ExternalLink size={14}/></a>}
-                                    </h5>
-                                    <p className="text-xs text-zinc-500 mt-1">{proj.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
+  // 전역 isGuest 상태를 사용하여 비공개 탭을 필터링합니다.
+  const availableTabs = tabOrder
+    .map(id => allTabsMap[id])
+    .filter(tab => !isGuest || user.privacy?.[tab.id] !== false);
+
+  useEffect(() => {
+    // 모든 정보가 비공개일 때 activeTab을 비우도록 설정
+    if (isGuest && activeTab && user.privacy?.[activeTab] === false) {
+      const firstAvailable = availableTabs[0];
+      setActiveTab(firstAvailable ? firstAvailable.id : null);
+    } else if (!activeTab && availableTabs.length > 0) {
+      setActiveTab(availableTabs[0].id);
+    }
+  }, [isGuest, activeTab, user.privacy, availableTabs]);
+
+  // 드래그 앤 드롭 핸들러들
+  const handleDragStart = (e, id) => {
+    setDraggedTab(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id); // HTML5 드래그 필수 코드
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // 드롭 허용 필수
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault(); // 진입 시에도 이벤트 전파 방지
+  };
+
+  const handleDrop = (e, dropId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedTab || draggedTab === dropId) return;
+
+    const newOrder = [...tabOrder];
+    const dragIdx = newOrder.indexOf(draggedTab);
+    const dropIdx = newOrder.indexOf(dropId);
+    
+    newOrder.splice(dragIdx, 1);
+    newOrder.splice(dropIdx, 0, draggedTab);
+    
+    setTabOrder(newOrder);
+    setDraggedTab(null);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
+      <header className="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight">Index</h1>
+          <p className="text-sm font-bold text-zinc-400 mt-1 uppercase tracking-widest">Personal Catalog</p>
         </div>
-    </section>
-);
-
-const renderCareer = () => (
-    <section id="career" className="scroll-mt-24">
-        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
-            <Briefcase className="text-zinc-400" size={24}/> Career
-        </h3>
-        <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-zinc-100 shadow-sm space-y-6">
-            <div>
-                <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Target Role</h4>
-                <p className="text-lg font-black text-zinc-900">{user?.career?.targetJob || '미설정'}</p>
-            </div>
-            
-            <div className="pt-4 border-t border-zinc-50">
-                <h4 className="text-xs font-bold text-zinc-900 mb-4">Career Goals</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-zinc-50 p-4 rounded-2xl">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Short Term</span>
-                        <p className="text-sm font-medium text-zinc-800">{user?.career?.careerGoals?.short || '-'}</p>
-                    </div>
-                    <div className="bg-zinc-50 p-4 rounded-2xl">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Mid Term</span>
-                        <p className="text-sm font-medium text-zinc-800">{user?.career?.careerGoals?.mid || '-'}</p>
-                    </div>
-                    <div className="bg-zinc-50 p-4 rounded-2xl">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">Long Term</span>
-                        <p className="text-sm font-medium text-zinc-800">{user?.career?.careerGoals?.long || '-'}</p>
-                    </div>
-                </div>
-            </div>
+        <div className="flex flex-wrap gap-2">
+           {!isProfileEmpty && (
+             <button onClick={handleShare} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm flex items-center gap-2">
+                 <Link size={16} /> <span className="hidden md:inline">공유</span>
+             </button>
+           )}
+          {isAdmin && !isGuestMode ? (
+            <button onClick={() => setViewMode('edit_profile')} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
+              <Edit2 size={16} /> <span className="hidden md:inline">프로필 설정</span>
+            </button>
+          ) : !isAdmin ? (
+             <button onClick={() => setLoginModalOpen(true)} className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2">
+              <Rocket size={16} /> <span className="hidden md:inline">내 프로필 만들기</span>
+            </button>
+          ) : null}
         </div>
-    </section>
-);
+      </header>
 
-const renderVision = () => {
-    const core = user?.vision?.core || "핵심 목표";
-    const subs = user?.vision?.subs || Array(8).fill("서브 목표");
-    return (
-        <section id="vision" className="scroll-mt-24">
-            <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
-                <Compass className="text-zinc-400" size={24}/> Vision
-            </h3>
-            <div className="bg-zinc-900 p-8 md:p-10 rounded-[2rem] shadow-md text-center">
-                <div className="inline-block p-4 border border-zinc-700/50 rounded-2xl mb-8 bg-zinc-800/50 backdrop-blur-sm">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Core Goal</p>
-                    <p className="font-black text-white text-xl md:text-2xl">{core}</p>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto">
-                    {subs.map((sub, idx) => (
-                        <span key={idx} className="px-3 py-1.5 bg-zinc-800 text-zinc-300 text-xs font-bold rounded-lg border border-zinc-700">
-                            {sub}
-                        </span>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-};
-
-const renderIdol = () => (
-    <section id="idol" className="scroll-mt-24">
-        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
-            <HeartHandshake className="text-zinc-400" size={24}/> TMI & Favorites
-        </h3>
-        <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-zinc-100 shadow-sm grid grid-cols-2 gap-y-6 gap-x-4">
-            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Nickname</span> <span className="text-sm font-bold text-zinc-900">{user?.idol?.nickname || '-'}</span></div>
-            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Specialty</span> <span className="text-sm font-bold text-zinc-900">{user?.idol?.specialty || '-'}</span></div>
-            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Favorite Color</span> <span className="text-sm font-bold text-zinc-900">{(user?.idol?.favorites?.colors || []).join(', ') || '-'}</span></div>
-            <div><span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Favorite Music</span> <span className="text-sm font-bold text-zinc-900">{(user?.idol?.favorites?.music || []).join(', ') || '-'}</span></div>
-        </div>
-    </section>
-);
-
-const renderHobby = () => {
-    const hobby = user?.hobby?.title ? user.hobby : { title: "기록과 산책", description: "조용한 동네를 걷습니다.", keywords: ["산책", "기록"] };
-    return (
-        <section id="hobby" className="scroll-mt-24">
-            <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
-                <Palette className="text-zinc-400" size={24}/> Hobby
-            </h3>
-            <div className="bg-zinc-50 p-6 md:p-8 rounded-[2rem] border border-zinc-100">
-                <h4 className="text-lg font-black text-zinc-900 mb-3">{hobby.title}</h4>
-                <p className="text-sm text-zinc-600 leading-relaxed mb-6">{hobby.description}</p>
-                <div className="flex flex-wrap gap-2">
-                    {(hobby.keywords || []).map(kw => <span key={kw} className="px-3 py-1 bg-white text-zinc-700 border border-zinc-200 text-xs font-bold rounded-lg">#{kw}</span>)}
-                </div>
-            </div>
-        </section>
-    );
-};
-
-// ==========================================
-// 🌟 Main Split Layout
-// ==========================================
-return (
-    <div className="max-w-6xl mx-auto w-full p-4 md:p-8 animate-in fade-in duration-500 pb-24 font-sans">
-        
-        {/* Top Actions */}
-        <div className="flex justify-end gap-3 mb-8">
-            {!isProfileEmpty && (
-                <button onClick={handleShare} className="px-4 py-2 rounded-full bg-white border border-zinc-200 flex items-center gap-2 text-zinc-600 text-xs font-bold hover:bg-zinc-50 transition">
-                    <Share size={14} /> 공유
-                </button>
-            )}
-            {isAdmin && !isGuestMode ? (
-                <button onClick={() => setViewMode('edit_profile')} className="px-4 py-2 rounded-full bg-zinc-900 flex items-center gap-2 text-white text-xs font-bold hover:bg-zinc-800 transition">
-                    <Edit2 size={14} /> 편집
-                </button>
-            ) : !isAdmin ? (
-                <button onClick={() => setLoginModalOpen(true)} className="px-4 py-2 rounded-full bg-zinc-900 flex items-center text-white text-xs font-bold hover:bg-zinc-800 transition">
-                    내 프로필 만들기
-                </button>
-            ) : null}
-        </div>
-
-        <div className={`flex flex-col md:flex-row gap-10 md:gap-16 ${shouldBlur ? 'opacity-30 blur-sm pointer-events-none' : ''}`}>
-            
-            {/* 👈 LEFT COLUMN: Sticky Profile */}
-            <aside className="w-full md:w-80 shrink-0 md:sticky md:top-24 h-max flex flex-col items-center md:items-start text-center md:text-left">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] overflow-hidden bg-white shadow-sm border border-zinc-200 mb-6 rotate-3 hover:rotate-0 transition-transform duration-300">
-                    {user?.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-5xl font-black text-zinc-200 bg-zinc-50">
-                            {isProfileEmpty ? '?' : user?.name?.charAt(0)}
-                        </div>
-                    )}
-                </div>
-                
-                <h1 className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight mb-2">{user?.name || '사용자'}</h1>
-                {user?.handle && <p className="text-sm font-bold text-zinc-400 mb-6">@{user.handle}</p>}
-                
-                <p className="text-sm text-zinc-600 leading-relaxed font-medium mb-8 max-w-sm">
-                    {user?.bio || "아직 작성된 한 줄 소개가 없습니다."}
-                </p>
-
-                <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-8">
-                    {(user?.tags || []).map(tag => (
-                        <span key={tag} className="px-3 py-1.5 bg-zinc-100 text-zinc-600 text-xs font-bold rounded-lg">#{tag}</span>
-                    ))}
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {displayLinks.map((link, idx) => (
-                        <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" 
-                           className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-colors shadow-sm" title={link.name}>
-                            {link.platform === 'github' ? <GithubIcon size={18} /> : <Globe size={18} />}
-                        </a>
-                    ))}
-                </div>
-
-                {/* Featured Quote under profile */}
-                <div className="mt-12 pt-8 border-t border-zinc-200 w-full hidden md:block">
-                    <Quote className="text-zinc-300 mb-3" size={24}/>
-                    <p className="text-sm font-medium text-zinc-700 italic leading-relaxed">"{featuredQuote.text}"</p>
-                </div>
-            </aside>
-
-            {/* 👉 RIGHT COLUMN: Scrollable Content */}
-            <main className="flex-1 space-y-16 md:space-y-24 pb-20">
-                {(!isGuest || user?.privacy?.developer !== false) && renderDeveloper()}
-                {(!isGuest || user?.privacy?.career !== false) && renderCareer()}
-                {(!isGuest || user?.privacy?.vision !== false) && renderVision()}
-                {(!isGuest || user?.privacy?.hobby !== false) && renderHobby()}
-                {(!isGuest || user?.privacy?.idol !== false) && renderIdol()}
-                
-                {/* Q&A Section */}
-                {(!isGuest || user?.privacy?.qna !== false) && (
-                    <section id="qna" className="scroll-mt-24">
-                        <h3 className="text-2xl font-black text-zinc-900 mb-6 flex items-center gap-2">
-                            <HelpCircle className="text-zinc-400" size={24}/> Q&A
-                        </h3>
-                        <div className="space-y-4">
-                            {(user?.qna?.length ? user.qna : [{ q: "나를 한 단어로 표현한다면?", a: "꾸준함." }]).map((item, idx) => (
-                                <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm">
-                                    <p className="font-black text-zinc-900 mb-2 text-sm">Q. {item.q}</p>
-                                    <p className="text-sm text-zinc-600 leading-relaxed font-medium">{item.a}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-            </main>
-
-        </div>
-
-        {/* Empty State Overlay */}
+      {/* Top SNS Profile Area */}
+      <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8 items-center md:items-start mb-6 relative overflow-hidden">
         {isProfileEmpty && !isAdmin && (
-            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm p-6 text-center">
-                <div className="w-20 h-20 bg-zinc-100 text-zinc-400 rounded-full flex items-center justify-center mb-6 shadow-sm"><User size={40}/></div>
-                <h3 className="text-2xl font-black text-zinc-900 mb-3">아직 프로필이 없습니다</h3>
-                <p className="text-base font-medium text-zinc-500 mb-8 max-w-sm">로그인 후 나만의 직무, 목표, 취향 정보를 입력하고 완벽한 이력서를 완성해보세요.</p>
-                <button onClick={() => setLoginModalOpen(true)} className="px-8 py-4 bg-zinc-900 text-white rounded-full text-sm font-black shadow-xl hover:bg-zinc-800 transition transform hover:scale-105">
-                    내 프로필 만들기
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4 shadow-sm"><User size={32}/></div>
+                <h3 className="text-xl font-black text-zinc-900 mb-2">아직 설정된 프로필이 없어요!</h3>
+                <p className="text-sm font-medium text-zinc-500 mb-6 max-w-sm">로그인 후 나만의 직무, 목표, 취향 정보를 입력하고 나를 표현하는 멋진 인덱스를 완성해보세요.</p>
+                <button onClick={() => setLoginModalOpen(true)} className="px-6 py-3 bg-zinc-900 text-white rounded-xl font-bold shadow-md hover:bg-zinc-800 transition">
+                    CraveLog 시작하기
                 </button>
             </div>
         )}
+
+        <div className={`shrink-0 text-center ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
+            <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
+                <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden">
+                    {/* 프로필 사진 렌더링 로직 반영 */}
+                    {user.profileImageUrl ? (
+                        <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="text-5xl font-black text-zinc-300">{isProfileEmpty ? '?' : user.name.charAt(0)}</span>
+                    )}
+                </div>
+                {!isProfileEmpty && (
+                    <div className="absolute -bottom-3 -right-2 bg-zinc-900 text-white px-3 py-1.5 shadow-xl flex items-center gap-1.5 rounded-xl border border-zinc-800">
+                        <Sparkles size={12} className="text-yellow-400" /><span className="text-[10px] font-bold tracking-wider">{user.status}</span>
+                    </div>
+                )}
+            </div>
+        </div>
+        
+        <div className={`flex-1 text-center md:text-left ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2">
+                <h2 className="text-2xl font-black text-zinc-900">{user.name}</h2>
+                <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-bold text-zinc-500">
+                    <span className="flex items-center gap-1"><Briefcase size={14}/> {user.role}</span>
+                    <span className="flex items-center gap-1"><GraduationCap size={14}/> {user.major}</span>
+                    <span className="flex items-center gap-1"><MapPin size={14}/> {user.location}</span>
+                </div>
+            </div>
+            <p className="text-sm text-zinc-500 font-medium mb-4">@{user.handle}</p>
+            <p className="text-base text-zinc-700 font-bold mb-4">"{user.bio}"</p>
+            
+            <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                {(user.tags || []).map(tag => <span key={tag} className="px-3 py-1 bg-zinc-100 text-zinc-600 text-xs font-black rounded-lg">#{tag}</span>)}
+            </div>
+
+            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 text-left">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Target size={14}/> 현재 목표</h4>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    {(user.goals || []).map((goal, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md"><ArrowRight size={12}/> {goal}</div>
+                    ))}
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {!isProfileEmpty && (
+        <>
+          {/* Detail Tabs */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
+            {availableTabs.map(tab => (
+                <div 
+                    key={tab.id} 
+                    draggable={!isGuest} // 게스트가 아닐 때만 드래그 허용
+                    onDragStart={(e) => handleDragStart(e, tab.id)}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDrop={(e) => handleDrop(e, tab.id)}
+                    onDragEnd={() => setDraggedTab(null)}
+                    onClick={() => setActiveTab(tab.id)} 
+                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
+                        !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                    } ${
+                        activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
+                    } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
+                >
+                    {tab.icon} {tab.label} {user.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
+                </div>
+            ))}
+          </div>
+
+          {/* Tab Contents */}
+          {availableTabs.length === 0 && isGuest ? (
+              // 모든 정보가 비공개일 때 빈 화면 렌더링
+              <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-zinc-200/60 shadow-sm animate-in fade-in duration-500">
+                  <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 border border-zinc-100 shadow-inner">
+                      <Lock size={28} className="text-zinc-300" />
+                  </div>
+                  <h3 className="text-lg font-black text-zinc-800">비공개 프로필</h3>
+                  <p className="text-sm font-medium text-zinc-500 mt-2">사용자가 모든 세부 프로필을 비공개로 설정했습니다.</p>
+              </div>
+          ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  
+                  {/* Developer Tab */}
+                  {activeTab === 'developer' && (
+                      <div className="space-y-6">
+                          {/* 상단 About Me & Tech Stack */}
+                          <div className="bg-[#0D1117] text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800 relative overflow-hidden">
+                              <div className="absolute top-4 left-4 flex gap-1.5">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                              </div>
+                              
+                              <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-8 mt-4">
+                                  <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
+                              </p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                          <Code size={14}/> Tech Stack
+                                      </h4>
+                                      <div className="space-y-4 text-sm font-mono">
+                                          {['backend', 'db', 'frontend', 'tools'].map(type => {
+                                              const stackString = user.developer?.techStack?.[type];
+                                              if (!stackString) return null;
+                                              return (
+                                                  <div key={type}>
+                                                      <span className={`text-[10px] uppercase font-bold mr-2 ${type === 'backend' ? 'text-indigo-400' : type === 'db' ? 'text-emerald-400' : type === 'frontend' ? 'text-rose-400' : 'text-yellow-400'}`}>
+                                                          {type}:
+                                                      </span>
+                                                      <div className="inline-flex flex-wrap gap-1.5 align-middle mt-1">
+                                                          {stackString.split(',').map((tech, i) => (
+                                                              <span key={i} className="px-2 py-0.5 bg-[#21262D] border border-zinc-700 rounded text-xs font-medium text-zinc-200 hover:border-zinc-500 transition-colors cursor-default">
+                                                                  {tech.trim()}
+                                                              </span>
+                                                          ))}
+                                                      </div>
+                                                  </div>
+                                              )
+                                          })}
+                                      </div>
+                                  </div>
+                                  
+                                  <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                          <Code size={14}/> Currently Learning
+                                      </h4>
+                                      <div className="flex flex-wrap gap-2">
+                                          {(user.developer?.learning || []).map(l => (
+                                              <span key={l} className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-bold font-mono">
+                                                  {l}
+                                              </span>
+                                          ))}
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          {/* 프로젝트 카드 업데이트 */}
+                          <div>
+                              <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2">
+                                  <Code size={20} className="text-indigo-500" /> Featured Projects
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {(user.developer?.projects || []).map((proj, idx) => (
+                                      <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col group">
+                                          <div className="flex justify-between items-start mb-3">
+                                              <h4 className="text-xl font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                                                  {proj.name}
+                                              </h4>
+                                              {/* ⭐️ 프로젝트 링크 아이콘 (Terminal 사용) */}
+                                              <div className="flex gap-2 text-zinc-400">
+                                                  {proj.githubUrl && (
+                                                      <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors" title="Repository">
+                                                          <Terminal size={18} />
+                                                      </a>
+                                                  )}
+                                                  {proj.liveUrl && (
+                                                      <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors" title="Live Preview">
+                                                          <ExternalLink size={18} />
+                                                      </a>
+                                                  )}
+                                              </div>
+                                          </div>
+                                          <p className="text-sm text-zinc-500 font-medium leading-relaxed flex-1">
+                                              {proj.desc}
+                                          </p>
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Career Tab */}
+                  {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (
+                      <div className="space-y-6">
+                          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-8">
+                              <div className="flex-1 space-y-6">
+                                  <div>
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Target Job</h4>
+                                      <p className="text-xl font-black text-indigo-600">{user.career?.targetJob}</p>
+                                  </div>
+                                  <div>
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                          {(user.career?.techStack || []).map(t => <span key={t} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-black rounded-lg border border-indigo-100">{t}</span>)}
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Interests</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                          {(user.career?.interests || []).map(i => <span key={i} className="px-3 py-1.5 bg-zinc-50 text-zinc-600 text-xs font-black rounded-lg border border-zinc-200">{i}</span>)}
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <div className="w-full md:w-1/3 space-y-4">
+                                  <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                      <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Short Term Goal</h4>
+                                      <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.short}</p>
+                                  </div>
+                                  <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                      <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Mid Term Goal</h4>
+                                      <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.mid}</p>
+                                  </div>
+                                  <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                      <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Long Term Goal</h4>
+                                      <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.long}</p>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              {(user.career?.strengths || []).map((str, idx) => (
+                                  <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm">
+                                      <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center font-black mb-4">{idx+1}</div>
+                                      <h4 className="text-base font-black text-zinc-900 mb-2">{str.title}</h4>
+                                      <p className="text-xs text-zinc-500 leading-relaxed font-medium">{str.desc}</p>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Idol Tab */}
+                  {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
+                      <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="md:col-span-1 bg-gradient-to-br from-rose-50 to-pink-50 p-8 rounded-[2rem] shadow-sm border border-rose-100">
+                                  <h3 className="text-xl font-black text-rose-900 mb-6 flex items-center gap-2"><Sparkles size={20} className="text-rose-400"/> Profile</h3>
+                                  <div className="space-y-4 text-sm">
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Nickname</span><span className="font-black text-rose-900">{user.idol?.nickname}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Birthday</span><span className="font-black text-rose-900">{user.idol?.birthday}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Age</span><span className="font-black text-rose-900">{user.idol?.age}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Specialty</span><span className="font-black text-rose-900">{user.idol?.specialty}</span></div>
+                                      <div className="flex justify-between pb-2"><span className="font-bold text-rose-400">Hobbies</span><span className="font-black text-rose-900 text-right">{user.idol?.hobbies}</span></div>
+                                  </div>
+                              </div>
+
+                              <div className="md:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
+                                  <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><Heart size={20} className="text-rose-500 fill-rose-500"/> Favorites</h3>
+                                  <div className="grid grid-cols-2 gap-6">
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Colors</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.colors || []).map(c=><span key={c} className="px-3 py-1 bg-zinc-50 rounded-lg text-xs font-bold text-zinc-700">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Foods</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.foods || []).map(c=><span key={c} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Games</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.games || []).map(c=><span key={c} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Music</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.music || []).map(c=><span key={c} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
+                              <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
+                              <div className="space-y-6">
+                                  {(user.idol?.qna || []).map((item, idx) => (
+                                      <div key={idx} className="flex flex-col gap-2">
+                                          <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
+                                          <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          )}
+        </>
+      )}
     </div>
-);
-
-
+  );
 };
 
 export default ProfileView;
