@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
-  Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal // ⭐️ Github 대신 Terminal 아이콘을 사용합니다!
+  Code, Briefcase, HeartHandshake, Sparkles, GraduationCap, MapPin, Target, ArrowRight, MessageSquare, X as CloseIcon,
+  Terminal 
 } from 'lucide-react'; 
 import { useAppStore } from '../store/AppStore';
 
-const EditProfileView= () => {
+const EditProfileView = () => {
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
+  // ⭐️ 방어 로직: user가 완전히 비어있거나 undefined일 경우를 대비한 튼튼한 초기값 설정
   const [formData, setFormData] = useState(() => {
-    const safeUser = JSON.parse(JSON.stringify(user || {}));
+    // 1. 넘어온 user 데이터가 객체가 아니면 빈 객체로 초기화
+    const safeUser = (user && typeof user === 'object') ? JSON.parse(JSON.stringify(user)) : {};
+    
+    // 2. 내부 속성들도 모두 옵셔널 체이닝 및 빈 값 처리
     return {
       ...safeUser,
+      name: safeUser.name || '',
+      handle: safeUser.handle || '',
       profileImageUrl: safeUser.profileImageUrl || '',
       privacy: safeUser.privacy || { developer: true, career: true, idol: true },
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
@@ -27,29 +33,29 @@ const EditProfileView= () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imageInputType, setImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
-
-  // 미리보기 모달 상태
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
 
-  // 미리보기 탭 목록 (비공개 처리된 탭은 미리보기에서도 숨김)
+  // ⭐️ 방어 로직: availablePreviewTabs 계산 시에도 formData.privacy가 확실히 존재할 때만 필터링
   const availablePreviewTabs = [
     { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
     { id: 'career', icon: <Briefcase size={16}/>, label: 'Career Info' },
     { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
-  ].filter(tab => formData.privacy[tab.id]);
+  ].filter(tab => formData.privacy && formData.privacy[tab.id]);
 
   useEffect(() => {
     if (showPreview) {
       const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
       setPreviewTab(firstTab);
     }
-  }, [showPreview]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showPreview, availablePreviewTabs.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 중첩된 객체 업데이트 헬퍼 함수
   const updateNested = (path, value) => {
     setFormData(prev => {
       const newData = JSON.parse(JSON.stringify(prev));
       let current = newData;
+      // path를 따라가면서 객체가 없으면 새로 생성
       for (let i = 0; i < path.length - 1; i++) {
         if (!current[path[i]]) current[path[i]] = {};
         current = current[path[i]];
@@ -113,27 +119,40 @@ const EditProfileView= () => {
     }
   };
 
-  const renderInput = (label, path, placeholder = "") => (
-    <div>
-      <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
-      <input
-        type="text"
-        placeholder={placeholder}
-        value={path.reduce((o, i) => (o || {})[i] || '', formData)}
-        onChange={e => updateNested(path, e.target.value)}
-        className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-      />
-    </div>
-  );
+  const renderInput = (label, path, placeholder = "") => {
+    // ⭐️ 방어 로직: 안전하게 값 추출
+    let value = formData;
+    for(const key of path) {
+      value = (value && typeof value === 'object') ? value[key] : undefined;
+    }
+    return (
+      <div>
+        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={value || ''}
+          onChange={e => updateNested(path, e.target.value)}
+          className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+        />
+      </div>
+    );
+  };
 
  const renderArrayTextarea = (label, path) => {
-    const arr = path.reduce((o, i) => (o || {})[i] || [], formData);
+    // ⭐️ 방어 로직: 배열 추출, 없으면 빈 배열
+    let arr = formData;
+    for(const key of path) {
+       arr = (arr && typeof arr === 'object') ? arr[key] : undefined;
+    }
+    if (!Array.isArray(arr)) arr = [];
+    
     return (
       <div>
         <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
         <textarea
-          value={arr.join(',')} // 보여질 때 콤마 뒤 공백 제거
-          onChange={e => updateNested(path, e.target.value.split(','))} // ⭐️ .map(s => s.trim()) 제거
+          value={arr.join(',')} 
+          onChange={e => updateNested(path, e.target.value.split(','))} 
           rows={2}
           className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
         />
@@ -184,7 +203,7 @@ const EditProfileView= () => {
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 mb-8">
           
           {/* 비공개 설정 (기본 탭 제외) */}
-          {editTab !== 'basic' && (
+          {editTab !== 'basic' && formData.privacy && (
             <div className="mb-8 p-5 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
               <div>
                 <h3 className="text-sm font-black text-indigo-900 flex items-center gap-2">
@@ -329,13 +348,13 @@ const EditProfileView= () => {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-8">
                                   <div className="md:col-span-2 space-y-3">
                                       <input 
-                                          value={proj.name} 
+                                          value={proj.name || ''} 
                                           onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
                                           className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black outline-none focus:border-indigo-400" 
                                           placeholder="프로젝트 이름 (예: CraveLog 아카이빙 플랫폼)" 
                                       />
                                       <textarea 
-                                          value={proj.desc} 
+                                          value={proj.desc || ''} 
                                           onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
                                           className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-medium outline-none resize-none focus:border-indigo-400" 
                                           placeholder="프로젝트 한 줄 설명 및 담당 역할" 
@@ -343,7 +362,6 @@ const EditProfileView= () => {
                                       />
                                   </div>
                                   <div className="flex items-center gap-2">
-                                      {/* ⭐️ Github 대신 Terminal 사용 */}
                                       <Terminal size={16} className="text-zinc-400 shrink-0"/>
                                       <input 
                                           value={proj.githubUrl || ''} 
@@ -392,8 +410,8 @@ const EditProfileView= () => {
                   <h3 className="font-black text-zinc-800">Strengths (강점)</h3>
                   {(formData.career?.strengths || []).map((str, idx) => (
                       <div key={idx} className="flex gap-2">
-                          <input value={str.title} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-1/3 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold outline-none" placeholder="강점 키워드" />
-                          <input value={str.desc} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="flex-1 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="설명" />
+                          <input value={str.title || ''} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-1/3 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold outline-none" placeholder="강점 키워드" />
+                          <input value={str.desc || ''} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="flex-1 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="설명" />
                           <button onClick={()=>{const arr=[...(formData.career?.strengths||[])]; arr.splice(idx,1); updateNested(["career","strengths"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={18}/></button>
                       </div>
                   ))}
@@ -422,8 +440,8 @@ const EditProfileView= () => {
                   <h3 className="font-black text-zinc-800">Q & A</h3>
                   {(formData.idol?.qna || []).map((item, idx) => (
                       <div key={idx} className="flex gap-2">
-                          <input value={item.q} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].q=e.target.value; updateNested(["idol","qna"], arr); }} className="w-1/2 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold text-indigo-600 outline-none" placeholder="질문" />
-                          <input value={item.a} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].a=e.target.value; updateNested(["idol","qna"], arr); }} className="w-1/2 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="답변" />
+                          <input value={item.q || ''} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].q=e.target.value; updateNested(["idol","qna"], arr); }} className="w-1/2 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold text-indigo-600 outline-none" placeholder="질문" />
+                          <input value={item.a || ''} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].a=e.target.value; updateNested(["idol","qna"], arr); }} className="w-1/2 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="답변" />
                           <button onClick={()=>{const arr=[...(formData.idol?.qna||[])]; arr.splice(idx,1); updateNested(["idol","qna"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={18}/></button>
                       </div>
                   ))}
