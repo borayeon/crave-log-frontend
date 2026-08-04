@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Folder, Palette, HelpCircle, Compass, Link as LinkIcon
-} from 'lucide-react'; 
+  Terminal, Quote, Folder, Palette, HelpCircle, Compass, Link as LinkIcon,
+  Edit2,
+  Plus
+} from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
