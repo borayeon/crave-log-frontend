@@ -167,7 +167,57 @@ const availablePreviewTabs = ALL_TABS.filter(tab => formData.privacy?.[tab.id] !
       console.error(e);
     }
   };
-
+const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
+    const str = path.reduce((o, i) => (o || {})[i] || '', formData);
+    const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
+    
+    return (
+      <div className="w-full">
+        {label && <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>}
+        <div className={`w-full ${label ? 'mt-2' : ''} bg-[#0D1117]/50 border border-zinc-700 hover:border-zinc-500 rounded-xl px-3 py-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-indigo-500 transition-all min-h-[42px] items-center cursor-text`} onClick={(e) => e.currentTarget.querySelector('input').focus()}>
+          {arr.map((v, idx) => (
+            <span key={idx} className="flex items-center gap-1 bg-[#21262D] border border-zinc-700 text-zinc-200 text-[11px] font-medium px-2 py-0.5 rounded shadow-sm select-none">
+              {v}
+              <button type="button" onClick={(e) => {
+                e.stopPropagation();
+                const newArr = [...arr];
+                newArr.splice(idx, 1);
+                updateNested(path, newArr.join(', '));
+              }} className="text-zinc-500 hover:text-rose-400 ml-0.5">
+                <CloseIcon size={12}/>
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            placeholder={arr.length === 0 ? placeholder : ""}
+            className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-medium text-zinc-200 placeholder:text-zinc-600"
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const val = e.target.value.trim();
+                if (val && !arr.includes(val)) {
+                  updateNested(path, [...arr, val].join(', '));
+                }
+                e.target.value = '';
+              } else if (e.key === 'Backspace' && e.target.value === '' && arr.length > 0) {
+                const newArr = [...arr];
+                newArr.pop();
+                updateNested(path, newArr.join(', '));
+              }
+            }}
+            onBlur={e => {
+              const val = e.target.value.trim();
+              if (val && !arr.includes(val)) {
+                updateNested(path, [...arr, val].join(', '));
+              }
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </div>
+    );
+  };
   /* STREAMING_CHUNK: Render Helpers */
   const renderArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const arr = path.reduce((o, i) => (o || {})[i] || [], formData);
