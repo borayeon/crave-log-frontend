@@ -1,61 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
-  Code, Briefcase, HeartHandshake, Sparkles, GraduationCap, MapPin, Target, ArrowRight, MessageSquare, X as CloseIcon,
-  Terminal 
+  Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
+  Terminal, Quote, Folder, Palette, HelpCircle, Compass, Globe, Link as LinkIcon
 } from 'lucide-react'; 
 import { useAppStore } from '../store/AppStore';
 
-const EditProfileView = () => {
+const EditProfileView= () => {
   const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
-  // ⭐️ 방어 로직: user가 완전히 비어있거나 undefined일 경우를 대비한 튼튼한 초기값 설정
   const [formData, setFormData] = useState(() => {
-    // 1. 넘어온 user 데이터가 객체가 아니면 빈 객체로 초기화
-    const safeUser = (user && typeof user === 'object') ? JSON.parse(JSON.stringify(user)) : {};
-    
-    // 2. 내부 속성들도 모두 옵셔널 체이닝 및 빈 값 처리
+    const safeUser = JSON.parse(JSON.stringify(user || {}));
+    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
     return {
       ...safeUser,
-      name: safeUser.name || '',
-      handle: safeUser.handle || '',
       profileImageUrl: safeUser.profileImageUrl || '',
-      privacy: safeUser.privacy || { developer: true, career: true, idol: true },
+      privacy: safeUser.privacy || { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true },
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
       idol: safeUser.idol || { nickname: "", birthday: "", age: "", specialty: "", hobbies: "", favorites: {}, qna: [] },
+      qna: qnaData,
+      hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
+      vision: safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
+      quotes: safeUser.quotes || [],
       tags: safeUser.tags || [],
-      goals: safeUser.goals || []
+      goals: safeUser.goals || [],
+      links: safeUser.links || []
     };
   });
 
   const [editTab, setEditTab] = useState('basic');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imageInputType, setImageInputType] = useState('file');
+  const [hobbyImageInputType, setHobbyImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeVisionTab, setActiveVisionTab] = useState(0);
+
+  // 아이디 중복 확인 상태
+  const [isCheckingHandle, setIsCheckingHandle] = useState(false);
+  const [isHandleAvailable, setIsHandleAvailable] = useState(true);
+
+  // 미리보기 모달 상태
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
 
-  // ⭐️ 방어 로직: availablePreviewTabs 계산 시에도 formData.privacy가 확실히 존재할 때만 필터링
-  const availablePreviewTabs = [
-    { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
-    { id: 'career', icon: <Briefcase size={16}/>, label: 'Career Info' },
-    { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
-  ].filter(tab => formData.privacy && formData.privacy[tab.id]);
+  // 모든 탭 통합 관리
+  const ALL_TABS = [
+    { id: 'basic', label: '기본 정보', icon: null },
+    { id: 'developer', label: 'Developer', icon: <Code size={14}/> },
+    { id: 'career', label: 'Career', icon: <Briefcase size={14}/> },
+    { id: 'idol', label: 'Idol (TMI)', icon: <HeartHandshake size={14}/> },
+    { id: 'qna', label: 'Q&A', icon: <HelpCircle size={14}/> },
+    { id: 'hobby', label: 'Hobby', icon: <Palette size={14}/> },
+    { id: 'vision', label: 'Mandalart', icon: <Compass size={14}/> },
+    { id: 'quotes', label: 'Quotes', icon: <Quote size={14}/> }
+  ];
+
+  const availablePreviewTabs = ALL_TABS.filter(tab => tab.id !== 'basic' && formData.privacy[tab.id]);
 
   useEffect(() => {
     if (showPreview) {
       const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
       setPreviewTab(firstTab);
     }
-  }, [showPreview, availablePreviewTabs.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showPreview]);
 
-  // 중첩된 객체 업데이트 헬퍼 함수
   const updateNested = (path, value) => {
     setFormData(prev => {
       const newData = JSON.parse(JSON.stringify(prev));
       let current = newData;
-      // path를 따라가면서 객체가 없으면 새로 생성
       for (let i = 0; i < path.length - 1; i++) {
         if (!current[path[i]]) current[path[i]] = {};
         current = current[path[i]];
@@ -69,10 +82,46 @@ const EditProfileView = () => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        updateNested(["profileImageUrl"], reader.result); 
-      };
+      reader.onloadend = () => { updateNested(["profileImageUrl"], reader.result); };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleHobbyImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => { updateNested(["hobby", "image"], reader.result); };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCheckDuplicateHandle = async () => {
+    if (!formData.handle?.trim()) return showToast('아이디를 입력해주세요.');
+    if (!/^[a-z0-9._-]+$/.test(formData.handle)) {
+        return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
+    }
+
+    if (formData.handle === user.handle) {
+        setIsHandleAvailable(true);
+        return showToast('현재 사용 중인 내 아이디입니다. ✅');
+    }
+
+    setIsCheckingHandle(true);
+    try {
+      const res = await apiFetch(`/users/${formData.handle}/profile`);
+      if (res.ok) {
+        setIsHandleAvailable(false);
+        showToast('이미 사용 중인 아이디입니다. ❌ 다른 아이디를 입력해주세요.');
+      } else {
+        setIsHandleAvailable(true);
+        showToast('사용 가능한 아이디입니다! ✅');
+      }
+    } catch (error) {
+      setIsHandleAvailable(false);
+      showToast('중복 확인 중 오류가 발생했습니다.');
+    } finally {
+      setIsCheckingHandle(false);
     }
   };
 
@@ -80,8 +129,11 @@ const EditProfileView = () => {
     if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
     if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
     
-    if (!/^[a-z0-9.]+$/.test(formData.handle)) {
-        return showToast('아이디는 영문 소문자, 숫자, 마침표(.)만 가능합니다.');
+    if (!/^[a-z0-9._-]+$/.test(formData.handle)) {
+        return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
+    }
+    if (!isHandleAvailable && formData.handle !== user.handle) {
+        return showToast('아이디 중복 확인을 진행해주세요.');
     }
 
     setIsLoading(true);
@@ -101,7 +153,6 @@ const EditProfileView = () => {
         showToast(data.message || "프로필 저장에 실패했습니다.");
       }
     } catch (e) {
-      console.error(e);
       showToast("서버 연결에 실패했습니다.");
     } finally {
       setIsLoading(false);
@@ -119,44 +170,211 @@ const EditProfileView = () => {
     }
   };
 
-  const renderInput = (label, path, placeholder = "") => {
-    // ⭐️ 방어 로직: 안전하게 값 추출
-    let value = formData;
-    for(const key of path) {
-      value = (value && typeof value === 'object') ? value[key] : undefined;
-    }
-    return (
-      <div>
-        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
-        <input
-          type="text"
-          placeholder={placeholder}
-          value={value || ''}
-          onChange={e => updateNested(path, e.target.value)}
-          className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-        />
-      </div>
-    );
-  };
+  const renderInput = (label, path, placeholder = "") => (
+    <div>
+      <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={path.reduce((o, i) => (o || {})[i] || '', formData)}
+        onChange={e => updateNested(path, e.target.value)}
+        className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+      />
+    </div>
+  );
 
- const renderArrayTextarea = (label, path) => {
-    // ⭐️ 방어 로직: 배열 추출, 없으면 빈 배열
-    let arr = formData;
-    for(const key of path) {
-       arr = (arr && typeof arr === 'object') ? arr[key] : undefined;
-    }
-    if (!Array.isArray(arr)) arr = [];
+  // ⭐️ 새롭게 도입된 세련된 태그(Chip) 입력 에디터
+  const renderArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
+    const arr = path.reduce((o, i) => (o || {})[i] || [], formData);
     
     return (
       <div>
         <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
-        <textarea
-          value={arr.join(',')} 
-          onChange={e => updateNested(path, e.target.value.split(','))} 
-          rows={2}
-          className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-        />
+        <div className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-indigo-500 transition-all min-h-[46px] items-center cursor-text" onClick={(e) => e.currentTarget.querySelector('input').focus()}>
+          {arr.map((v, idx) => (
+            <span key={idx} className="flex items-center gap-1 bg-white border border-zinc-200 text-zinc-700 text-[11px] font-bold px-2.5 py-1 rounded-md shadow-sm select-none">
+              {v}
+              <button type="button" onClick={(e) => {
+                e.stopPropagation();
+                const newArr = [...arr];
+                newArr.splice(idx, 1);
+                updateNested(path, newArr);
+              }} className="text-zinc-400 hover:text-rose-500 ml-0.5">
+                <CloseIcon size={12}/>
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            placeholder={arr.length === 0 ? placeholder : ""}
+            className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-zinc-800"
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const val = e.target.value.trim();
+                if (val && !arr.includes(val)) {
+                  updateNested(path, [...arr, val]);
+                }
+                e.target.value = '';
+              } else if (e.key === 'Backspace' && e.target.value === '' && arr.length > 0) {
+                // 백스페이스로 태그 지우기 기능
+                const newArr = [...arr];
+                newArr.pop();
+                updateNested(path, newArr);
+              }
+            }}
+            onBlur={e => {
+              const val = e.target.value.trim();
+              if (val && !arr.includes(val)) {
+                updateNested(path, [...arr, val]);
+              }
+              e.target.value = '';
+            }}
+          />
+        </div>
       </div>
+    );
+  };
+
+  // ⭐️ 백엔드/프론트엔드 기술스택(콤마로 이어져있는 문자열) 전용 태그 에디터
+  const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
+    const str = path.reduce((o, i) => (o || {})[i] || '', formData);
+    const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
+    
+    return (
+      <div>
+        <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>
+        <div className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-indigo-500 transition-all min-h-[46px] items-center cursor-text" onClick={(e) => e.currentTarget.querySelector('input').focus()}>
+          {arr.map((v, idx) => (
+            <span key={idx} className="flex items-center gap-1 bg-white border border-zinc-200 text-zinc-700 text-[11px] font-bold px-2.5 py-1 rounded-md shadow-sm select-none">
+              {v}
+              <button type="button" onClick={(e) => {
+                e.stopPropagation();
+                const newArr = [...arr];
+                newArr.splice(idx, 1);
+                updateNested(path, newArr.join(', '));
+              }} className="text-zinc-400 hover:text-rose-500 ml-0.5">
+                <CloseIcon size={12}/>
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            placeholder={arr.length === 0 ? placeholder : ""}
+            className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-zinc-800"
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const val = e.target.value.trim();
+                if (val && !arr.includes(val)) {
+                  updateNested(path, [...arr, val].join(', '));
+                }
+                e.target.value = '';
+              } else if (e.key === 'Backspace' && e.target.value === '' && arr.length > 0) {
+                const newArr = [...arr];
+                newArr.pop();
+                updateNested(path, newArr.join(', '));
+              }
+            }}
+            onBlur={e => {
+              const val = e.target.value.trim();
+              if (val && !arr.includes(val)) {
+                updateNested(path, [...arr, val].join(', '));
+              }
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // 만다라트 9x9 그리드 에디터 
+  const renderMandalartEditor = () => {
+    const v = formData.vision;
+    
+    const handleCoreChange = (val) => updateNested(['vision', 'core'], val);
+    const handleSubChange = (subIdx, val) => {
+      const newSubs = [...v.subs];
+      newSubs[subIdx] = val;
+      updateNested(['vision', 'subs'], newSubs);
+    };
+    const handleDetailChange = (subIdx, detailIdx, val) => {
+      const newDetails = [...v.details];
+      if (!newDetails[subIdx]) newDetails[subIdx] = Array(8).fill("");
+      else newDetails[subIdx] = [...newDetails[subIdx]]; 
+      newDetails[subIdx][detailIdx] = val;
+      updateNested(['vision', 'details'], newDetails);
+    };
+
+    const blocks = [];
+    for (let i = 0; i < 9; i++) {
+        if (i === 4) {
+            blocks.push([
+                { t: 'sub', idx: 0, val: v.subs[0] }, { t: 'sub', idx: 1, val: v.subs[1] }, { t: 'sub', idx: 2, val: v.subs[2] },
+                { t: 'sub', idx: 3, val: v.subs[3] }, { t: 'core', idx: 0, val: v.core }, { t: 'sub', idx: 4, val: v.subs[4] },
+                { t: 'sub', idx: 5, val: v.subs[5] }, { t: 'sub', idx: 6, val: v.subs[6] }, { t: 'sub', idx: 7, val: v.subs[7] }
+            ]);
+        } else {
+            const subIdx = i < 4 ? i : i - 1;
+            const d = v.details[subIdx] || Array(8).fill("");
+            blocks.push([
+                { t: 'detail', subIdx, idx: 0, val: d[0] }, { t: 'detail', subIdx, idx: 1, val: d[1] }, { t: 'detail', subIdx, idx: 2, val: d[2] },
+                { t: 'detail', subIdx, idx: 3, val: d[3] }, { t: 'sub-readonly', subIdx, idx: 0, val: v.subs[subIdx] }, { t: 'detail', subIdx, idx: 4, val: d[4] },
+                { t: 'detail', subIdx, idx: 5, val: d[5] }, { t: 'detail', subIdx, idx: 6, val: d[6] }, { t: 'detail', subIdx, idx: 7, val: d[7] }
+            ]);
+        }
+    }
+
+    return (
+        <div className="bg-gradient-to-br from-teal-900 to-slate-900 p-6 md:p-10 rounded-[2.5rem] shadow-xl overflow-x-auto scrollbar-hide">
+            <div className="min-w-[650px] max-w-3xl mx-auto aspect-square grid grid-cols-3 gap-1 md:gap-2 p-1.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                {blocks.map((block, bIdx) => (
+                    <div key={bIdx} className="grid grid-cols-3 gap-px bg-white/30 border border-white/20 rounded-lg overflow-hidden shadow-inner p-px">
+                        {block.map((cell, cIdx) => {
+                            let bg = "bg-white/90 hover:bg-white focus:bg-white";
+                            let textClass = "text-slate-800 font-bold";
+                            let placeholder = "세부 계획";
+                            let onChange = null;
+                            let disabled = false;
+
+                            if (cell.t === 'core') {
+                                bg = "bg-teal-500 hover:bg-teal-400 focus:bg-teal-400 z-10 shadow-md";
+                                textClass = "text-white font-black";
+                                placeholder = "최종 목표";
+                                onChange = (e) => handleCoreChange(e.target.value);
+                            } else if (cell.t === 'sub') {
+                                bg = "bg-teal-100 hover:bg-teal-50 focus:bg-teal-50";
+                                textClass = "text-teal-900 font-black";
+                                placeholder = "핵심 요건";
+                                onChange = (e) => handleSubChange(cell.idx, e.target.value);
+                            } else if (cell.t === 'sub-readonly') {
+                                bg = "bg-teal-200/80 cursor-not-allowed";
+                                textClass = "text-teal-900 font-black";
+                                disabled = true;
+                            } else if (cell.t === 'detail') {
+                                onChange = (e) => handleDetailChange(cell.subIdx, cell.idx, e.target.value);
+                            }
+
+                            return (
+                                <textarea
+                                    key={cIdx}
+                                    disabled={disabled}
+                                    value={cell.val || ''}
+                                    onChange={onChange}
+                                    placeholder={placeholder}
+                                    className={`w-full h-full min-h-[50px] p-1 text-center text-[9px] sm:text-[10px] md:text-xs resize-none outline-none transition-colors placeholder:text-black/20 flex items-center justify-center ${bg} ${textClass}`}
+                                    style={{ lineHeight: '1.2' }}
+                                />
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+            <p className="text-center text-teal-200/80 text-xs font-bold mt-6">
+                칸을 직접 클릭해서 수정하세요. 정중앙에 최종 목표를 적고, 주변에 8개의 핵심 요건을 적으면 외곽에 자동으로 복사됩니다.
+            </p>
+        </div>
     );
   };
 
@@ -188,14 +406,9 @@ const EditProfileView = () => {
 
         {/* 탭 메뉴 */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
-          {[
-            { id: 'basic', label: '기본 정보' },
-            { id: 'developer', label: 'Developer' },
-            { id: 'career', label: 'Career' },
-            { id: 'idol', label: 'Idol' }
-          ].map(tab => (
-              <button key={tab.id} onClick={() => setEditTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap ${editTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
-                  {tab.label}
+          {ALL_TABS.map(tab => (
+              <button key={tab.id} onClick={() => setEditTab(tab.id)} className={`shrink-0 flex items-center justify-center gap-1.5 px-5 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap ${editTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
+                  {tab.icon} {tab.label}
               </button>
           ))}
         </div>
@@ -203,7 +416,7 @@ const EditProfileView = () => {
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 mb-8">
           
           {/* 비공개 설정 (기본 탭 제외) */}
-          {editTab !== 'basic' && formData.privacy && (
+          {editTab !== 'basic' && (
             <div className="mb-8 p-5 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
               <div>
                 <h3 className="text-sm font-black text-indigo-900 flex items-center gap-2">
@@ -228,23 +441,42 @@ const EditProfileView = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
               {renderInput("이름", ["name"], "예: 홍길동")}
               
-              {/* 고유 아이디 입력 칸 */}
+              {/* 고유 아이디 및 중복 확인 */}
               <div>
                 <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">고유 아이디 (URL 및 검색용)</label>
-                <div className="relative mt-2">
-                  <AtSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-                  <input 
-                      type="text" 
-                      value={formData.handle || ''} 
-                      onChange={e => updateNested(["handle"], e.target.value.toLowerCase())}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" 
-                      placeholder="예: taekyeong.dev"
-                  />
+                <div className="flex gap-2 mt-2">
+                  <div className="relative flex-1">
+                    <AtSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                    <input 
+                        type="text" 
+                        value={formData.handle || ''} 
+                        onChange={e => {
+                            const val = e.target.value.toLowerCase();
+                            updateNested(["handle"], val);
+                            if (val !== user.handle) setIsHandleAvailable(false);
+                            else setIsHandleAvailable(true);
+                        }}
+                        className={`w-full bg-zinc-50 border rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-colors ${!isHandleAvailable && formData.handle !== user.handle ? 'border-rose-400' : 'border-zinc-200'}`} 
+                        placeholder="예: taekyeong.dev"
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={handleCheckDuplicateHandle}
+                    disabled={isCheckingHandle || !formData.handle || formData.handle === user.handle}
+                    className="shrink-0 px-4 py-3 bg-zinc-900 text-white text-sm font-bold rounded-xl hover:bg-zinc-800 transition disabled:bg-zinc-400 flex items-center justify-center min-w-[90px] shadow-sm whitespace-nowrap"
+                  >
+                    {isCheckingHandle ? <Loader2 size={16} className="animate-spin" /> : '중복 확인'}
+                  </button>
                 </div>
-                <p className="text-[10px] text-zinc-400 font-medium pl-1 mt-1.5">영문 소문자, 숫자, 마침표(.)만 사용할 수 있습니다.</p>
+                <p className={`text-[10px] font-medium pl-1 mt-1.5 ${!isHandleAvailable && formData.handle !== user.handle ? 'text-rose-500' : 'text-zinc-400'}`}>
+                    {!isHandleAvailable && formData.handle !== user.handle 
+                        ? '아이디 중복 확인이 필요합니다.' 
+                        : '영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-) 허용'}
+                </p>
               </div>
               
-              {/* 프로필 이미지 입력 영역 */}
+              {/* 프로필 이미지 */}
               <div className="md:col-span-2 p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100">
                   <div className="flex items-center justify-between mb-4">
                       <label className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
@@ -257,7 +489,6 @@ const EditProfileView = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-5">
-                      {/* 미리보기 아바타 */}
                       <div className="w-20 h-20 rounded-2xl bg-white border border-zinc-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
                           {formData.profileImageUrl ? (
                               <img src={formData.profileImageUrl} alt="Profile preview" className="w-full h-full object-cover" />
@@ -279,11 +510,6 @@ const EditProfileView = () => {
                                           className="hidden" 
                                       />
                                   </label>
-                                  <span className="text-[11px] font-bold text-zinc-400 ml-1">
-                                      {formData.profileImageUrl && formData.profileImageUrl.startsWith('data:image') 
-                                        ? '✅ 업로드된 파일 적용됨' 
-                                        : '선택된 파일 없음'}
-                                  </span>
                               </div>
                           ) : (
                               <input 
@@ -294,9 +520,6 @@ const EditProfileView = () => {
                                   className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm" 
                               />
                           )}
-                          <p className="text-[10px] font-medium text-zinc-400 mt-2 ml-1">
-                              정사각형 이미지를 권장합니다. (JPG, PNG)
-                          </p>
                       </div>
                   </div>
               </div>
@@ -310,8 +533,57 @@ const EditProfileView = () => {
                   <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">한 줄 소개</label>
                   <textarea placeholder="나를 표현하는 멋진 문장을 적어주세요." value={formData.bio || ''} onChange={e => updateNested(["bio"], e.target.value)} rows={2} className="w-full mt-2 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
-              {renderArrayTextarea("Tags (키워드)", ["tags"])}
-              {renderArrayTextarea("Current Goals (현재 목표)", ["goals"])}
+
+              {/* 소셜 링크 입력 폼 */}
+              <div className="md:col-span-2 p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
+                  <div>
+                      <h3 className="font-black text-zinc-800 flex items-center gap-2"><LinkIcon size={16} className="text-indigo-500"/> Social Links</h3>
+                      <p className="text-[10px] font-bold text-zinc-500 mt-1">프로필 메인 화면에 아이콘 형태의 버튼으로 노출됩니다.</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                      {(formData.links || []).map((link, idx) => (
+                          <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center bg-white p-3 rounded-xl border border-zinc-200 shadow-sm relative">
+                              <select 
+                                  value={link.platform} 
+                                  onChange={e => { const arr=[...(formData.links||[])]; arr[idx].platform=e.target.value; updateNested(["links"], arr); }} 
+                                  className="w-full sm:w-32 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-bold outline-none"
+                              >
+                                  <option value="github">GitHub</option>
+                                  <option value="blog">Blog/Web</option>
+                                  <option value="instagram">Instagram</option>
+                                  <option value="facebook">Facebook</option>
+                                  <option value="x">X (Twitter)</option>
+                                  <option value="steam">Steam</option>
+                                  <option value="notion">Notion</option>
+                                  <option value="other">기타</option>
+                              </select>
+                              <input 
+                                  value={link.name} 
+                                  onChange={e => { const arr=[...(formData.links||[])]; arr[idx].name=e.target.value; updateNested(["links"], arr); }} 
+                                  className="w-full sm:w-1/3 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-medium outline-none" 
+                                  placeholder="표시할 이름" 
+                              />
+                              <input 
+                                  value={link.url} 
+                                  onChange={e => { const arr=[...(formData.links||[])]; arr[idx].url=e.target.value; updateNested(["links"], arr); }} 
+                                  className="w-full flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-medium outline-none" 
+                                  placeholder="https://..." 
+                              />
+                              <button onClick={()=>{const arr=[...(formData.links||[])]; arr.splice(idx,1); updateNested(["links"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg shrink-0">
+                                  <Trash2 size={16}/>
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+                  <button onClick={()=>{const arr=[...(formData.links||[]), {platform:"github", name:"", url:""}]; updateNested(["links"], arr);}} className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition-colors w-full md:w-auto mt-2">
+                      + 링크 추가
+                  </button>
+              </div>
+
+              {/* ⭐️ 새로운 Chip 형태의 태그 에디터 적용 영역 */}
+              <div className="md:col-span-2">{renderArrayInput("Tags (나를 표현하는 키워드)", ["tags"], "키워드 입력 후 Enter")}</div>
+              <div className="md:col-span-2">{renderArrayInput("Current Goals (현재 목표)", ["goals"], "목표 입력 후 Enter")}</div>
             </div>
           )}
 
@@ -324,12 +596,14 @@ const EditProfileView = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-zinc-50 rounded-2xl border border-zinc-100">
                   <h3 className="md:col-span-2 font-black text-zinc-800">Tech Stack</h3>
-                  {renderInput("Backend", ["developer", "techStack", "backend"])}
-                  {renderInput("Database", ["developer", "techStack", "db"])}
-                  {renderInput("Frontend", ["developer", "techStack", "frontend"])}
-                  {renderInput("Tools", ["developer", "techStack", "tools"])}
+                  {/* ⭐️ 기술 스택에 String 배열 형태의 Chip 에디터 적용 */}
+                  {renderStringArrayInput("Backend", ["developer", "techStack", "backend"], "기술 입력 후 Enter")}
+                  {renderStringArrayInput("Database", ["developer", "techStack", "db"], "기술 입력 후 Enter")}
+                  {renderStringArrayInput("Frontend", ["developer", "techStack", "frontend"], "기술 입력 후 Enter")}
+                  {renderStringArrayInput("Tools", ["developer", "techStack", "tools"], "기술 입력 후 Enter")}
               </div>
-              {renderArrayTextarea("Currently Learning (학습 중인 기술)", ["developer", "learning"])}
+              
+              {renderArrayInput("Currently Learning (학습 중인 기술)", ["developer", "learning"], "기술 입력 후 Enter")}
               
               <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
                   <h3 className="font-black text-zinc-800">Featured Projects</h3>
@@ -348,13 +622,13 @@ const EditProfileView = () => {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-8">
                                   <div className="md:col-span-2 space-y-3">
                                       <input 
-                                          value={proj.name || ''} 
+                                          value={proj.name} 
                                           onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
                                           className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black outline-none focus:border-indigo-400" 
                                           placeholder="프로젝트 이름 (예: CraveLog 아카이빙 플랫폼)" 
                                       />
                                       <textarea 
-                                          value={proj.desc || ''} 
+                                          value={proj.desc} 
                                           onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
                                           className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-medium outline-none resize-none focus:border-indigo-400" 
                                           placeholder="프로젝트 한 줄 설명 및 담당 역할" 
@@ -398,8 +672,8 @@ const EditProfileView = () => {
             <div className="space-y-6 animate-in fade-in">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {renderInput("Target Job (희망 직무)", ["career", "targetJob"])}
-                  {renderArrayTextarea("Tech Stack", ["career", "techStack"])}
-                  {renderArrayTextarea("Interests (관심 분야)", ["career", "interests"])}
+                  <div className="md:col-span-1">{renderArrayInput("Tech Stack", ["career", "techStack"])}</div>
+                  <div className="md:col-span-2">{renderArrayInput("Interests (관심 분야)", ["career", "interests"])}</div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100">
                   {renderInput("Short Term Goal", ["career", "careerGoals", "short"])}
@@ -410,8 +684,8 @@ const EditProfileView = () => {
                   <h3 className="font-black text-zinc-800">Strengths (강점)</h3>
                   {(formData.career?.strengths || []).map((str, idx) => (
                       <div key={idx} className="flex gap-2">
-                          <input value={str.title || ''} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-1/3 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold outline-none" placeholder="강점 키워드" />
-                          <input value={str.desc || ''} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="flex-1 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="설명" />
+                          <input value={str.title} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-1/3 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold outline-none" placeholder="강점 키워드" />
+                          <input value={str.desc} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="flex-1 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="설명" />
                           <button onClick={()=>{const arr=[...(formData.career?.strengths||[])]; arr.splice(idx,1); updateNested(["career","strengths"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={18}/></button>
                       </div>
                   ))}
@@ -430,23 +704,78 @@ const EditProfileView = () => {
                   {renderInput("Specialty", ["idol", "specialty"])}
                   {renderInput("Hobbies", ["idol", "hobbies"])}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-pink-50/50 rounded-2xl border border-pink-100">
-                  {renderArrayTextarea("Colors", ["idol", "favorites", "colors"])}
-                  {renderArrayTextarea("Foods", ["idol", "favorites", "foods"])}
-                  {renderArrayTextarea("Games", ["idol", "favorites", "games"])}
-                  {renderArrayTextarea("Music", ["idol", "favorites", "music"])}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-pink-50/50 rounded-2xl border border-pink-100">
+                  {renderArrayInput("Colors", ["idol", "favorites", "colors"])}
+                  {renderArrayInput("Foods", ["idol", "favorites", "foods"])}
+                  {renderArrayInput("Games", ["idol", "favorites", "games"])}
+                  {renderArrayInput("Music", ["idol", "favorites", "music"])}
               </div>
-              <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
-                  <h3 className="font-black text-zinc-800">Q & A</h3>
-                  {(formData.idol?.qna || []).map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                          <input value={item.q || ''} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].q=e.target.value; updateNested(["idol","qna"], arr); }} className="w-1/2 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-bold text-indigo-600 outline-none" placeholder="질문" />
-                          <input value={item.a || ''} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].a=e.target.value; updateNested(["idol","qna"], arr); }} className="w-1/2 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="답변" />
-                          <button onClick={()=>{const arr=[...(formData.idol?.qna||[])]; arr.splice(idx,1); updateNested(["idol","qna"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={18}/></button>
-                      </div>
-                  ))}
-                  <button onClick={()=>{const arr=[...(formData.idol?.qna||[]), {q:"", a:""}]; updateNested(["idol","qna"], arr);}} className="text-sm font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl">+ 문답 추가</button>
-              </div>
+            </div>
+          )}
+
+          {/* Q&A TAB */}
+          {editTab === 'qna' && (
+            <div className="space-y-4 animate-in fade-in p-6 bg-violet-50/30 rounded-3xl border border-violet-100">
+                <h3 className="font-black text-violet-900 mb-4 flex items-center gap-2"><MessageSquare size={20}/> 100문 100답 관리</h3>
+                {(formData.qna || []).map((item, idx) => (
+                    <div key={idx} className="flex gap-2">
+                        <input value={item.q} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].q=e.target.value; updateNested(["qna"], arr); }} className="w-1/3 bg-white border border-violet-200 rounded-xl px-3 py-2 text-sm font-bold text-violet-700 outline-none" placeholder="질문" />
+                        <input value={item.a} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].a=e.target.value; updateNested(["qna"], arr); }} className="flex-1 bg-white border border-violet-200 rounded-xl px-3 py-2 text-sm font-medium outline-none" placeholder="답변" />
+                        <button onClick={()=>{const arr=[...(formData.qna||[])]; arr.splice(idx,1); updateNested(["qna"], arr);}} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={18}/></button>
+                    </div>
+                ))}
+                <button onClick={()=>{const arr=[...(formData.qna||[]), {q:"", a:""}]; updateNested(["qna"], arr);}} className="text-sm font-bold text-violet-700 bg-violet-100 px-4 py-2 rounded-xl mt-2">+ 질문 추가하기</button>
+            </div>
+          )}
+
+          {/* HOBBY TAB */}
+          {editTab === 'hobby' && (
+            <div className="space-y-6 animate-in fade-in p-6 bg-amber-50/30 rounded-3xl border border-amber-100">
+                <h3 className="font-black text-amber-900 mb-2 flex items-center gap-2"><Target size={20}/> 취미 소개 관리</h3>
+                {renderInput("취미 제목", ["hobby", "title"], "예: 여행과 사진")}
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-2xl border border-amber-200/50">
+                    <div className="w-24 h-24 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200">
+                        {formData.hobby?.image ? <img src={formData.hobby.image} alt="Hobby" className="w-full h-full object-cover"/> : <ImageIcon className="text-zinc-300"/>}
+                    </div>
+                    <div className="flex-1 w-full space-y-2">
+                        <div className="flex bg-zinc-100 p-0.5 rounded-lg w-max">
+                            <button type="button" onClick={() => setHobbyImageInputType('file')} className={`px-3 py-1 text-xs font-bold rounded-md transition ${hobbyImageInputType === 'file' ? 'bg-white shadow-sm' : 'text-zinc-500'}`}>파일 업로드</button>
+                            <button type="button" onClick={() => setHobbyImageInputType('url')} className={`px-3 py-1 text-xs font-bold rounded-md transition ${hobbyImageInputType === 'url' ? 'bg-white shadow-sm' : 'text-zinc-500'}`}>웹 URL</button>
+                        </div>
+                        {hobbyImageInputType === 'file' ? (
+                            <input type="file" accept="image/*" onChange={handleHobbyImageUpload} className="w-full text-xs font-bold file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-amber-100 file:text-amber-700 cursor-pointer"/>
+                        ) : (
+                            <input type="text" placeholder="이미지 URL" value={formData.hobby?.image || ''} onChange={e => updateNested(["hobby", "image"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs" />
+                        )}
+                    </div>
+                </div>
+                <div>
+                    <label className="text-xs font-black text-amber-700 uppercase tracking-widest">상세 설명</label>
+                    <textarea value={formData.hobby?.description || ''} onChange={e => updateNested(["hobby", "description"], e.target.value)} rows={4} className="w-full mt-2 bg-white border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium outline-none" />
+                </div>
+                {renderArrayInput("관련 키워드 (Tags)", ["hobby", "keywords"])}
+            </div>
+          )}
+
+          {/* VISION TAB (Mandalart) */}
+          {editTab === 'vision' && (
+             <div className="animate-in fade-in">
+                 {renderMandalartEditor()}
+             </div>
+          )}
+
+          {/* QUOTES TAB */}
+          {editTab === 'quotes' && (
+            <div className="space-y-4 animate-in fade-in p-6 bg-slate-50/30 rounded-3xl border border-slate-200">
+                <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2"><Quote size={20}/> 좋아하는 명언 관리</h3>
+                {(formData.quotes || []).map((item, idx) => (
+                    <div key={idx} className="flex flex-col md:flex-row gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative pr-10">
+                        <textarea value={item.text} onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].text=e.target.value; updateNested(["quotes"], arr); }} className="flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none resize-none" placeholder="명언 내용" rows={2}/>
+                        <input value={item.author} onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].author=e.target.value; updateNested(["quotes"], arr); }} className="w-full md:w-1/4 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-medium outline-none" placeholder="말한 사람" />
+                        <button onClick={()=>{const arr=[...(formData.quotes||[])]; arr.splice(idx,1); updateNested(["quotes"], arr);}} className="absolute top-1/2 -translate-y-1/2 right-2 p-2 text-rose-500 hover:bg-rose-50 rounded-xl"><Trash2 size={16}/></button>
+                    </div>
+                ))}
+                <button onClick={()=>{const arr=[...(formData.quotes||[]), {text:"", author:""}]; updateNested(["quotes"], arr);}} className="text-sm font-bold text-slate-700 bg-slate-200 px-4 py-2.5 rounded-xl mt-2 w-full">+ 명언 추가하기</button>
             </div>
           )}
         </div>
@@ -703,17 +1032,100 @@ const EditProfileView = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
 
-                            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
-                                <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
-                                <div className="space-y-6">
-                                    {(formData.idol?.qna || []).map((item, idx) => (
-                                        <div key={idx} className="flex flex-col gap-2">
-                                            <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
-                                            <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
+                    {/* Preview Q&A Tab */}
+                    {previewTab === 'qna' && (
+                        <div className="space-y-6">
+                            <h3 className="text-2xl font-black text-violet-900 flex items-center gap-2"><MessageSquare size={24} className="text-violet-500"/> 100문 100답</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(formData.qna || []).map((item, idx) => (
+                                    <div key={idx} className="p-6 bg-violet-50/50 rounded-3xl relative overflow-hidden group border border-violet-100">
+                                        <div className="absolute -right-4 -top-6 text-9xl font-black text-white/50 select-none group-hover:scale-110 transition-transform duration-500">Q</div>
+                                        <h4 className="text-base md:text-lg font-black text-violet-700 relative z-10 mb-3 leading-snug">{item.q}</h4>
+                                        <p className="text-sm font-medium text-zinc-700 relative z-10 leading-relaxed bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white">{item.a}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Preview Hobby Tab */}
+                    {previewTab === 'hobby' && (
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-amber-100/60 overflow-hidden flex flex-col md:flex-row group">
+                            <div className="md:w-1/2 h-72 md:h-auto relative overflow-hidden">
+                                <img src={formData.hobby?.image || 'https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81?q=80&w=1000'} alt="Hobby" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                <h3 className="absolute bottom-8 left-8 text-3xl font-black text-white drop-shadow-md leading-tight">{formData.hobby?.title || '취미 제목'}</h3>
+                            </div>
+                            <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/30">
+                                <Quote size={48} className="text-amber-300 mb-6 transform rotate-180" />
+                                <p className="text-base text-zinc-700 leading-relaxed font-medium mb-8">
+                                    {formData.hobby?.description || '취미 설명이 없습니다.'}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {(formData.hobby?.keywords || []).map(kw => <span key={kw} className="px-4 py-2 bg-white text-amber-700 text-xs font-black rounded-xl border border-amber-200 shadow-sm">#{kw}</span>)}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Preview Vision Tab */}
+                    {previewTab === 'vision' && (() => {
+                        const v = formData.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
+                        const blocks = [];
+                        for (let i = 0; i < 9; i++) {
+                            if (i === 4) {
+                                blocks.push([v.subs[0], v.subs[1], v.subs[2], v.subs[3], v.core, v.subs[4], v.subs[5], v.subs[6], v.subs[7]]);
+                            } else {
+                                const subIdx = i < 4 ? i : i - 1;
+                                const d = v.details[subIdx] || Array(8).fill("");
+                                blocks.push([d[0], d[1], d[2], d[3], v.subs[subIdx], d[4], d[5], d[6], d[7]]);
+                            }
+                        }
+                        return (
+                            <div className="bg-gradient-to-br from-teal-900 to-slate-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl text-white">
+                                <div className="text-center mb-10">
+                                    <h3 className="text-3xl md:text-4xl font-black mb-3 flex items-center justify-center gap-3"><Compass className="text-teal-400"/> Mandalart</h3>
+                                    <p className="text-teal-200/80 text-sm font-medium">나의 비전을 이루기 위한 81가지 세부 계획</p>
+                                </div>
+                                <div className="grid grid-cols-3 gap-1 md:gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl w-full max-w-3xl mx-auto aspect-square border border-white/20 shadow-2xl">
+                                    {blocks.map((block, bIdx) => (
+                                        <div key={bIdx} className="grid grid-cols-3 gap-px bg-white/20 border border-white/10 rounded overflow-hidden shadow-inner">
+                                            {block.map((cell, cIdx) => {
+                                                const isCore = bIdx === 4 && cIdx === 4;
+                                                const isMainSub = bIdx === 4 && cIdx !== 4;
+                                                const isCenterOfOuter = bIdx !== 4 && cIdx === 4;
+                                                let bg = "bg-white/90";
+                                                let text = "text-slate-800";
+                                                let font = "font-bold text-[8px] sm:text-[10px] md:text-xs";
+                                                if (isCore) { bg = "bg-teal-500 shadow-lg z-10"; text = "text-white"; font = "font-black text-[10px] sm:text-xs md:text-sm"; } 
+                                                else if (isMainSub || isCenterOfOuter) { bg = "bg-teal-100"; text = "text-teal-900"; font = "font-black text-[9px] sm:text-[11px] md:text-sm"; }
+                                                return (
+                                                    <div key={cIdx} className={`${bg} ${text} ${font} flex items-center justify-center text-center p-0.5 sm:p-1 overflow-hidden break-words leading-tight transition-colors hover:brightness-95 cursor-default`}>
+                                                        {cell || '-'}
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+                        );
+                    })()}
+
+                    {/* Preview Quotes Tab */}
+                    {previewTab === 'quotes' && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {(formData.quotes || []).map((q, idx) => (
+                                    <div key={idx} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all">
+                                        <Quote size={20} className="text-slate-300 mb-3" />
+                                        <p className="text-sm font-bold text-slate-700 leading-relaxed mb-4">"{q.text}"</p>
+                                        <p className="text-[10px] font-black text-slate-400 text-right uppercase tracking-widest">- {q.author}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
