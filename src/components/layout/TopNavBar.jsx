@@ -123,11 +123,11 @@ const TopNavBar = () => {
 
             {/* 계정 설정 버튼 */}
             {(!isGuestMode && !visitedHandle) && (
-              <button 
-                onClick={() => setViewMode('account_settings')} 
-                className="hidden md:flex w-9 h-9 rounded-full bg-white border border-zinc-200 items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm md:mr-2" title="계정 설정">
-                <Settings size={16} />
-              </button>
+<button 
+  onClick={() => setViewMode('account_settings')} 
+  className="flex w-9 h-9 rounded-full bg-white border border-zinc-200 items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm md:mr-2" title="계정 설정">
+  <Settings size={16} />
+</button>
             )}
             
             {/* 새 기록 버튼 */}
