@@ -53,7 +53,7 @@ const EditProfileView = () => {
     { id: 'quotes', label: 'Quotes', icon: <Quote size={16}/> }
   ];
 
-  const availablePreviewTabs = ALL_TABS.filter(tab => formData.privacy[tab.id]);
+const availablePreviewTabs = ALL_TABS.filter(tab => formData.privacy?.[tab.id] !== false);
 
   useEffect(() => {
     if (showPreview) {
@@ -220,60 +220,29 @@ const EditProfileView = () => {
     );
   };
 
-  const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
-    const str = path.reduce((o, i) => (o || {})[i] || '', formData);
-    const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
-    
+const renderInput = (label, path, placeholder = "") => {
+    const val = path.reduce((o, i) => (o || {})[i], formData) || '';
     return (
       <div className="w-full">
-        {label && <label className="text-xs font-black text-zinc-500 uppercase tracking-widest">{label}</label>}
-        <div className={`w-full ${label ? 'mt-2' : ''} bg-[#0D1117]/50 border border-zinc-700 hover:border-zinc-500 rounded-xl px-3 py-2 flex flex-wrap gap-2 focus-within:ring-2 focus-within:ring-indigo-500 transition-all min-h-[42px] items-center cursor-text`} onClick={(e) => e.currentTarget.querySelector('input').focus()}>
-          {arr.map((v, idx) => (
-            <span key={idx} className="flex items-center gap-1 bg-[#21262D] border border-zinc-700 text-zinc-200 text-[11px] font-medium px-2 py-0.5 rounded shadow-sm select-none">
-              {v}
-              <button type="button" onClick={(e) => {
-                e.stopPropagation();
-                const newArr = [...arr];
-                newArr.splice(idx, 1);
-                updateNested(path, newArr.join(', '));
-              }} className="text-zinc-500 hover:text-rose-400 ml-0.5">
-                <CloseIcon size={12}/>
-              </button>
-            </span>
-          ))}
-          <input
-            type="text"
-            placeholder={arr.length === 0 ? placeholder : ""}
-            className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-medium text-zinc-200 placeholder:text-zinc-600"
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault();
-                const val = e.target.value.trim();
-                if (val && !arr.includes(val)) {
-                  updateNested(path, [...arr, val].join(', '));
-                }
-                e.target.value = '';
-              } else if (e.key === 'Backspace' && e.target.value === '' && arr.length > 0) {
-                const newArr = [...arr];
-                newArr.pop();
-                updateNested(path, newArr.join(', '));
-              }
-            }}
-            onBlur={e => {
-              const val = e.target.value.trim();
-              if (val && !arr.includes(val)) {
-                updateNested(path, [...arr, val].join(', '));
-              }
-              e.target.value = '';
-            }}
-          />
-        </div>
+        {label && <label className="text-xs font-black text-amber-700 uppercase tracking-widest block mb-2">{label}</label>}
+        <input
+          type="text"
+          value={val}
+          onChange={e => updateNested(path, e.target.value)}
+          className="w-full bg-white border border-amber-200 rounded-xl px-4 py-3 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-400"
+          placeholder={placeholder}
+        />
       </div>
     );
   };
 
   const renderMandalartEditor = () => {
-    const v = formData.vision;
+    const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
+    const v = {
+        core: formData.vision?.core || defaultVision.core,
+        subs: formData.vision?.subs?.length === 8 ? formData.vision.subs : defaultVision.subs,
+        details: formData.vision?.details?.length === 8 ? formData.vision.details : defaultVision.details
+    };
     
     const handleCoreChange = (val) => updateNested(['vision', 'core'], val);
     const handleSubChange = (subIdx, val) => {
@@ -363,7 +332,12 @@ const EditProfileView = () => {
 
   /* STREAMING_CHUNK: Vision Preview Helper */
   const renderVisionPreview = () => {
-    const v = formData.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
+    const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
+    const v = {
+        core: formData.vision?.core || defaultVision.core,
+        subs: formData.vision?.subs?.length === 8 ? formData.vision.subs : defaultVision.subs,
+        details: formData.vision?.details?.length === 8 ? formData.vision.details : defaultVision.details
+    };
     const blocks = [];
     for (let i = 0; i < 9; i++) {
         if (i === 4) {
