@@ -32,7 +32,6 @@ const EditProfileView = () => {
   });
 
   const [editTab, setEditTab] = useState('developer');
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imageInputType, setImageInputType] = useState('file');
   const [hobbyImageInputType, setHobbyImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
@@ -157,16 +156,6 @@ const availablePreviewTabs = ALL_TABS.filter(tab => formData.privacy?.[tab.id] !
     }
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      setIsAdmin(false);
-      await fetchAllData();
-      setViewMode('profile');
-      showToast("계정이 성공적으로 삭제되었습니다. 🗑️");
-    } catch (e) {
-      console.error(e);
-    }
-  };
 const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const str = path.reduce((o, i) => (o || {})[i] || '', formData);
     const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -955,41 +944,6 @@ const renderInput = (label, path, placeholder = "") => {
                   </button>
                 </div>
             </div>
-          )}
-        </div>
-
-        {/* Danger Zone */}
-        <div className="bg-rose-50 border border-rose-200 p-8 rounded-[2rem] mt-8 animate-in fade-in relative overflow-hidden">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                  <h3 className="text-lg font-black text-rose-600 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h3>
-                  <p className="text-sm font-medium text-rose-700/80 mt-2">
-                      계정을 삭제하면 모든 프로필 정보와 기록이 영구적으로 삭제되며 복구할 수 없습니다.
-                  </p>
-              </div>
-              <button 
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="shrink-0 px-6 py-3 bg-white text-rose-600 border border-rose-200 rounded-xl font-bold hover:bg-rose-600 hover:text-white transition-colors shadow-sm"
-              >
-                  내 계정 삭제
-              </button>
-          </div>
-
-          {showDeleteConfirm && (
-              <div className="absolute inset-0 bg-rose-50/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center border border-rose-300 rounded-[2rem] animate-in fade-in zoom-in-95">
-                  <AlertTriangle size={48} className="text-rose-500 mb-4" />
-                  <h4 className="text-xl font-black text-rose-900 mb-2">정말 삭제하시겠습니까?</h4>
-                  <p className="text-sm font-medium text-rose-700 mb-6">모든 데이터가 즉시 파기됩니다.</p>
-                  <div className="flex gap-3">
-                      <button type="button" onClick={() => setShowDeleteConfirm(false)} className="px-5 py-2.5 bg-white text-zinc-600 rounded-xl font-bold shadow-sm border border-zinc-200 hover:bg-zinc-50">
-                          취소하기
-                      </button>
-                      <button type="button" onClick={handleDeleteAccount} className="px-5 py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 flex items-center gap-2">
-                          <Trash2 size={16} /> 영구 삭제 확인
-                      </button>
-                  </div>
-              </div>
           )}
         </div>
 
