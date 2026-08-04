@@ -28,7 +28,7 @@ const ProfileView = () => {
   // 공유하기 버튼 클릭 시 클립보드 복사 로직
   const handleShare = () => {
     // window.location.origin은 현재 사이트 주소(예: https://cravelog.me 또는 localhost:5173)를 자동으로 가져옵니다.
-    const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user.handle}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
     }).catch(err => {
@@ -37,7 +37,9 @@ const ProfileView = () => {
     });
   };
 
-  const isProfileEmpty = user.name === "손님" && (user.tags || []).length === 0;
+  // ⭐️ 방어 로직 추가: user가 완전히 비어있을 때를 대비
+  const safeUser = user || {};
+  const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
 
   const allTabsMap = {
@@ -46,20 +48,20 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // 전역 isGuest 상태를 사용하여 비공개 탭을 필터링합니다.
+  // ⭐️ 방어 로직 추가: 로컬 스토리지에 잘못된 탭 정보가 있을 경우를 대비해 tab이 존재하는지(tab &&) 먼저 확인합니다.
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
-    .filter(tab => !isGuest || user.privacy?.[tab.id] !== false);
+    .filter(tab => tab && (!isGuest || user?.privacy?.[tab.id] !== false));
 
   useEffect(() => {
     // 모든 정보가 비공개일 때 activeTab을 비우도록 설정
-    if (isGuest && activeTab && user.privacy?.[activeTab] === false) {
+    if (isGuest && activeTab && user?.privacy?.[activeTab] === false) {
       const firstAvailable = availableTabs[0];
       setActiveTab(firstAvailable ? firstAvailable.id : null);
     } else if (!activeTab && availableTabs.length > 0) {
       setActiveTab(availableTabs[0].id);
     }
-  }, [isGuest, activeTab, user.privacy, availableTabs]);
+  }, [isGuest, activeTab, safeUser.privacy, availableTabs]);
 
   // 드래그 앤 드롭 핸들러들
   const handleDragStart = (e, id) => {
@@ -135,15 +137,15 @@ const ProfileView = () => {
             <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
                 <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden">
                     {/* 프로필 사진 렌더링 로직 반영 */}
-                    {user.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                    {safeUser.profileImageUrl ? (
+                        <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                        <span className="text-5xl font-black text-zinc-300">{isProfileEmpty ? '?' : user.name.charAt(0)}</span>
+                        <span className="text-5xl font-black text-zinc-300">{isProfileEmpty ? '?' : (safeUser.name ? safeUser.name.charAt(0) : '?')}</span>
                     )}
                 </div>
-                {!isProfileEmpty && (
+                {!isProfileEmpty && safeUser.status && (
                     <div className="absolute -bottom-3 -right-2 bg-zinc-900 text-white px-3 py-1.5 shadow-xl flex items-center gap-1.5 rounded-xl border border-zinc-800">
-                        <Sparkles size={12} className="text-yellow-400" /><span className="text-[10px] font-bold tracking-wider">{user.status}</span>
+                        <Sparkles size={12} className="text-yellow-400" /><span className="text-[10px] font-bold tracking-wider">{safeUser.status}</span>
                     </div>
                 )}
             </div>
@@ -151,24 +153,24 @@ const ProfileView = () => {
         
         <div className={`flex-1 text-center md:text-left ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2">
-                <h2 className="text-2xl font-black text-zinc-900">{user.name}</h2>
+                <h2 className="text-2xl font-black text-zinc-900">{safeUser.name || '손님'}</h2>
                 <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-bold text-zinc-500">
-                    <span className="flex items-center gap-1"><Briefcase size={14}/> {user.role}</span>
-                    <span className="flex items-center gap-1"><GraduationCap size={14}/> {user.major}</span>
-                    <span className="flex items-center gap-1"><MapPin size={14}/> {user.location}</span>
+                    <span className="flex items-center gap-1"><Briefcase size={14}/> {safeUser.role || ''}</span>
+                    <span className="flex items-center gap-1"><GraduationCap size={14}/> {safeUser.major || ''}</span>
+                    <span className="flex items-center gap-1"><MapPin size={14}/> {safeUser.location || ''}</span>
                 </div>
             </div>
-            <p className="text-sm text-zinc-500 font-medium mb-4">@{user.handle}</p>
-            <p className="text-base text-zinc-700 font-bold mb-4">"{user.bio}"</p>
+            <p className="text-sm text-zinc-500 font-medium mb-4">@{safeUser.handle || 'handle'}</p>
+            <p className="text-base text-zinc-700 font-bold mb-4">"{safeUser.bio || ''}"</p>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                {(user.tags || []).map(tag => <span key={tag} className="px-3 py-1 bg-zinc-100 text-zinc-600 text-xs font-black rounded-lg">#{tag}</span>)}
+                {(safeUser.tags || []).map(tag => <span key={tag} className="px-3 py-1 bg-zinc-100 text-zinc-600 text-xs font-black rounded-lg">#{tag}</span>)}
             </div>
 
             <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 text-left">
                 <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Target size={14}/> 현재 목표</h4>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
-                    {(user.goals || []).map((goal, idx) => (
+                    {(safeUser.goals || []).map((goal, idx) => (
                         <div key={idx} className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md"><ArrowRight size={12}/> {goal}</div>
                     ))}
                 </div>
@@ -196,7 +198,7 @@ const ProfileView = () => {
                         activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
                     } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
                 >
-                    {tab.icon} {tab.label} {user.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
+                    {tab.icon} {tab.label} {safeUser.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
                 </div>
             ))}
           </div>
@@ -226,7 +228,7 @@ const ProfileView = () => {
                               </div>
                               
                               <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-emerald-400 mb-8 mt-4">
-                                  <span className="text-zinc-500">{"// About Me"}</span><br/>{user.developer?.about}
+                                  <span className="text-zinc-500">{"// About Me"}</span><br/>{safeUser.developer?.about || ''}
                               </p>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -236,7 +238,7 @@ const ProfileView = () => {
                                       </h4>
                                       <div className="space-y-4 text-sm font-mono">
                                           {['backend', 'db', 'frontend', 'tools'].map(type => {
-                                              const stackString = user.developer?.techStack?.[type];
+                                              const stackString = safeUser.developer?.techStack?.[type];
                                               if (!stackString) return null;
                                               return (
                                                   <div key={type}>
@@ -261,7 +263,7 @@ const ProfileView = () => {
                                           <Code size={14}/> Currently Learning
                                       </h4>
                                       <div className="flex flex-wrap gap-2">
-                                          {(user.developer?.learning || []).map(l => (
+                                          {(safeUser.developer?.learning || []).map(l => (
                                               <span key={l} className="px-2.5 py-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs font-bold font-mono">
                                                   {l}
                                               </span>
@@ -277,7 +279,7 @@ const ProfileView = () => {
                                   <Code size={20} className="text-indigo-500" /> Featured Projects
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {(user.developer?.projects || []).map((proj, idx) => (
+                                  {(safeUser.developer?.projects || []).map((proj, idx) => (
                                       <div key={idx} className="bg-white p-6 rounded-2xl border border-zinc-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col group">
                                           <div className="flex justify-between items-start mb-3">
                                               <h4 className="text-xl font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
@@ -314,18 +316,18 @@ const ProfileView = () => {
                               <div className="flex-1 space-y-6">
                                   <div>
                                       <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-2">Target Job</h4>
-                                      <p className="text-xl font-black text-indigo-600">{user.career?.targetJob}</p>
+                                      <p className="text-xl font-black text-indigo-600">{safeUser.career?.targetJob || ''}</p>
                                   </div>
                                   <div>
                                       <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Tech Stack</h4>
                                       <div className="flex flex-wrap gap-2">
-                                          {(user.career?.techStack || []).map(t => <span key={t} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-black rounded-lg border border-indigo-100">{t}</span>)}
+                                          {(safeUser.career?.techStack || []).map(t => <span key={t} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-black rounded-lg border border-indigo-100">{t}</span>)}
                                       </div>
                                   </div>
                                   <div>
                                       <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">Interests</h4>
                                       <div className="flex flex-wrap gap-2">
-                                          {(user.career?.interests || []).map(i => <span key={i} className="px-3 py-1.5 bg-zinc-50 text-zinc-600 text-xs font-black rounded-lg border border-zinc-200">{i}</span>)}
+                                          {(safeUser.career?.interests || []).map(i => <span key={i} className="px-3 py-1.5 bg-zinc-50 text-zinc-600 text-xs font-black rounded-lg border border-zinc-200">{i}</span>)}
                                       </div>
                                   </div>
                               </div>
@@ -333,21 +335,21 @@ const ProfileView = () => {
                               <div className="w-full md:w-1/3 space-y-4">
                                   <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
                                       <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Short Term Goal</h4>
-                                      <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.short}</p>
+                                      <p className="text-sm font-bold text-indigo-900">{safeUser.career?.careerGoals?.short || ''}</p>
                                   </div>
                                   <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
                                       <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Mid Term Goal</h4>
-                                      <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.mid}</p>
+                                      <p className="text-sm font-bold text-indigo-900">{safeUser.career?.careerGoals?.mid || ''}</p>
                                   </div>
                                   <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
                                       <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Long Term Goal</h4>
-                                      <p className="text-sm font-bold text-indigo-900">{user.career?.careerGoals?.long}</p>
+                                      <p className="text-sm font-bold text-indigo-900">{safeUser.career?.careerGoals?.long || ''}</p>
                                   </div>
                               </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              {(user.career?.strengths || []).map((str, idx) => (
+                              {(safeUser.career?.strengths || []).map((str, idx) => (
                                   <div key={idx} className="bg-white p-6 rounded-[2rem] border border-zinc-200/80 shadow-sm">
                                       <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center font-black mb-4">{idx+1}</div>
                                       <h4 className="text-base font-black text-zinc-900 mb-2">{str.title}</h4>
@@ -365,21 +367,21 @@ const ProfileView = () => {
                               <div className="md:col-span-1 bg-gradient-to-br from-rose-50 to-pink-50 p-8 rounded-[2rem] shadow-sm border border-rose-100">
                                   <h3 className="text-xl font-black text-rose-900 mb-6 flex items-center gap-2"><Sparkles size={20} className="text-rose-400"/> Profile</h3>
                                   <div className="space-y-4 text-sm">
-                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Nickname</span><span className="font-black text-rose-900">{user.idol?.nickname}</span></div>
-                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Birthday</span><span className="font-black text-rose-900">{user.idol?.birthday}</span></div>
-                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Age</span><span className="font-black text-rose-900">{user.idol?.age}</span></div>
-                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Specialty</span><span className="font-black text-rose-900">{user.idol?.specialty}</span></div>
-                                      <div className="flex justify-between pb-2"><span className="font-bold text-rose-400">Hobbies</span><span className="font-black text-rose-900 text-right">{user.idol?.hobbies}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Nickname</span><span className="font-black text-rose-900">{safeUser.idol?.nickname || ''}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Birthday</span><span className="font-black text-rose-900">{safeUser.idol?.birthday || ''}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Age</span><span className="font-black text-rose-900">{safeUser.idol?.age || ''}</span></div>
+                                      <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Specialty</span><span className="font-black text-rose-900">{safeUser.idol?.specialty || ''}</span></div>
+                                      <div className="flex justify-between pb-2"><span className="font-bold text-rose-400">Hobbies</span><span className="font-black text-rose-900 text-right">{safeUser.idol?.hobbies || ''}</span></div>
                                   </div>
                               </div>
 
                               <div className="md:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
                                   <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><Heart size={20} className="text-rose-500 fill-rose-500"/> Favorites</h3>
                                   <div className="grid grid-cols-2 gap-6">
-                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Colors</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.colors || []).map(c=><span key={c} className="px-3 py-1 bg-zinc-50 rounded-lg text-xs font-bold text-zinc-700">{c}</span>)}</div></div>
-                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Foods</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.foods || []).map(c=><span key={c} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
-                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Games</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.games || []).map(c=><span key={c} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
-                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Music</h4><div className="flex flex-wrap gap-2">{(user.idol?.favorites?.music || []).map(c=><span key={c} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Colors</h4><div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.colors || []).map(c=><span key={c} className="px-3 py-1 bg-zinc-50 rounded-lg text-xs font-bold text-zinc-700">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Foods</h4><div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.foods || []).map(c=><span key={c} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Games</h4><div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.games || []).map(c=><span key={c} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
+                                      <div><h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Music</h4><div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.music || []).map(c=><span key={c} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">{c}</span>)}</div></div>
                                   </div>
                               </div>
                           </div>
@@ -387,7 +389,7 @@ const ProfileView = () => {
                           <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
                               <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
                               <div className="space-y-6">
-                                  {(user.idol?.qna || []).map((item, idx) => (
+                                  {(safeUser.idol?.qna || []).map((item, idx) => (
                                       <div key={idx} className="flex flex-col gap-2">
                                           <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
                                           <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
