@@ -14,10 +14,21 @@ const EditProfileView = () => {
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
+    
+    // ⭐️ 핵심 수정: 서버에서 온 privacy 데이터가 문자열이면 무조건 객체로 뜯어냅니다!
+    let parsedPrivacy = { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true };
+    if (safeUser.privacy) {
+        if (typeof safeUser.privacy === 'string') {
+            try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
+        } else if (typeof safeUser.privacy === 'object') {
+            parsedPrivacy = { ...parsedPrivacy, ...safeUser.privacy };
+        }
+    }
+
     return {
       ...safeUser,
       profileImageUrl: safeUser.profileImageUrl || '',
-      privacy: safeUser.privacy || { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true },
+      privacy: parsedPrivacy, // 확실한 객체 형태로 저장
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
       idol: safeUser.idol || { nickname: "", birthday: "", age: "", specialty: "", hobbies: "", favorites: {}, qna: [] },
@@ -52,12 +63,12 @@ const EditProfileView = () => {
     { id: 'quotes', label: 'Quotes', icon: <Quote size={16}/> }
   ];
 
-// EditProfileView.jsx 80번째 줄 부근 (미리보기 탭 필터링 로직 통일)
+  // ⭐️ 객체화된 데이터를 바탕으로 완벽하게 상태 판별
   const isTabPrivate = (tabId) => {
       const val = formData.privacy?.[tabId];
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
-  // 비공개가 아닌 것만 미리보기 탭에 살려둡니다.
+  
   const availablePreviewTabs = ALL_TABS.filter(tab => !isTabPrivate(tab.id));
 
   useEffect(() => {
@@ -162,7 +173,7 @@ const EditProfileView = () => {
     }
   };
 
-const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
+  const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const str = path.reduce((o, i) => (o || {})[i] || '', formData);
     const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
     
@@ -213,7 +224,7 @@ const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추
       </div>
     );
   };
-  /* STREAMING_CHUNK: Render Helpers */
+
   const renderArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const arr = path.reduce((o, i) => (o || {})[i] || [], formData);
     
@@ -265,7 +276,7 @@ const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추
     );
   };
 
-const renderInput = (label, path, placeholder = "") => {
+  const renderInput = (label, path, placeholder = "") => {
     const val = path.reduce((o, i) => (o || {})[i], formData) || '';
     return (
       <div className="w-full">
@@ -375,7 +386,6 @@ const renderInput = (label, path, placeholder = "") => {
     );
   };
 
-  /* STREAMING_CHUNK: Vision Preview Helper */
   const renderVisionPreview = () => {
     const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
     const v = {
@@ -424,7 +434,6 @@ const renderInput = (label, path, placeholder = "") => {
     );
   };
 
-  /* STREAMING_CHUNK: Main Return Layout */
   return (
     <React.Fragment>
       <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
@@ -611,23 +620,25 @@ const renderInput = (label, path, placeholder = "") => {
           ))}
         </div>
 
-  {/* 탭 헤더 공개/비공개 토글 */}
-  <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
-    <div>
-      <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2">
-        {/* currentPrivacy가 true면 공개, false면 비공개 상태 */}
-        {!isTabPrivate(editTab) ? <Eye size={16} className="text-indigo-500"/> : <Lock size={16} className="text-rose-500"/>}
-        이 탭을 방문자에게 공개하시겠습니까?
-      </h3>
-      <p className="text-[11px] font-medium text-zinc-500 mt-1">비공개 처리된 탭은 본인에게만 보이며 공유된 링크에서는 숨겨집니다.</p>
-    </div>
-    <button 
-      onClick={() => updateNested(['privacy', editTab], isTabPrivate(editTab))}
-      className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!isTabPrivate(editTab) ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100' : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'}`}
-    >
-      {!isTabPrivate(editTab) ? '공개 중 (클릭하여 숨기기)' : '비공개됨 (클릭하여 공개)'}
-    </button>
-  </div>
+        {/* ⭐️ 토글 액션 수정됨: 이제 확실한 boolean 값을 저장합니다 */}
+        <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
+          <div>
+            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2">
+              {!isTabPrivate(editTab) ? <Eye size={16} className="text-indigo-500"/> : <Lock size={16} className="text-rose-500"/>}
+              이 탭을 방문자에게 공개하시겠습니까?
+            </h3>
+            <p className="text-[11px] font-medium text-zinc-500 mt-1">비공개 처리된 탭은 본인에게만 보이며 공유된 링크에서는 숨겨집니다.</p>
+          </div>
+          <button 
+            onClick={() => {
+                const currentlyPrivate = isTabPrivate(editTab);
+                updateNested(['privacy', editTab], currentlyPrivate ? true : false);
+            }}
+            className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!isTabPrivate(editTab) ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100' : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'}`}
+          >
+            {!isTabPrivate(editTab) ? '공개 중 (클릭하여 숨기기)' : '비공개됨 (클릭하여 공개)'}
+          </button>
+        </div>
 
         {/* 3. 탭별 편집 컨텐츠 */}
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
