@@ -11,10 +11,14 @@ const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
 
-  // 게스트 판단 로직: 비로그인 상태이거나, 호스트가 '게스트 뷰' 버튼을 켰을 때
+  // 게스트 판단 로직
   const isGuest = !isAdmin || isGuestMode;
 
-  // 탭 순서를 로컬 스토리지에 저장하고 드래그 앤 드롭 상태를 관리합니다.
+  // ⭐️ 디버깅용: DB에서 불러온 privacy 데이터 확인
+  useEffect(() => {
+      console.log("👀 현재 로드된 privacy 데이터:", user?.privacy);
+  }, [user]);
+
   const [tabOrder, setTabOrder] = useState(() => {
     const saved = localStorage.getItem('cravelog_tab_order');
     return saved ? JSON.parse(saved) : ['developer', 'career', 'idol'];
@@ -25,18 +29,15 @@ const ProfileView = () => {
     localStorage.setItem('cravelog_tab_order', JSON.stringify(tabOrder));
   }, [tabOrder]);
   
-  // 공유하기 버튼 클릭 시 클립보드 복사 로직
   const handleShare = () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
     }).catch(err => {
-      console.error("클립보드 복사 실패:", err);
       showToast("링크 복사에 실패했습니다.");
     });
   };
 
-  // 방어 로직 추가: user가 완전히 비어있을 때를 대비
   const safeUser = user || {};
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
@@ -47,40 +48,39 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // ⭐️ [수정 1] 강력한 공개 여부 확인 함수 (문자열 'false' 완벽 차단)
-const isTabPublic = (tabId) => {
-    let privacyObj = safeUser.privacy;
+  // ⭐️ 1. 순수하게 해당 탭이 '비공개'인지 판별하는 함수
+  const isTabPrivate = (tabId) => {
+    const privacyData = safeUser.privacy;
+    if (!privacyData) return false; // 데이터가 없으면 공개로 간주
 
-    // 1. DB에서 데이터가 문자열(String)로 넘어온 경우 강제로 객체(Object) 변환
-    if (typeof privacyObj === 'string') {
-      try {
-        privacyObj = JSON.parse(privacyObj);
-      } catch (e) {
-        privacyObj = {};
-      }
+    let val;
+    if (typeof privacyData === 'string') {
+        try {
+            val = JSON.parse(privacyData)[tabId];
+        } catch {
+            const regex = new RegExp(`['"]?${tabId}['"]?\\s*:\\s*(false|0)`, 'i');
+            return regex.test(privacyData);
+        }
+    } else {
+        val = privacyData[tabId];
     }
-
-    const privacyVal = privacyObj?.[tabId];
-
-    // 2. 비공개 상태로 간주할 모든 경우의 수 차단
-    const isPrivate = 
-      privacyVal === false || 
-      privacyVal === 'false' || 
-      privacyVal === 'False' || 
-      privacyVal === 0 || 
-      privacyVal === '0';
-
-    return !isPrivate; 
+    
+    // 명시적 false 이거나 문자열 'false', '0' 이면 비공개
+    return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  // ⭐️ [수정 2] 사용할 수 있는 탭 목록 (비공개 탭은 아예 배열에서 삭제)
+  // ⭐️ 2. 게스트에게 비공개 탭을 완전히 숨기는 렌더링 필터
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
-    .filter(tab => tab && isTabPublic(tab.id));
+    .filter(tab => {
+        if (!tab) return false;
+        // 게스트이면서 비공개 설정된 탭이면 화면에서 삭제
+        if (isGuest && isTabPrivate(tab.id)) return false; 
+        return true; 
+    });
 
   useEffect(() => {
-    // 모든 정보가 비공개일 때 activeTab을 비우도록 설정
-    if (isGuest && activeTab && !isTabPublic(activeTab)) {
+    if (isGuest && activeTab && isTabPrivate(activeTab)) {
       const firstAvailable = availableTabs[0];
       setActiveTab(firstAvailable ? firstAvailable.id : null);
     } else if (!activeTab && availableTabs.length > 0) {
@@ -88,22 +88,13 @@ const isTabPublic = (tabId) => {
     }
   }, [isGuest, activeTab, safeUser.privacy, availableTabs]);
 
-  // 드래그 앤 드롭 핸들러들
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id); 
   };
-
-  const handleDragOver = (e) => {
-    e.preventDefault(); 
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDragEnter = (e) => {
-    e.preventDefault(); 
-  };
-
+  const handleDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
+  const handleDragEnter = (e) => { e.preventDefault(); };
   const handleDrop = (e, dropId) => {
     e.preventDefault();
     e.stopPropagation();
@@ -206,34 +197,34 @@ const isTabPublic = (tabId) => {
         <>
           {/* Detail Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
-    {availableTabs.map(tab => {
-        // 방금 만든 함수를 재활용하여 자물쇠 노출 여부 결정
-        const isPrivate = !isTabPublic(tab.id); 
-        
-        return (
-          <div 
-              key={tab.id} 
-              draggable={!isGuest}
-              onDragStart={(e) => handleDragStart(e, tab.id)}
-              onDragOver={handleDragOver}
-              onDragEnter={handleDragEnter}
-              onDrop={(e) => handleDrop(e, tab.id)}
-              onDragEnd={() => setDraggedTab(null)}
-              onClick={() => setActiveTab(tab.id)} 
-              className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
-                  !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-              } ${
-                  activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
-              } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
-          >
-              {tab.icon} {tab.label} {isPrivate && <Lock size={12} className="text-rose-400" />}
+            {availableTabs.map(tab => {
+                // ⭐️ 호스트(본인) 뷰에서 비공개 탭에 자물쇠를 그리기 위한 확인
+                const isPrivate = isTabPrivate(tab.id); 
+                
+                return (
+                  <div 
+                      key={tab.id} 
+                      draggable={!isGuest}
+                      onDragStart={(e) => handleDragStart(e, tab.id)}
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragEnter}
+                      onDrop={(e) => handleDrop(e, tab.id)}
+                      onDragEnd={() => setDraggedTab(null)}
+                      onClick={() => setActiveTab(tab.id)} 
+                      className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
+                          !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                      } ${
+                          activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
+                      } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
+                  >
+                      {tab.icon} {tab.label} {isPrivate && <Lock size={12} className="text-rose-400" />}
+                  </div>
+                );
+            })}
           </div>
-        );
-    })}
-  </div>
+
           {/* Tab Contents */}
           {availableTabs.length === 0 && isGuest ? (
-              // 모든 정보가 비공개일 때 빈 화면 렌더링
               <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[2rem] border border-zinc-200/60 shadow-sm animate-in fade-in duration-500">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 border border-zinc-100 shadow-inner">
                       <Lock size={28} className="text-zinc-300" />
@@ -244,10 +235,9 @@ const isTabPublic = (tabId) => {
           ) : (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   
-                  {/* ⭐️ [수정 4] Developer Tab - availableTabs.some 안전장치 추가 */}
+                  {/* Developer Tab */}
                   {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
                       <div className="space-y-6">
-                          {/* 상단 About Me & Tech Stack */}
                           <div className="bg-[#0D1117] text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800 relative overflow-hidden">
                               <div className="absolute top-4 left-4 flex gap-1.5">
                                   <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
@@ -301,7 +291,6 @@ const isTabPublic = (tabId) => {
                               </div>
                           </div>
 
-                          {/* 프로젝트 카드 */}
                           <div>
                               <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2">
                                   <Code size={20} className="text-indigo-500" /> Featured Projects
