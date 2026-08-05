@@ -48,12 +48,29 @@ const ProfileView = () => {
   };
 
   // ⭐️ [수정 1] 강력한 공개 여부 확인 함수 (문자열 'false' 완벽 차단)
-  const isTabPublic = (tabId) => {
-    if (!isGuest) return true; // 호스트(본인)면 무조건 다 봄
-    const privacyVal = safeUser.privacy?.[tabId];
-    // 값이 명시적으로 false이거나 문자열 'false'이면 비공개 처리
-    if (privacyVal === false || privacyVal === 'false') return false;
-    return true; 
+const isTabPublic = (tabId) => {
+    let privacyObj = safeUser.privacy;
+
+    // 1. DB에서 데이터가 문자열(String)로 넘어온 경우 강제로 객체(Object) 변환
+    if (typeof privacyObj === 'string') {
+      try {
+        privacyObj = JSON.parse(privacyObj);
+      } catch (e) {
+        privacyObj = {};
+      }
+    }
+
+    const privacyVal = privacyObj?.[tabId];
+
+    // 2. 비공개 상태로 간주할 모든 경우의 수 차단
+    const isPrivate = 
+      privacyVal === false || 
+      privacyVal === 'false' || 
+      privacyVal === 'False' || 
+      privacyVal === 0 || 
+      privacyVal === '0';
+
+    return !isPrivate; 
   };
 
   // ⭐️ [수정 2] 사용할 수 있는 탭 목록 (비공개 탭은 아예 배열에서 삭제)
@@ -189,31 +206,31 @@ const ProfileView = () => {
         <>
           {/* Detail Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
-            {availableTabs.map(tab => {
-                // ⭐️ [수정 3] 자물쇠 표시 조건 강화
-                const isPrivate = safeUser.privacy?.[tab.id] === false || safeUser.privacy?.[tab.id] === 'false';
-                return (
-                  <div 
-                      key={tab.id} 
-                      draggable={!isGuest}
-                      onDragStart={(e) => handleDragStart(e, tab.id)}
-                      onDragOver={handleDragOver}
-                      onDragEnter={handleDragEnter}
-                      onDrop={(e) => handleDrop(e, tab.id)}
-                      onDragEnd={() => setDraggedTab(null)}
-                      onClick={() => setActiveTab(tab.id)} 
-                      className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
-                          !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-                      } ${
-                          activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
-                      } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
-                  >
-                      {tab.icon} {tab.label} {isPrivate && <Lock size={12} className="text-rose-400" />}
-                  </div>
-                );
-            })}
+    {availableTabs.map(tab => {
+        // 방금 만든 함수를 재활용하여 자물쇠 노출 여부 결정
+        const isPrivate = !isTabPublic(tab.id); 
+        
+        return (
+          <div 
+              key={tab.id} 
+              draggable={!isGuest}
+              onDragStart={(e) => handleDragStart(e, tab.id)}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
+              onDrop={(e) => handleDrop(e, tab.id)}
+              onDragEnd={() => setDraggedTab(null)}
+              onClick={() => setActiveTab(tab.id)} 
+              className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
+                  !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+              } ${
+                  activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
+              } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
+          >
+              {tab.icon} {tab.label} {isPrivate && <Lock size={12} className="text-rose-400" />}
           </div>
-
+        );
+    })}
+  </div>
           {/* Tab Contents */}
           {availableTabs.length === 0 && isGuest ? (
               // 모든 정보가 비공개일 때 빈 화면 렌더링
