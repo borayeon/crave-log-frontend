@@ -3,7 +3,7 @@ import {
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
     ArrowRight, Heart, MessageSquare, Lock, 
-    ExternalLink, Terminal // ⭐️ Github 대신 Terminal 아이콘 사용!
+    ExternalLink, Terminal 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -27,7 +27,6 @@ const ProfileView = () => {
   
   // 공유하기 버튼 클릭 시 클립보드 복사 로직
   const handleShare = () => {
-    // window.location.origin은 현재 사이트 주소(예: https://cravelog.me 또는 localhost:5173)를 자동으로 가져옵니다.
     const shareUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       showToast("프로필 링크가 클립보드에 복사되었습니다! 🔗");
@@ -37,7 +36,7 @@ const ProfileView = () => {
     });
   };
 
-  // ⭐️ 방어 로직 추가: user가 완전히 비어있을 때를 대비
+  // 방어 로직 추가: user가 완전히 비어있을 때를 대비
   const safeUser = user || {};
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
@@ -48,14 +47,23 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // ⭐️ 방어 로직 추가: 로컬 스토리지에 잘못된 탭 정보가 있을 경우를 대비해 tab이 존재하는지(tab &&) 먼저 확인합니다.
+  // ⭐️ [수정 1] 강력한 공개 여부 확인 함수 (문자열 'false' 완벽 차단)
+  const isTabPublic = (tabId) => {
+    if (!isGuest) return true; // 호스트(본인)면 무조건 다 봄
+    const privacyVal = safeUser.privacy?.[tabId];
+    // 값이 명시적으로 false이거나 문자열 'false'이면 비공개 처리
+    if (privacyVal === false || privacyVal === 'false') return false;
+    return true; 
+  };
+
+  // ⭐️ [수정 2] 사용할 수 있는 탭 목록 (비공개 탭은 아예 배열에서 삭제)
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
-    .filter(tab => tab && (!isGuest || user?.privacy?.[tab.id] !== false));
+    .filter(tab => tab && isTabPublic(tab.id));
 
   useEffect(() => {
     // 모든 정보가 비공개일 때 activeTab을 비우도록 설정
-    if (isGuest && activeTab && user?.privacy?.[activeTab] === false) {
+    if (isGuest && activeTab && !isTabPublic(activeTab)) {
       const firstAvailable = availableTabs[0];
       setActiveTab(firstAvailable ? firstAvailable.id : null);
     } else if (!activeTab && availableTabs.length > 0) {
@@ -67,16 +75,16 @@ const ProfileView = () => {
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id); // HTML5 드래그 필수 코드
+    e.dataTransfer.setData('text/plain', id); 
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // 드롭 허용 필수
+    e.preventDefault(); 
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnter = (e) => {
-    e.preventDefault(); // 진입 시에도 이벤트 전파 방지
+    e.preventDefault(); 
   };
 
   const handleDrop = (e, dropId) => {
@@ -136,7 +144,6 @@ const ProfileView = () => {
         <div className={`shrink-0 text-center ${shouldBlur ? 'opacity-30 blur-[2px]' : ''}`}>
             <div className="w-32 h-32 bg-gradient-to-tr from-indigo-500 to-rose-400 p-[3px] rounded-[2rem] shadow-md mx-auto relative">
                 <div className="w-full h-full border-[5px] border-white bg-zinc-100 flex items-center justify-center rounded-[1.8rem] overflow-hidden">
-                    {/* 프로필 사진 렌더링 로직 반영 */}
                     {safeUser.profileImageUrl ? (
                         <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -182,25 +189,29 @@ const ProfileView = () => {
         <>
           {/* Detail Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
-            {availableTabs.map(tab => (
-                <div 
-                    key={tab.id} 
-                    draggable={!isGuest} // 게스트가 아닐 때만 드래그 허용
-                    onDragStart={(e) => handleDragStart(e, tab.id)}
-                    onDragOver={handleDragOver}
-                    onDragEnter={handleDragEnter}
-                    onDrop={(e) => handleDrop(e, tab.id)}
-                    onDragEnd={() => setDraggedTab(null)}
-                    onClick={() => setActiveTab(tab.id)} 
-                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
-                        !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-                    } ${
-                        activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
-                    } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
-                >
-                    {tab.icon} {tab.label} {safeUser.privacy?.[tab.id] === false && <Lock size={12} className="text-rose-400" />}
-                </div>
-            ))}
+            {availableTabs.map(tab => {
+                // ⭐️ [수정 3] 자물쇠 표시 조건 강화
+                const isPrivate = safeUser.privacy?.[tab.id] === false || safeUser.privacy?.[tab.id] === 'false';
+                return (
+                  <div 
+                      key={tab.id} 
+                      draggable={!isGuest}
+                      onDragStart={(e) => handleDragStart(e, tab.id)}
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragEnter}
+                      onDrop={(e) => handleDrop(e, tab.id)}
+                      onDragEnd={() => setDraggedTab(null)}
+                      onClick={() => setActiveTab(tab.id)} 
+                      className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap select-none ${
+                          !isGuest ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                      } ${
+                          activeTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'
+                      } ${draggedTab === tab.id ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-400' : 'opacity-100'}`}
+                  >
+                      {tab.icon} {tab.label} {isPrivate && <Lock size={12} className="text-rose-400" />}
+                  </div>
+                );
+            })}
           </div>
 
           {/* Tab Contents */}
@@ -216,8 +227,8 @@ const ProfileView = () => {
           ) : (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   
-                  {/* Developer Tab */}
-                  {activeTab === 'developer' && (
+                  {/* ⭐️ [수정 4] Developer Tab - availableTabs.some 안전장치 추가 */}
+                  {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
                       <div className="space-y-6">
                           {/* 상단 About Me & Tech Stack */}
                           <div className="bg-[#0D1117] text-zinc-300 p-8 rounded-[2rem] shadow-xl border border-zinc-800 relative overflow-hidden">
@@ -273,7 +284,7 @@ const ProfileView = () => {
                               </div>
                           </div>
 
-                          {/* 프로젝트 카드 업데이트 */}
+                          {/* 프로젝트 카드 */}
                           <div>
                               <h3 className="text-lg font-black text-zinc-900 mb-4 ml-2 flex items-center gap-2">
                                   <Code size={20} className="text-indigo-500" /> Featured Projects
@@ -285,7 +296,6 @@ const ProfileView = () => {
                                               <h4 className="text-xl font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
                                                   {proj.name}
                                               </h4>
-                                              {/* ⭐️ 프로젝트 링크 아이콘 (Terminal 사용) */}
                                               <div className="flex gap-2 text-zinc-400">
                                                   {proj.githubUrl && (
                                                       <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-zinc-900 transition-colors" title="Repository">
