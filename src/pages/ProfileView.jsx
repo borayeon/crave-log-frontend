@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
     Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
@@ -13,11 +13,6 @@ const ProfileView = () => {
 
   // 게스트 판단 로직
   const isGuest = !isAdmin || isGuestMode;
-
-  // ⭐️ 디버깅용: DB에서 불러온 privacy 데이터 확인
-  useEffect(() => {
-      console.log("👀 현재 로드된 privacy 데이터:", user?.privacy);
-  }, [user]);
 
   const [tabOrder, setTabOrder] = useState(() => {
     const saved = localStorage.getItem('cravelog_tab_order');
@@ -48,28 +43,25 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // ⭐️ 1. 순수하게 해당 탭이 '비공개'인지 판별하는 함수
-  const isTabPrivate = (tabId) => {
-    const privacyData = safeUser.privacy;
-    if (!privacyData) return false; // 데이터가 없으면 공개로 간주
+  // ⭐️ 핵심 수정: 화면을 그릴 때에도 무조건 객체화 진행!
+  const privacyObj = useMemo(() => {
+      let p = { developer: true, career: true, idol: true };
+      if (safeUser.privacy) {
+          if (typeof safeUser.privacy === 'string') {
+              try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
+          } else if (typeof safeUser.privacy === 'object') {
+              p = { ...p, ...safeUser.privacy };
+          }
+      }
+      return p;
+  }, [safeUser.privacy]);
 
-    let val;
-    if (typeof privacyData === 'string') {
-        try {
-            val = JSON.parse(privacyData)[tabId];
-        } catch {
-            const regex = new RegExp(`['"]?${tabId}['"]?\\s*:\\s*(false|0)`, 'i');
-            return regex.test(privacyData);
-        }
-    } else {
-        val = privacyData[tabId];
-    }
-    
-    // 명시적 false 이거나 문자열 'false', '0' 이면 비공개
-    return String(val).toLowerCase() === 'false' || String(val) === '0';
+  const isTabPrivate = (tabId) => {
+      const val = privacyObj[tabId];
+      return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  // ⭐️ 2. 게스트에게 비공개 탭을 완전히 숨기는 렌더링 필터
+  // ⭐️ 게스트에게 비공개 탭을 완전히 숨기는 렌더링 필터
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
@@ -86,7 +78,7 @@ const ProfileView = () => {
     } else if (!activeTab && availableTabs.length > 0) {
       setActiveTab(availableTabs[0].id);
     }
-  }, [isGuest, activeTab, safeUser.privacy, availableTabs]);
+  }, [isGuest, activeTab, privacyObj, availableTabs]);
 
   const handleDragStart = (e, id) => {
     setDraggedTab(id);
@@ -198,7 +190,7 @@ const ProfileView = () => {
           {/* Detail Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
             {availableTabs.map(tab => {
-                // ⭐️ 호스트(본인) 뷰에서 비공개 탭에 자물쇠를 그리기 위한 확인
+                // 호스트 뷰에서 비공개 탭에 자물쇠를 그리기 위한 확인
                 const isPrivate = isTabPrivate(tab.id); 
                 
                 return (
