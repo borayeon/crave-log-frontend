@@ -446,11 +446,13 @@ const ArchiveView = () => {
     return ['전체', ...Array.from(uniqueCategories)];
   }, [records]);
 
-  const displayRecords = useMemo(() => {
+const displayRecords = useMemo(() => {
     let result = records;
 
-    if (isGuestMode) {
-      result = result.filter(r => r.isPublic !== false);
+    // ⭐️ 게스트 모드이거나(!isAdmin), 호스트가 게스트 뷰 체험 중(isGuestMode)일 때 비공개 글 제외
+    const isGuest = !isAdmin || isGuestMode; 
+    if (isGuest) {
+      result = result.filter(r => r.isPublic === true); // 명확하게 true인 것만 남김
     }
 
     if (searchQuery.trim()) {
