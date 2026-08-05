@@ -107,14 +107,15 @@ const TopNavBar = () => {
 
         {isAdmin ? (
           <>
-            <button 
-              onClick={() => {
-                if (visitedHandle) {
-                  resetToMyProfile();
-                } else {
-                  setIsGuestMode(!isGuestMode);
-                }
-              }} 
+<button 
+  onClick={() => {
+    if (visitedHandle) {
+      resetToMyProfile();
+    } else {
+      setIsGuestMode(!isGuestMode);
+    }
+    setViewMode('profile'); // ⭐️ 무조건 프로필 화면으로 이동하도록 이 줄을 추가해주세요!
+  }}
               className={`hidden md:flex px-3.5 py-2 rounded-xl text-xs font-black transition shadow-sm items-center gap-1.5 md:mr-2 ${(isGuestMode || visitedHandle) ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
             >
               {(isGuestMode || visitedHandle) ? <EyeOff size={14} /> : <Eye size={14} />}
