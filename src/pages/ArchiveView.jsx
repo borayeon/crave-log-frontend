@@ -779,10 +779,13 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* 💡 무조건 최소 3열 강제 적용! 반응형 분기점(md, lg, xl)에 따라 열 개수만 증가 */}
+        {/* 💡 완벽한 타협점 (스마트 그리드)
+            1. 좁은 모바일 화면(<640px)에서는 강제 2열 배치 (너무 작아지지 않게 방어)
+            2. 태블릿/PC(>=640px)에서는 공간을 계산해 남는 공간이 210px씩 확보될 때마다 3열->4열->5열->6열로 알아서 변환 (auto-fill)
+        */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
-            : "grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 pb-10 w-full"
+            : "grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3 sm:gap-4 md:gap-5 pb-10 justify-items-center w-full"
         }>
             {customOrderedRecords.map((item, index) => {
                 if (item.isMusic) {
@@ -896,9 +899,9 @@ const ArchiveView = () => {
                       );
                   }
 
-                  // 💡 음악 카드: max-w 제한을 통해 지나치게 커지지 않도록 보호 (가운데 정렬)
+                  // 💡 음악 카드: w-full과 max-w 제한 적용
                   return (
-                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[320px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[300px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
@@ -920,18 +923,18 @@ const ArchiveView = () => {
                   );
                 }
 
-                // 💡 일반/URL 카드: 3:4 비율로 그리드 셀 꽉 채우기 (max-w 제한)
+                // 💡 일반/URL 카드: 3:4 비율 유지 및 최대 크기 제한으로 예쁘게 꽉 참
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       setSelectedRecord(item);
-                  }} className={`group relative aspect-[3/4] w-full max-w-[320px] rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                  }} className={`group relative aspect-[3/4] w-full max-w-[300px] mx-auto rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden group/card">
                               <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
                               <div className="flex flex-col items-center w-full h-full justify-center mt-4">
                                   {item.youtubeUrl && item.domain ? (
-                                      <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
+                                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
                                           <img 
                                             src={`https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`} 
                                             onError={(e) => { 
@@ -942,7 +945,7 @@ const ArchiveView = () => {
                                             alt="site logo" 
                                           />
                                       </div>
-                                  ) : <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
+                                  ) : <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
                                   <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
                                   <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
