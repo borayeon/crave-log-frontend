@@ -38,6 +38,10 @@ const TimelineView = () => {
   // 🛡️ 중복 요청 방지를 위한 로딩 상태 추가
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
+  
+  // ✍️ 카테고리 이름 수정 상태
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
 
   const safeRecords = Array.isArray(records) ? records : [];
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
@@ -101,10 +105,9 @@ const TimelineView = () => {
   };
 
   const handleAddCategory = async () => {
-    // 🛡️ 입력값이 없거나, API 요청 중일 때는 함수 실행 차단
     if (!newCategoryName.trim() || !apiFetch || isAddingCategory) return;
     
-    setIsAddingCategory(true); // 버튼 비활성화 (잠금)
+    setIsAddingCategory(true); 
     try {
       const res = await apiFetch(`/me/categories`, {
         method: 'POST',
@@ -118,16 +121,15 @@ const TimelineView = () => {
     } catch(e) { 
         console.error(e); 
     } finally {
-        setIsAddingCategory(false); // 작업 완료 후 버튼 활성화 (잠금 해제)
+        setIsAddingCategory(false); 
     }
   };
 
   const handleAddTag = async (catId) => {
     const tagName = newTagNames[catId];
-    // 🛡️ 입력값이 없거나, API 요청 중일 때는 함수 실행 차단
     if (!tagName || !tagName.trim() || !apiFetch || isAddingTag) return;
     
-    setIsAddingTag(true); // 버튼 비활성화 (잠금)
+    setIsAddingTag(true);
     try {
       const res = await apiFetch(`/me/categories/${catId}/tags`, {
         method: 'POST',
@@ -141,7 +143,7 @@ const TimelineView = () => {
     } catch(e) { 
         console.error(e); 
     } finally {
-        setIsAddingTag(false); // 작업 완료 후 버튼 활성화 (잠금 해제)
+        setIsAddingTag(false);
     }
   };
 
@@ -149,7 +151,6 @@ const TimelineView = () => {
     e.stopPropagation();
     if (!apiFetch) return;
 
-    // 시스템 폴더 보호
     if (type === 'category') {
         const targetCategory = safeTagTree.find(c => String(c.id) === String(nodeId));
         if (targetCategory && (targetCategory.name.includes('음악') || targetCategory.name.includes('URL'))) {
@@ -170,6 +171,52 @@ const TimelineView = () => {
         showToast('삭제되었습니다.');
       }
     } catch(e) { console.error(e); }
+  };
+
+  // ✍️ 카테고리 이름 변경 핸들러
+  const handleUpdateCategory = async (cat) => {
+    const newName = editCategoryName.trim();
+    
+    // 변경 사항이 없거나 빈 칸이면 취소
+    if (!newName || newName === cat.name) {
+      setEditingCategoryId(null);
+      return;
+    }
+
+    // 🛡️ 시스템 폴더 키워드 보호 로직
+    const isSystemCat = cat.name.includes('음악') || cat.name.includes('URL');
+    if (isSystemCat) {
+      if (cat.name.includes('음악') && !newName.includes('음악')) {
+        showToast("시스템 폴더는 '음악' 단어가 반드시 포함되어야 합니다.");
+        setEditingCategoryId(null);
+        return;
+      }
+      if (cat.name.includes('URL') && !newName.toUpperCase().includes('URL')) {
+        showToast("시스템 폴더는 'URL' 단어가 반드시 포함되어야 합니다.");
+        setEditingCategoryId(null);
+        return;
+      }
+    }
+
+    try {
+      const res = await apiFetch(`/me/categories/${cat.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: newName })
+      });
+      if (res.ok) {
+        await fetchAllData(true);
+        // 만약 선택된 카테고리를 수정했다면 필터값도 함께 갱신
+        if (selectedFilter.type === 'category' && selectedFilter.id === cat.id) {
+          setSelectedFilter({ ...selectedFilter, value: newName });
+        }
+        showToast('카테고리 이름이 변경되었습니다! ✨');
+      }
+    } catch(e) {
+      console.error(e);
+      showToast('이름 변경에 실패했습니다.');
+    } finally {
+      setEditingCategoryId(null);
+    }
   };
 
   return (
@@ -211,30 +258,60 @@ const TimelineView = () => {
               const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
               const isExpanded = expandedFolders[cat.id];
               const isSystemCat = cat.name.includes('음악') || cat.name.includes('URL');
+              const isEditingThisCat = editingCategoryId === cat.id;
 
               return (
                 <div key={cat.id} className="pt-1">
                   <div className={`group flex items-center justify-between rounded-xl transition-colors ${isCatSelected ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-zinc-50 text-zinc-700'}`}>
                     
-                    <button 
-                      onClick={() => setSelectedFilter({ type: 'category', value: cat.name, id: cat.id })} 
-                      className="flex-1 flex items-center gap-2.5 px-3 py-2 text-sm font-bold truncate"
-                    >
-                      <span onClick={(e) => toggleFolder(cat.id, e)} className="p-0.5 rounded-md hover:bg-zinc-200/50 text-zinc-400 transition-transform">
-                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </span>
-                      {isExpanded ? <FolderOpen size={16} className="text-indigo-400 shrink-0"/> : <Folder size={16} className="text-indigo-400 shrink-0"/>}
-                      <span className="truncate">{cat.name}</span>
-                    </button>
+                    {isEditingThisCat ? (
+                      <div className="flex-1 flex items-center gap-2.5 px-3 py-1.5 ml-3">
+                        <input 
+                          autoFocus
+                          value={editCategoryName}
+                          onChange={(e) => setEditCategoryName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleUpdateCategory(cat);
+                            if (e.key === 'Escape') setEditingCategoryId(null);
+                          }}
+                          onBlur={() => handleUpdateCategory(cat)}
+                          className="flex-1 w-full bg-white border border-indigo-400 rounded px-2 py-1 text-sm outline-none font-bold text-zinc-900 shadow-sm"
+                        />
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => setSelectedFilter({ type: 'category', value: cat.name, id: cat.id })} 
+                        className="flex-1 flex items-center gap-2.5 px-3 py-2 text-sm font-bold truncate"
+                      >
+                        <span onClick={(e) => toggleFolder(cat.id, e)} className="p-0.5 rounded-md hover:bg-zinc-200/50 text-zinc-400 transition-transform shrink-0">
+                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </span>
+                        {isExpanded ? <FolderOpen size={16} className="text-indigo-400 shrink-0"/> : <Folder size={16} className="text-indigo-400 shrink-0"/>}
+                        <span className="truncate">{cat.name}</span>
+                      </button>
+                    )}
                     
-                    {isEditing && (
-                        isSystemCat ? (
-                            <div className="p-2 text-zinc-300 shrink-0" title="시스템 폴더는 삭제 불가"><Lock size={14}/></div>
-                        ) : (
-                            <button onClick={(e) => handleDeleteNode('category', null, cat.id, e)} className="p-2 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
-                                <Trash2 size={14}/>
+                    {isEditing && !isEditingThisCat && (
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setEditingCategoryId(cat.id); 
+                                setEditCategoryName(cat.name); 
+                              }} 
+                              className="p-2 text-zinc-400 hover:text-indigo-500 transition-colors shrink-0"
+                              title="카테고리 이름 수정"
+                            >
+                                <Edit2 size={14}/>
                             </button>
-                        )
+                            {isSystemCat ? (
+                                <div className="p-2 text-zinc-300 shrink-0" title="시스템 기본 폴더는 삭제 불가"><Lock size={14}/></div>
+                            ) : (
+                                <button onClick={(e) => handleDeleteNode('category', null, cat.id, e)} className="p-2 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
+                                    <Trash2 size={14}/>
+                                </button>
+                            )}
+                        </div>
                     )}
                   </div>
                   
@@ -268,7 +345,7 @@ const TimelineView = () => {
                             value={newTagNames[cat.id] || ''} 
                             onChange={(e) => setNewTagNames(prev => ({ ...prev, [cat.id]: e.target.value }))} 
                             placeholder="태그 추가" 
-                            disabled={isAddingTag} // 🛡️ 방어 로직 추가
+                            disabled={isAddingTag}
                             className="flex-1 w-full bg-zinc-100 border-none rounded-md px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-400 disabled:text-zinc-400 disabled:cursor-not-allowed" 
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -279,7 +356,7 @@ const TimelineView = () => {
                           />
                           <button 
                             onClick={() => handleAddTag(cat.id)} 
-                            disabled={isAddingTag} // 🛡️ 방어 로직 추가
+                            disabled={isAddingTag}
                             className="ml-1 p-1 text-indigo-500 hover:bg-indigo-50 rounded-md disabled:text-zinc-400 disabled:hover:bg-transparent"
                           >
                             {isAddingTag ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14}/>}
@@ -300,7 +377,7 @@ const TimelineView = () => {
                 value={newCategoryName} 
                 onChange={(e) => setNewCategoryName(e.target.value)} 
                 placeholder="카테고리 추가" 
-                disabled={isAddingCategory} // 🛡️ 방어 로직 추가
+                disabled={isAddingCategory}
                 className="flex-1 min-w-0 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed" 
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -311,7 +388,7 @@ const TimelineView = () => {
               />
               <button 
                 onClick={handleAddCategory} 
-                disabled={isAddingCategory} // 🛡️ 방어 로직 추가
+                disabled={isAddingCategory}
                 className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[36px]"
               >
                 {isAddingCategory ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16}/>}
