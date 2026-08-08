@@ -162,28 +162,37 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-  const currentCategory = tagTree.find(c => String(c.id) === String(categoryId));
-  const catType = currentCategory?.type || (currentCategory?.name?.includes('음악') ? 'MUSIC' : currentCategory?.name?.includes('URL') ? 'URL' : 'GENERAL');
-  
-  const isEditMusicCat = catType === 'MUSIC';
-  const isEditUrlCat = catType === 'URL';
-  
+  // 💡 [수정] 팝업창 자체적으로 데이터를 튼튼하게 분석하는 방어 로직 추가
   const recordImage = record.image || record.imageUrl || '';
   const recordCategory = record.category || record.categoryName || '';
 
+  // 1. 뷰 모드 판단 로직 (선택된 기록의 정보 기반)
+  const viewCategory = tagTree.find(c => String(c.id) === String(record.categoryId) || c.name === recordCategory);
+  const viewCatType = record.categoryType || viewCategory?.type || (recordCategory.includes('음악') ? 'MUSIC' : recordCategory.includes('URL') ? 'URL' : 'GENERAL');
+  
+  const isViewMusic = viewCatType === 'MUSIC';
+  const isViewUrl = viewCatType === 'URL';
+  const viewVideoId = isViewMusic && record.youtubeUrl ? getYoutubeId(record.youtubeUrl) : null;
+  const viewDomain = isViewUrl && record.youtubeUrl ? getDomain(record.youtubeUrl) : null;
+  const viewHasImage = recordImage && recordImage.trim() !== '' && recordImage !== DEFAULT_IMAGE;
+  const isViewTextOnly = !isViewMusic && !isViewUrl && !viewHasImage;
+
+  // 2. 편집 모드 판단 로직 (선택한 카테고리 셀렉트박스 기반)
+  const currentCategory = tagTree.find(c => String(c.id) === String(categoryId));
+  const editCatType = currentCategory?.type || (currentCategory?.name?.includes('음악') ? 'MUSIC' : currentCategory?.name?.includes('URL') ? 'URL' : 'GENERAL');
+  const isEditMusicCat = editCatType === 'MUSIC';
+  const isEditUrlCat = editCatType === 'URL';
+
   return (
-    // 💡 라이트모드 스타일로 전면 개편 (bg-zinc-900/50, bg-white 등 적용)
     <div className="fixed inset-0 z-[200] bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
       <div 
         className="bg-white rounded-2xl w-full max-w-5xl h-[75vh] flex flex-col md:flex-row overflow-hidden shadow-2xl relative"
         onClick={e => e.stopPropagation()}
       >
-        {/* 닫기 버튼 */}
         <button onClick={onClose} className="absolute top-4 right-4 z-[250] p-2 bg-white/90 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors rounded-full backdrop-blur-md shadow-sm border border-zinc-200">
             <CloseIcon size={20}/>
         </button>
 
-        {/* 삭제 확인 모달 */}
         {showDeleteConfirm && (
           <div className="absolute inset-0 z-[300] bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-6 text-center">
              <div className="bg-white border border-zinc-200 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
@@ -198,7 +207,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
           </div>
         )}
 
-        {/* 좌측 (이미지/미디어 영역) */}
         <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full flex items-center justify-center relative border-r border-zinc-100 shrink-0 bg-zinc-50 overflow-hidden">
             {isEditMode ? (
                  <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-50/50">
@@ -234,17 +242,17 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                          </div>
                      )}
                  </div>
-            ) : record.videoId ? (
-                <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${record.videoId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full border-none outline-none"></iframe>
-            ) : record.isUrlItem ? (
+            ) : viewVideoId ? ( // 💡 여기서부터 뷰 모드 렌더링 로직 (자체 계산한 viewVideoId 등 사용)
+                <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${viewVideoId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full border-none outline-none"></iframe>
+            ) : isViewUrl ? (
                 <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
-                    {record.youtubeUrl && record.domain ? (
+                    {record.youtubeUrl && viewDomain ? (
                         <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-3xl p-4 shadow-xl mb-6 flex items-center justify-center transform hover:scale-105 transition-transform z-10 border border-zinc-100">
                             <img 
-                                src={`https://icons.duckduckgo.com/ip3/${record.domain}.ico`} 
+                                src={`https://icons.duckduckgo.com/ip3/${viewDomain}.ico`} 
                                 onError={(e) => { 
                                     e.target.onerror = null; 
-                                    e.target.src = `https://ui-avatars.com/api/?name=${record.domain?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
+                                    e.target.src = `https://ui-avatars.com/api/?name=${viewDomain?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
                                 }} 
                                 alt="favicon" 
                                 className="w-full h-full object-contain" 
@@ -268,7 +276,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
                     <div className="absolute top-20 -left-20 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
                 </div>
-            ) : record.isTextOnly ? (
+            ) : isViewTextOnly ? (
                 <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
                     <Quote size={80} className="absolute -top-4 -left-4 text-indigo-100" />
                     <Quote size={80} className="absolute -bottom-4 -right-4 text-indigo-100 rotate-180" />
@@ -280,9 +288,8 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             )}
         </div>
 
-        {/* 우측 (텍스트/입력 영역) */}
+        {/* 우측 텍스트 정보 및 폼 영역 */}
         <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-white text-zinc-800 overflow-hidden relative z-10">
-            {/* 상단 프로필 헤더 */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center shrink-0 border border-zinc-200">
@@ -304,7 +311,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                 </div>
             </div>
 
-            {/* 본문/폼 영역 */}
             <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                 {isEditMode ? (
                     <div className="space-y-5 animate-in fade-in duration-300">
@@ -442,7 +448,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                 )}
             </div>
 
-            {/* 하단 버튼 영역 */}
             {isEditMode ? (
                  <div className="p-4 border-t border-zinc-100 bg-zinc-50/50 shrink-0">
                     <div className="flex gap-2">
@@ -498,30 +503,6 @@ const ArchiveView = () => {
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
-
-  useEffect(() => {
-    if (selectedRecord && records) {
-      const latestRecord = records.find(r => r.id === selectedRecord.id);
-      if (latestRecord && JSON.stringify(latestRecord) !== JSON.stringify(selectedRecord)) {
-        setSelectedRecord(latestRecord);
-      }
-    }
-  }, [records, selectedRecord]);
-
-  const executeGridDelete = async () => {
-    if (!confirmDeleteId || !apiFetch) return;
-    try {
-      const res = await apiFetch(`/me/records/${confirmDeleteId}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchAllData(true);
-        showToast('기록이 보관함에서 삭제되었습니다.');
-      }
-    } catch(err) {
-      console.error(err);
-    } finally {
-      setConfirmDeleteId(null);
-    }
-  };
 
   const categories = useMemo(() => {
     const uniqueCategories = new Set((records || []).map(r => r.category || r.categoryName).filter(Boolean));
@@ -582,6 +563,16 @@ const ArchiveView = () => {
   useEffect(() => {
     setCustomOrderedRecords(displayRecords);
   }, [displayRecords]);
+
+  // 💡 [수정] records의 원본이 아닌, 예쁘게 가공된 최신 displayRecords에서 데이터를 찾아 모달을 갱신합니다.
+  useEffect(() => {
+    if (selectedRecord && displayRecords.length > 0) {
+      const latestRecord = displayRecords.find(r => r.id === selectedRecord.id);
+      if (latestRecord && JSON.stringify(latestRecord) !== JSON.stringify(selectedRecord)) {
+        setSelectedRecord(latestRecord);
+      }
+    }
+  }, [displayRecords, selectedRecord]);
 
   const handleDragStart = (e, index) => {
     if (editingRankId) return; 
