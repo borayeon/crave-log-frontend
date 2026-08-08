@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote, ExternalLink, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
+// 기본 이미지 상수
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
 const MUSIC_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop';
 
+// 유튜브 ID 추출 함수 
 const getYoutubeId = (url) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\/shorts\/)([^#&?]*).*/;
@@ -13,6 +15,7 @@ const getYoutubeId = (url) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
+// 도메인 추출 함수 (파비콘 가져올 때 사용)
 const getDomain = (url) => {
     try {
         const domain = new URL(url).hostname;
@@ -24,7 +27,7 @@ const getDomain = (url) => {
 
 const TimelineView = () => {
   // 실제 스토어에서 데이터 로드
-  const { records: rawRecords, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
+  const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
   
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState({ type: 'all', value: '전체', id: 'all' });
@@ -32,16 +35,11 @@ const TimelineView = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newTagNames, setNewTagNames] = useState({});
 
-  // ⭐️ 핵심 해결 로직: 백엔드에서 오는 데이터 키(Key) 이름이 달라도 완벽하게 정규화 매핑!
-  const safeRecords = useMemo(() => {
-      return (rawRecords || []).map(r => ({
-          ...r,
-          category: r.category || r.categoryName || '분류 없음',
-          image: r.image || r.imageUrl || '',
-          isPublic: r.isPublic ?? r.public ?? true
-      }));
-  }, [rawRecords]);
+  // 🛡️ 중복 요청 방지를 위한 로딩 상태 추가
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [isAddingTag, setIsAddingTag] = useState(false);
 
+  const safeRecords = Array.isArray(records) ? records : [];
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
 
   const filteredRecords = useMemo(() => {
@@ -103,7 +101,10 @@ const TimelineView = () => {
   };
 
   const handleAddCategory = async () => {
-    if (!newCategoryName.trim() || !apiFetch) return;
+    // 🛡️ 입력값이 없거나, API 요청 중일 때는 함수 실행 차단
+    if (!newCategoryName.trim() || !apiFetch || isAddingCategory) return;
+    
+    setIsAddingCategory(true); // 버튼 비활성화 (잠금)
     try {
       const res = await apiFetch(`/me/categories`, {
         method: 'POST',
@@ -114,13 +115,19 @@ const TimelineView = () => {
         setNewCategoryName('');
         showToast('새 카테고리가 추가되었습니다.');
       }
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+    } finally {
+        setIsAddingCategory(false); // 작업 완료 후 버튼 활성화 (잠금 해제)
+    }
   };
 
   const handleAddTag = async (catId) => {
     const tagName = newTagNames[catId];
-    if (!tagName || !tagName.trim() || !apiFetch) return;
+    // 🛡️ 입력값이 없거나, API 요청 중일 때는 함수 실행 차단
+    if (!tagName || !tagName.trim() || !apiFetch || isAddingTag) return;
     
+    setIsAddingTag(true); // 버튼 비활성화 (잠금)
     try {
       const res = await apiFetch(`/me/categories/${catId}/tags`, {
         method: 'POST',
@@ -131,13 +138,18 @@ const TimelineView = () => {
         setNewTagNames(prev => ({ ...prev, [catId]: '' }));
         showToast('새 태그가 추가되었습니다.');
       }
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+    } finally {
+        setIsAddingTag(false); // 작업 완료 후 버튼 활성화 (잠금 해제)
+    }
   };
 
   const handleDeleteNode = async (type, parentId, nodeId, e) => {
     e.stopPropagation();
     if (!apiFetch) return;
 
+    // 시스템 폴더 보호
     if (type === 'category') {
         const targetCategory = safeTagTree.find(c => String(c.id) === String(nodeId));
         if (targetCategory && (targetCategory.name.includes('음악') || targetCategory.name.includes('URL'))) {
@@ -179,6 +191,7 @@ const TimelineView = () => {
 
       <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden flex flex-col md:flex-row gap-8">
         
+        {/* 사이드바 필터 */}
         <div className="w-full md:w-64 shrink-0 flex flex-col h-[40vh] md:h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
           <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -255,7 +268,8 @@ const TimelineView = () => {
                             value={newTagNames[cat.id] || ''} 
                             onChange={(e) => setNewTagNames(prev => ({ ...prev, [cat.id]: e.target.value }))} 
                             placeholder="태그 추가" 
-                            className="flex-1 w-full bg-zinc-100 border-none rounded-md px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-400" 
+                            disabled={isAddingTag} // 🛡️ 방어 로직 추가
+                            className="flex-1 w-full bg-zinc-100 border-none rounded-md px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-400 disabled:text-zinc-400 disabled:cursor-not-allowed" 
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                                 e.preventDefault();
@@ -263,7 +277,13 @@ const TimelineView = () => {
                               }
                             }} 
                           />
-                          <button onClick={() => handleAddTag(cat.id)} className="ml-1 p-1 text-indigo-500 hover:bg-indigo-50 rounded-md"><Plus size={14}/></button>
+                          <button 
+                            onClick={() => handleAddTag(cat.id)} 
+                            disabled={isAddingTag} // 🛡️ 방어 로직 추가
+                            className="ml-1 p-1 text-indigo-500 hover:bg-indigo-50 rounded-md disabled:text-zinc-400 disabled:hover:bg-transparent"
+                          >
+                            {isAddingTag ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14}/>}
+                          </button>
                         </div>
                       )}
                     </div>
@@ -280,7 +300,8 @@ const TimelineView = () => {
                 value={newCategoryName} 
                 onChange={(e) => setNewCategoryName(e.target.value)} 
                 placeholder="카테고리 추가" 
-                className="flex-1 min-w-0 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400" 
+                disabled={isAddingCategory} // 🛡️ 방어 로직 추가
+                className="flex-1 min-w-0 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed" 
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                     e.preventDefault();
@@ -288,11 +309,18 @@ const TimelineView = () => {
                   }
                 }} 
               />
-              <button onClick={handleAddCategory} className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition"><Plus size={16}/></button>
+              <button 
+                onClick={handleAddCategory} 
+                disabled={isAddingCategory} // 🛡️ 방어 로직 추가
+                className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[36px]"
+              >
+                {isAddingCategory ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16}/>}
+              </button>
             </div>
           )}
         </div>
 
+        {/* 타임라인 메인 목록 */}
         <div className="flex-1 min-w-0 overflow-y-auto pr-2 pl-2 md:pl-4 py-2 scrollbar-hide">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
@@ -309,13 +337,11 @@ const TimelineView = () => {
           <div className="relative border-l-2 border-dashed border-zinc-200 ml-3 md:ml-4 space-y-5 pb-10 mt-2">
             {filteredRecords.map((item) => {
               
-              // ⭐️ 대소문자 무시, 이모지 무시하고 포함 여부만 안전하게 검사!
-              const catUpper = item.category.toUpperCase();
-              const isMusic = catUpper.includes('음악');
-              const isUrlItem = catUpper.includes('URL');
+              const isMusic = item.category?.includes('음악');
+              const isUrlItem = item.category?.includes('URL');
               
               const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
-              const hasImage = typeof item.image === 'string' && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
+              const hasImage = item.image && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
               
               const isTextOnly = !isMusic && !isUrlItem && !hasImage;
 
@@ -325,6 +351,7 @@ const TimelineView = () => {
                   
                   <div className={`bg-white border border-zinc-200/80 rounded-2xl p-3 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1 ${isTextOnly ? 'bg-gradient-to-br from-white to-zinc-50/50' : ''}`}>
                     
+                    {/* 타입별 썸네일 영역 */}
                     {isMusic ? (
                       <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-full border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700">
                         <img 
@@ -345,7 +372,7 @@ const TimelineView = () => {
                           rel="noopener noreferrer" 
                           className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 bg-white border-2 border-zinc-100 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center relative shadow-sm hover:shadow-md transition-all duration-300 group/link overflow-hidden"
                       >
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 group-hover/link:opacity-0 bg-white">
                               {item.youtubeUrl && getDomain(item.youtubeUrl) ? (
                                   <img 
                                     src={`https://www.google.com/s2/favicons?domain=${getDomain(item.youtubeUrl)}&sz=128`} 
@@ -360,6 +387,11 @@ const TimelineView = () => {
                                   <LinkIcon size={28} className="text-blue-300 mb-2" />
                               )}
                               <span className="text-[9px] font-bold text-zinc-400 max-w-[80%] truncate">{getDomain(item.youtubeUrl)}</span>
+                          </div>
+                          
+                          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
+                              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(item.youtubeUrl || '')}`} alt="QR Code" className="w-12 h-12 sm:w-14 sm:h-14 mix-blend-multiply mb-1" />
+                              <span className="text-[9px] font-black text-blue-600 bg-white px-2 py-0.5 rounded-md shadow-sm">이동/스캔</span>
                           </div>
                           
                           <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-blue-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50 z-10">{item.category}</div>
@@ -381,6 +413,7 @@ const TimelineView = () => {
                       </div>
                     )}
                     
+                    {/* 메인 텍스트 정보 */}
                     <div className="flex-1 w-full text-left py-0.5 flex flex-col justify-center min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Calendar size={12} className="text-indigo-500" />
