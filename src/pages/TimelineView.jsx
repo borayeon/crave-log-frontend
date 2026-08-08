@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote, ExternalLink, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote, ExternalLink, Link as LinkIcon, Loader2, GripVertical } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -39,8 +39,17 @@ const TimelineView = () => {
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState('');
 
+  // 💡 카테고리 드래그 앤 드롭 순서 관리용 상태
+  const [orderedCategories, setOrderedCategories] = useState([]);
+  const [draggedCatIndex, setDraggedCatIndex] = useState(null);
+
   const safeRecords = Array.isArray(records) ? records : [];
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
+
+  // 스토어의 tagTree가 업데이트되면 로컬 정렬 상태 동기화
+  useEffect(() => {
+    setOrderedCategories(safeTagTree);
+  }, [safeTagTree]);
 
   const filteredRecords = useMemo(() => {
     let filtered = safeRecords;
@@ -197,6 +206,44 @@ const TimelineView = () => {
     }
   };
 
+  // 💡 드래그 앤 드롭 핸들러 로직
+  const handleCatDragStart = (e, index) => {
+    if (editingCategoryId) return; // 이름 수정 중일 땐 드래그 방지
+    setDraggedCatIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleCatDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleCatDrop = async (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedCatIndex === null || draggedCatIndex === targetIndex) return;
+
+    const updated = [...orderedCategories];
+    const [draggedItem] = updated.splice(draggedCatIndex, 1);
+    updated.splice(targetIndex, 0, draggedItem);
+
+    setOrderedCategories(updated);
+    setDraggedCatIndex(null);
+
+    // 백엔드 연동 (백엔드에 API가 있어야 완벽하게 저장됨)
+    try {
+        if (apiFetch) {
+            const orderedIds = updated.map(c => c.id);
+            await apiFetch('/me/categories/reorder', {
+                method: 'PUT',
+                body: JSON.stringify({ categoryIds: orderedIds })
+            });
+            showToast('카테고리 순서가 저장되었습니다! 🔄');
+        }
+    } catch (err) {
+        console.error("순서 저장 API 연동 실패 (백엔드 추가 필요):", err);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full flex-1 min-h-0 animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
       <header className="px-6 md:px-10 py-8 shrink-0 flex justify-between items-end border-b border-zinc-200/50">
@@ -227,18 +274,32 @@ const TimelineView = () => {
             {isEditing && <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded-md text-[9px] font-black animate-pulse">편집 중</span>}
           </div>
           
-          {/* 💡 편집 모드일 때 나오는 직관적인 관리자 전용 UI (카드형) */}
+          {/* 편집 모드 관리자 뷰 */}
           {isEditing ? (
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 scrollbar-hide min-h-0">
-              {safeTagTree.map(cat => {
+              {orderedCategories.map((cat, index) => {
                 const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
                 const isSystemCat = catType === 'MUSIC' || catType === 'URL';
                 const isEditingThisCat = editingCategoryId === cat.id;
 
                 return (
-                  <div key={cat.id} className="bg-white border border-zinc-200 rounded-2xl p-3.5 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md">
-                    {/* 카테고리 헤더 */}
+                  <div 
+                    key={cat.id} 
+                    draggable={!editingCategoryId}
+                    onDragStart={(e) => handleCatDragStart(e, index)}
+                    onDragOver={(e) => handleCatDragOver(e, index)}
+                    onDrop={(e) => handleCatDrop(e, index)}
+                    className={`bg-white border border-zinc-200 rounded-2xl p-3.5 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md ${draggedCatIndex === index ? 'opacity-40 border-dashed border-indigo-400' : ''}`}
+                  >
                     <div className="flex items-center justify-between gap-2">
+                      
+                      {/* 💡 드래그 핸들 추가 */}
+                      {!editingCategoryId && (
+                        <div className="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 p-1 shrink-0 transition-colors" title="드래그하여 순서 변경">
+                            <GripVertical size={16} />
+                        </div>
+                      )}
+
                       {isEditingThisCat ? (
                         <input
                           autoFocus
@@ -273,7 +334,7 @@ const TimelineView = () => {
                     </div>
 
                     {/* 카테고리별 태그 목록 */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-100">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-100 ml-6">
                       {(cat.children || []).map(tag => (
                         <div key={tag.id} className="group/tag flex items-center gap-1 pl-2.5 pr-1 py-1 bg-zinc-100 text-zinc-600 rounded-lg text-xs font-bold border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 transition-colors">
                           <span>#{tag.name}</span>
@@ -296,7 +357,7 @@ const TimelineView = () => {
                 );
               })}
 
-              {/* 💡 새로운 카테고리 추가 카드 (바닥 고정이 아닌 리스트 마지막에 붙는 형태) */}
+              {/* 새로운 카테고리 추가 박스 */}
               <div className="bg-white border border-dashed border-zinc-300 rounded-2xl p-4 flex flex-col gap-3 mt-6 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
                 <div className="text-[11px] font-black text-indigo-500 flex items-center gap-1.5"><Plus size={14} strokeWidth={3}/> 카테고리 새로 만들기</div>
@@ -322,7 +383,7 @@ const TimelineView = () => {
               </div>
             </div>
           ) : (
-            // 💡 뷰 모드일 때 나오는 탐색용 트리 UI (기존과 동일)
+            // 💡 뷰 모드 탐색용 트리 UI (변경된 orderedCategories 기준 렌더링)
             <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide min-h-0">
               <button 
                 onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
@@ -331,7 +392,7 @@ const TimelineView = () => {
                 <Network size={16} className={selectedFilter.type === 'all' ? 'text-indigo-600' : 'text-zinc-400'}/> 전체보기
               </button>
 
-              {safeTagTree.map(cat => {
+              {orderedCategories.map(cat => {
                 const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
                 const isExpanded = expandedFolders[cat.id];
 
