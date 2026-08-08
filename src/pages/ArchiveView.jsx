@@ -491,6 +491,16 @@ const ArchiveView = () => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
 
+  // 🔄 수정된 데이터 실시간 동기화 로직 추가
+  useEffect(() => {
+    if (selectedRecord && records) {
+      const latestRecord = records.find(r => r.id === selectedRecord.id);
+      if (latestRecord && JSON.stringify(latestRecord) !== JSON.stringify(selectedRecord)) {
+        setSelectedRecord(latestRecord);
+      }
+    }
+  }, [records, selectedRecord]);
+
   const executeGridDelete = async () => {
     if (!confirmDeleteId || !apiFetch) return;
     try {
@@ -770,7 +780,6 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* 💡 요청하신 반응형 3열~6열 그리드 및 간격 축소 적용 부분 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
             : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-10 justify-items-center w-full"
@@ -887,7 +896,6 @@ const ArchiveView = () => {
                       );
                   }
 
-                  // 💡 음악 그리드 카드: 최소/최대 크기(min-w-[90px] max-w-[240px] 지정)
                   return (
                     <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full min-w-[90px] max-w-[240px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
@@ -911,7 +919,6 @@ const ArchiveView = () => {
                   );
                 }
 
-                // 💡 일반 그리드 카드: 최소/최대 크기(min-w-[90px] max-w-[240px] 지정)
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
