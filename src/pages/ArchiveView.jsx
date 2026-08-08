@@ -172,40 +172,44 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const recordCategory = record.category || record.categoryName || '';
 
   return (
-    <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
+    // 💡 라이트모드 스타일로 전면 개편 (bg-zinc-900/50, bg-white 등 적용)
+    <div className="fixed inset-0 z-[200] bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
       <div 
-        className="bg-zinc-950 md:bg-zinc-900 rounded-2xl w-full max-w-5xl h-[75vh] flex flex-col md:flex-row overflow-hidden shadow-2xl border border-zinc-800 relative"
+        className="bg-white rounded-2xl w-full max-w-5xl h-[75vh] flex flex-col md:flex-row overflow-hidden shadow-2xl relative"
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 z-[250] p-2 bg-black/50 hover:bg-white text-white hover:text-zinc-900 transition-colors rounded-full backdrop-blur-md shadow-lg border border-white/10">
+        {/* 닫기 버튼 */}
+        <button onClick={onClose} className="absolute top-4 right-4 z-[250] p-2 bg-white/90 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors rounded-full backdrop-blur-md shadow-sm border border-zinc-200">
             <CloseIcon size={20}/>
         </button>
 
+        {/* 삭제 확인 모달 */}
         {showDeleteConfirm && (
-          <div className="absolute inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-6 text-center">
-             <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+          <div className="absolute inset-0 z-[300] bg-white/90 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-6 text-center">
+             <div className="bg-white border border-zinc-200 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
                 <AlertTriangle size={56} className="text-rose-500 mx-auto mb-4" />
-                <h3 className="text-xl font-black text-white mb-2">정말 삭제하시겠습니까?</h3>
-                <p className="text-sm text-zinc-400 mb-8">이 기록은 영구적으로 삭제되며 복구할 수 없습니다.</p>
+                <h3 className="text-xl font-black text-zinc-900 mb-2">정말 삭제하시겠습니까?</h3>
+                <p className="text-sm text-zinc-500 mb-8">이 기록은 영구적으로 삭제되며 복구할 수 없습니다.</p>
                 <div className="flex gap-3">
-                    <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 bg-zinc-800 text-white hover:bg-zinc-700 rounded-xl font-bold transition">취소</button>
-                    <button onClick={executeDelete} className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition">삭제하기</button>
+                    <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 rounded-xl font-bold transition">취소</button>
+                    <button onClick={executeDelete} className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition">삭제하기</button>
                 </div>
              </div>
           </div>
         )}
 
-        <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full flex items-center justify-center relative border-r border-zinc-800 shrink-0 bg-black">
+        {/* 좌측 (이미지/미디어 영역) */}
+        <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full flex items-center justify-center relative border-r border-zinc-100 shrink-0 bg-zinc-50 overflow-hidden">
             {isEditMode ? (
-                 <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-900">
-                     <p className="text-zinc-400 mb-4 font-bold text-sm">이미지/영상 미리보기</p>
+                 <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-50/50">
+                     <p className="text-zinc-500 mb-4 font-bold text-sm">이미지/영상 미리보기</p>
                      
                      {isEditMusicCat && getYoutubeId(youtubeUrl) ? (
-                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
+                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                              <img src={`https://img.youtube.com/vi/${getYoutubeId(youtubeUrl)}/hqdefault.jpg`} alt="youtube thumbnail" className="max-w-full max-h-full object-contain" />
                          </div>
                      ) : isEditUrlCat && youtubeUrl ? (
-                         <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black p-6 text-center">
+                         <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
                              {getDomain(youtubeUrl) ? (
                                 <img 
                                   src={`https://icons.duckduckgo.com/ip3/${getDomain(youtubeUrl)}.ico`} 
@@ -213,18 +217,18 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                       e.target.onerror = null; 
                                       e.target.src = `https://ui-avatars.com/api/?name=${getDomain(youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
                                   }}
-                                  className="w-20 h-20 bg-white p-2 rounded-2xl mb-4" 
+                                  className="w-20 h-20 bg-zinc-50 p-2 rounded-2xl mb-4 border border-zinc-100" 
                                   alt="favicon" 
                                 />
-                             ) : <LinkIcon size={48} className="text-zinc-500 mb-4" />}
-                             <span className="text-zinc-400 font-bold">{getDomain(youtubeUrl)}</span>
+                             ) : <LinkIcon size={48} className="text-zinc-400 mb-4" />}
+                             <span className="text-zinc-600 font-bold">{getDomain(youtubeUrl)}</span>
                          </div>
                      ) : imageUrl ? (
-                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
+                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                              <img src={imageUrl} alt="preview" className="max-w-full max-h-full object-contain" />
                         </div>
                      ) : (
-                         <div className="w-full h-full border-2 border-dashed border-zinc-700 rounded-xl flex items-center justify-center text-zinc-600 bg-black/50 flex-col gap-2">
+                         <div className="w-full h-full border-2 border-dashed border-zinc-300 rounded-xl flex items-center justify-center text-zinc-400 bg-zinc-100/50 flex-col gap-2">
                              <ImageIcon size={24} className="opacity-50" />
                              <span>이미지 없음 (텍스트 전용)</span>
                          </div>
@@ -233,9 +237,9 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             ) : record.videoId ? (
                 <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${record.videoId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full border-none outline-none"></iframe>
             ) : record.isUrlItem ? (
-                <div className="w-full h-full bg-gradient-to-br from-blue-900 via-zinc-900 to-black flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
+                <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
                     {record.youtubeUrl && record.domain ? (
-                        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-3xl p-4 shadow-2xl mb-6 flex items-center justify-center transform hover:scale-105 transition-transform z-10">
+                        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-3xl p-4 shadow-xl mb-6 flex items-center justify-center transform hover:scale-105 transition-transform z-10 border border-zinc-100">
                             <img 
                                 src={`https://icons.duckduckgo.com/ip3/${record.domain}.ico`} 
                                 onError={(e) => { 
@@ -246,64 +250,67 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 className="w-full h-full object-contain" 
                             />
                         </div>
-                    ) : <LinkIcon size={80} className="text-blue-400 mb-6 z-10" />}
+                    ) : <LinkIcon size={80} className="text-blue-300 mb-6 z-10" />}
                     
-                    <h2 className="text-2xl md:text-4xl font-black text-white leading-tight tracking-tight drop-shadow-lg mb-4 z-10">{record.title}</h2>
-                    {record.content && <p className="text-zinc-400 text-base md:text-lg font-medium leading-relaxed max-w-md line-clamp-3 z-10">{record.content}</p>}
+                    <h2 className="text-2xl md:text-4xl font-black text-zinc-900 leading-tight tracking-tight drop-shadow-sm mb-4 z-10">{record.title}</h2>
+                    {record.content && <p className="text-zinc-500 text-base md:text-lg font-medium leading-relaxed max-w-md line-clamp-3 z-10">{record.content}</p>}
                     
                     {record.youtubeUrl && (
-                        <div className="mt-8 flex flex-col items-center justify-center gap-6 bg-white/5 p-5 md:p-6 rounded-[2rem] backdrop-blur-md border border-white/10 z-10">
+                        <div className="mt-8 flex flex-col items-center justify-center gap-6 bg-white/50 p-5 md:p-6 rounded-[2rem] backdrop-blur-md border border-white/50 z-10 shadow-sm">
                             <div className="flex flex-col items-center text-center">
-                                <p className="text-zinc-300 font-bold text-sm mb-3">아래 버튼을 눌러 웹사이트로 이동하세요.</p>
-                                <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-colors shadow-lg shadow-blue-900/50 font-black text-base md:text-lg">
+                                <p className="text-zinc-500 font-bold text-sm mb-3">아래 버튼을 눌러 웹사이트로 이동하세요.</p>
+                                <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-full transition-colors shadow-sm font-black text-base md:text-lg">
                                     <ExternalLink size={20} /> 웹사이트 방문하기
                                 </a>
                             </div>
                         </div>
                     )}
-                    <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/20 blur-[100px] rounded-full pointer-events-none" />
-                    <div className="absolute top-20 -left-20 w-64 h-64 bg-indigo-500/20 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="absolute top-20 -left-20 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
                 </div>
             ) : record.isTextOnly ? (
-                <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-zinc-900 to-black flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
-                    <Quote size={80} className="absolute -top-4 -left-4 text-white/5" />
-                    <Quote size={80} className="absolute -bottom-4 -right-4 text-white/5 rotate-180" />
-                    <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-lg mb-6">{record.title}</h2>
-                    {record.content && <p className="text-zinc-300 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">"{record.content}"</p>}
+                <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
+                    <Quote size={80} className="absolute -top-4 -left-4 text-indigo-100" />
+                    <Quote size={80} className="absolute -bottom-4 -right-4 text-indigo-100 rotate-180" />
+                    <h2 className="text-3xl md:text-5xl font-black text-zinc-900 leading-tight tracking-tight drop-shadow-sm mb-6">{record.title}</h2>
+                    {record.content && <p className="text-zinc-600 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">"{record.content}"</p>}
                 </div>
             ) : (
-                <img src={recordImage} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={record.title} className="w-full h-full object-contain" />
+                <img src={recordImage} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={record.title} className="w-full h-full object-contain bg-zinc-50" />
             )}
         </div>
 
-        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-zinc-950 text-zinc-200 overflow-hidden relative z-10">
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-800 shrink-0">
+        {/* 우측 (텍스트/입력 영역) */}
+        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-white text-zinc-800 overflow-hidden relative z-10">
+            {/* 상단 프로필 헤더 */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center shrink-0 border border-zinc-200">
                          {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" /> : <span className="text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>}
                     </div>
                     <div className="leading-tight">
-                        <p className="text-sm font-bold text-white flex items-center gap-1.5">{user?.handle || 'User'} <span className="text-[10px] text-zinc-500 font-medium tracking-wider">• {recordCategory}</span></p>
-                        {user?.location && <p className="text-[10px] text-zinc-400">{user.location}</p>}
+                        <p className="text-sm font-bold text-zinc-900 flex items-center gap-1.5">{user?.handle || 'User'} <span className="text-[10px] text-zinc-400 font-medium tracking-wider">• {recordCategory}</span></p>
+                        {user?.location && <p className="text-[10px] text-zinc-500">{user.location}</p>}
                     </div>
                 </div>
 
                 <div className="flex items-center gap-1">
                     {!isEditMode && isAdmin && !isGuestMode && (
                         <div className="flex items-center gap-1 mr-6 md:mr-0">
-                            <button onClick={() => setIsEditMode(true)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="수정"><Edit2 size={16}/></button>
+                            <button onClick={() => setIsEditMode(true)} className="p-2 text-zinc-400 hover:text-indigo-500 transition-colors" title="수정"><Edit2 size={16}/></button>
                             <button onClick={() => setShowDeleteConfirm(true)} className="p-2 text-zinc-400 hover:text-rose-500 transition-colors" title="삭제"><Trash2 size={16}/></button>
                         </div>
                     )}
                 </div>
             </div>
 
+            {/* 본문/폼 영역 */}
             <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                 {isEditMode ? (
                     <div className="space-y-5 animate-in fade-in duration-300">
                         <div>
                             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">제목 <span className="text-rose-500">*</span></label>
-                            <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none transition-colors" />
+                            <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" />
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4">
@@ -316,7 +323,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 setTagIds([]);
                                 setIsTagExpanded(true);
                                 }} 
-                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none appearance-none transition-colors"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none appearance-none transition-colors shadow-sm"
                             >
                                 <option value="">선택해주세요</option>
                                 {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
@@ -324,30 +331,30 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             </div>
                             <div>
                             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜</label>
-                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none [color-scheme:dark] transition-colors" />
+                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" />
                             </div>
                         </div>
                         
                         {tagTree.find(c => String(c.id) === String(categoryId))?.children?.length > 0 && (
-                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg overflow-hidden">
+                            <div className="bg-zinc-50 border border-zinc-200 rounded-lg overflow-hidden shadow-sm">
                             <button 
                                 type="button"
                                 onClick={() => setIsTagExpanded(!isTagExpanded)}
-                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-800 transition-colors"
+                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-100 transition-colors"
                             >
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">태그 수정 ({tagIds.length})</span>
-                                <ChevronDown size={14} className={`text-zinc-500 transition-transform ${isTagExpanded ? 'rotate-180' : ''}`} />
+                                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">태그 수정 ({tagIds.length})</span>
+                                <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isTagExpanded ? 'rotate-180' : ''}`} />
                             </button>
                             
                             {isTagExpanded && (
-                                <div className="p-3 border-t border-zinc-800 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                                <div className="p-3 border-t border-zinc-200 flex flex-wrap gap-2 max-h-40 overflow-y-auto bg-white">
                                 {tagTree.find(c => String(c.id) === String(categoryId)).children.map(tag => {
                                     const isSelected = tagIds.includes(tag.id);
                                     return (
                                     <button 
                                         key={tag.id} type="button"
                                         onClick={() => setTagIds(prev => isSelected ? prev.filter(id=>id!==tag.id) : [...prev, tag.id])} 
-                                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${isSelected ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${isSelected ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}
                                     >
                                         #{tag.name}
                                     </button>
@@ -359,11 +366,11 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                         )}
 
                         {isEditMusicCat || isEditUrlCat ? (
-                          <div className={`p-3 border rounded-lg ${isEditMusicCat ? 'bg-red-950/30 border-red-900/50' : 'bg-indigo-950/30 border-indigo-900/50'}`}>
-                            <label className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${isEditMusicCat ? 'text-red-500' : 'text-indigo-400'}`}>
+                          <div className={`p-3 border rounded-lg shadow-sm ${isEditMusicCat ? 'bg-rose-50 border-rose-100' : 'bg-indigo-50 border-indigo-100'}`}>
+                            <label className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${isEditMusicCat ? 'text-red-500' : 'text-indigo-500'}`}>
                                 {isEditMusicCat ? '유튜브 URL 연결' : '웹사이트 링크 (URL)'}
                             </label>
-                            <input type="text" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="https://..." className={`w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none transition-colors ${isEditMusicCat ? 'focus:border-red-500/50' : 'focus:border-indigo-500/50'}`} />
+                            <input type="text" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="https://..." className={`w-full bg-white border rounded-lg px-3 py-2.5 text-sm text-zinc-900 outline-none transition-colors ${isEditMusicCat ? 'border-rose-200 focus:border-rose-400' : 'border-indigo-200 focus:border-indigo-400'}`} />
                           </div>
                         ) : null}
 
@@ -371,92 +378,93 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                           <div>
                               <div className="flex items-center justify-between mb-1.5">
                                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">이미지 소스</label>
-                                  <div className="flex bg-zinc-800 p-0.5 rounded-md">
-                                      <button type="button" onClick={() => setImageInputType('file')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition ${imageInputType === 'file' ? 'bg-zinc-600 text-white' : 'text-zinc-500'}`}>파일</button>
-                                      <button type="button" onClick={() => setImageInputType('url')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition ${imageInputType === 'url' ? 'bg-zinc-600 text-white' : 'text-zinc-500'}`}>URL</button>
+                                  <div className="flex bg-zinc-100 p-1 rounded-md border border-zinc-200">
+                                      <button type="button" onClick={() => setImageInputType('file')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition-all ${imageInputType === 'file' ? 'bg-white text-zinc-800 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}>파일</button>
+                                      <button type="button" onClick={() => setImageInputType('url')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition-all ${imageInputType === 'url' ? 'bg-white text-zinc-800 shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}>URL</button>
                                   </div>
                               </div>
                               {imageInputType === 'file' ? (
-                                  <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-400 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer" />
+                                  <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-500 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-200 file:text-zinc-700 hover:file:bg-zinc-300 cursor-pointer shadow-sm" />
                               ) : (
-                                  <input type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="선택: 새 이미지 URL을 입력하거나 비워두세요." className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none" />
+                                  <input type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="선택: 새 이미지 URL을 입력하거나 비워두세요." className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none shadow-sm placeholder:text-zinc-400" />
                               )}
                           </div>
                         )}
 
                         <div>
                             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">본문</label>
-                            <textarea value={content} onChange={e=>setContent(e.target.value)} rows={5} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none resize-none transition-colors" />
+                            <textarea value={content} onChange={e=>setContent(e.target.value)} rows={5} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none resize-none transition-colors shadow-sm placeholder:text-zinc-400" />
                         </div>
                         
-                        <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg mt-2">
+                        <div className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200 rounded-lg mt-2 shadow-sm">
                           <div>
-                            <h4 className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                              {isPublic ? <Globe size={14} className="text-indigo-400"/> : <Lock size={14} className="text-rose-400"/>}
+                            <h4 className="text-[11px] font-bold text-zinc-700 flex items-center gap-1.5">
+                              {isPublic ? <Globe size={14} className="text-indigo-500"/> : <Lock size={14} className="text-rose-500"/>}
                               {isPublic ? '전체 공개' : '나만 보기 (비공개)'}
                             </h4>
                           </div>
-                          <button type="button" onClick={() => setIsPublic(!isPublic)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPublic ? 'bg-indigo-500' : 'bg-zinc-600'}`}>
-                            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-1'}`} />
+                          <button type="button" onClick={() => setIsPublic(!isPublic)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none shadow-inner ${isPublic ? 'bg-indigo-500' : 'bg-zinc-300'}`}>
+                            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${isPublic ? 'translate-x-5' : 'translate-x-1'}`} />
                           </button>
                         </div>
                     </div>
                 ) : (
                     <div className="animate-in fade-in duration-300">
                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-100 shrink-0 border border-zinc-200">
                                 {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" /> : <span className="w-full h-full flex items-center justify-center text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>}
                             </div>
                             <div className="flex-1 pt-1">
-                                <span className="text-sm font-bold text-white mr-2">{user?.handle || 'User'}</span>
-                                <span className="text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed font-medium">
-                                    <span className="font-bold text-white mb-1 flex items-center gap-1.5">
+                                <span className="text-sm font-bold text-zinc-900 mr-2">{user?.handle || 'User'}</span>
+                                <span className="text-sm text-zinc-700 whitespace-pre-wrap leading-relaxed font-medium">
+                                    <span className="font-black text-zinc-900 mb-1 flex items-center gap-1.5">
                                         {record.title}
-                                        {!record.isPublic && <Lock size={12} className="text-rose-400" title="비공개 기록" />} 
+                                        {!record.isPublic && <Lock size={12} className="text-rose-500" title="비공개 기록" />} 
                                     </span>
                                     {record.content}
                                 </span>
                                 
                                 {record.isUrlItem && record.youtubeUrl && (
                                     <div className="mt-4">
-                                        <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 text-blue-300 hover:bg-blue-500/40 hover:text-white rounded-lg transition-colors text-xs font-bold border border-blue-500/30">
+                                        <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold border border-blue-200 shadow-sm">
                                             <LinkIcon size={12} /> 바로가기
                                         </a>
                                     </div>
                                 )}
 
                                 <div className="mt-4 flex flex-wrap gap-1.5">
-                                    {(record.tags || []).map(tag => <span key={tag} className="text-xs font-medium text-[#E0F2FE] hover:text-white cursor-pointer transition-colors">#{tag}</span>)}
+                                    {(record.tags || []).map(tag => <span key={tag} className="text-xs font-bold text-indigo-500 hover:text-indigo-600 cursor-pointer transition-colors">#{tag}</span>)}
                                 </div>
-                                <div className="mt-3 text-[11px] text-zinc-500 font-medium">{record.date}</div>
+                                <div className="mt-3 text-[11px] text-zinc-400 font-medium">{record.date}</div>
                             </div>
                         </div>
                     </div>
                 )}
             </div>
 
+            {/* 하단 버튼 영역 */}
             {isEditMode ? (
-                 <div className="p-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
+                 <div className="p-4 border-t border-zinc-100 bg-zinc-50/50 shrink-0">
                     <div className="flex gap-2">
-                        <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-lg font-bold text-sm hover:bg-zinc-800 transition">취소</button>
-                        <button onClick={handleSave} disabled={isLoading} className={`flex-1 py-2.5 rounded-lg font-black text-sm transition flex items-center justify-center gap-2 ${isLoading ? 'bg-zinc-400 text-zinc-800 cursor-not-allowed' : 'bg-zinc-100 text-zinc-900 hover:bg-white'}`}>
+                        <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-white text-zinc-600 border border-zinc-200 rounded-lg font-bold text-sm hover:bg-zinc-50 transition shadow-sm">취소</button>
+                        <button onClick={handleSave} disabled={isLoading} className={`flex-1 py-2.5 rounded-lg font-black text-sm transition flex items-center justify-center gap-2 shadow-sm ${isLoading ? 'bg-zinc-400 text-zinc-800 cursor-not-allowed' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
                             {isLoading && <Loader2 size={16} className="animate-spin" />}
                             {isLoading ? '저장 중...' : '저장 완료'}
                         </button>
                     </div>
                  </div>
             ) : (
-                <div className="border-t border-zinc-800 p-4 shrink-0 bg-zinc-950">
-                    <div className="flex items-center justify-between mb-3 text-white">
+                <div className="border-t border-zinc-100 p-4 shrink-0 bg-white">
+                    <div className="flex items-center justify-between mb-3 text-zinc-800">
                         <div className="flex gap-4">
-                            <button className="hover:text-zinc-400 transition-colors"><Heart size={24} /></button>
-                            <button className="hover:text-zinc-400 transition-colors"><MessageCircle size={24} /></button>
-                            <button className="hover:text-zinc-400 transition-colors"><Send size={24} /></button>
+                            <button className="text-zinc-400 hover:text-rose-500 transition-colors"><Heart size={24} /></button>
+                            <button className="text-zinc-400 hover:text-indigo-500 transition-colors"><MessageCircle size={24} /></button>
+                            <button className="text-zinc-400 hover:text-indigo-500 transition-colors"><Send size={24} /></button>
                         </div>
-                        <button className="hover:text-zinc-400 transition-colors"><Bookmark size={24} /></button>
+                        <button className="text-zinc-400 hover:text-indigo-500 transition-colors"><Bookmark size={24} /></button>
                     </div>
-                    <p className="text-sm font-bold text-white mb-1">CraveLog Archive</p>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{record.date}</p>
+                    <p className="text-sm font-bold text-zinc-900 mb-1">CraveLog Archive</p>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest">{record.date}</p>
                 </div>
             )}
         </div>
@@ -779,10 +787,9 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* 💡 DuckDuckGo API 수정 완료된 스마트 그리드 적용 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
-            : "grid grid-cols-[repeat(auto-fill,minmax(224px,1fr))] gap-4 sm:gap-5 md:gap-6 pb-10 w-full"
+            : "grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3 sm:gap-4 md:gap-5 pb-10 justify-items-center w-full"
         }>
             {customOrderedRecords.map((item, index) => {
                 if (item.isMusic) {
@@ -897,7 +904,7 @@ const ArchiveView = () => {
                   }
 
                   return (
-                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[300px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
@@ -923,13 +930,13 @@ const ArchiveView = () => {
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       setSelectedRecord(item);
-                  }} className={`group relative aspect-[3/4] w-full rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                  }} className={`group relative aspect-[3/4] w-full max-w-[300px] mx-auto rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden group/card">
                               <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
                               <div className="flex flex-col items-center w-full h-full justify-center mt-4">
                                   {item.youtubeUrl && item.domain ? (
-                                      <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
+                                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
                                           <img 
                                             src={`https://icons.duckduckgo.com/ip3/${item.domain}.ico`} 
                                             onError={(e) => { 
@@ -940,7 +947,7 @@ const ArchiveView = () => {
                                             alt="site logo" 
                                           />
                                       </div>
-                                  ) : <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
+                                  ) : <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
                                   <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
                                   <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
