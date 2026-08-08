@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -13,53 +13,70 @@ const getYoutubeId = (url) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
+const getDomain = (url) => {
+  try {
+    const domain = new URL(url).hostname;
+    return domain.replace('www.', '');
+  } catch (e) {
+    return null;
+  }
+};
+
 const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, apiFetch, fetchAllData, showToast }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   const [date, setDate] = useState('');
+  
   const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState(null); 
+  
   const [youtubeUrl, setYoutubeUrl] = useState(''); 
   const [content, setContent] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [isTagExpanded, setIsTagExpanded] = useState(true);
   const [imageInputType, setImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAppStore(); 
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // 런타임 에러 방지를 위한 임시 기본값 처리 (실제로는 주석 해제된 useAppStore에서 데이터를 가져옵니다)
+  const appStore = typeof useAppStore !== 'undefined' ? useAppStore() : { user: {} };
+  const { user } = appStore;
 
   useEffect(() => {
-    if (record) {
-      setIsEditMode(false);
-    }
-  }, [record]);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showDeleteConfirm) setShowDeleteConfirm(false);
+        else onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, showDeleteConfirm]);
+
+  useEffect(() => {
+    setIsEditMode(false);
+    setShowDeleteConfirm(false);
+  }, [record?.id]);
 
   useEffect(() => {
     if (record && isEditMode) {
       setTitle(record.title);
       setDate(record.date?.replace(/\./g, '-') || '');
-      setImageUrl(record.image === DEFAULT_IMAGE ? '' : record.image); // ⭐️ 편집 모드일 때 기본 이미지는 빈칸으로 치환
+      setImageUrl(record.image === DEFAULT_IMAGE ? '' : record.image);
+      setImageFile(null);
       setYoutubeUrl(record.youtubeUrl || ''); 
       setContent(record.content || '');
       setIsPublic(record.isPublic ?? true);
       setIsTagExpanded(true);
 
-      const cat = tagTree.find(c => c.name === record.category);
+      const cat = tagTree?.find(c => c.name === record.category);
       setCategoryId(cat ? cat.id : '');
 
       if (cat && cat.children) {
-        const matchedTagIds = record.tags
+        const matchedTagIds = (record.tags || [])
             .map(tagName => cat.children.find(t => t.name === tagName)?.id)
             .filter(Boolean);
         setTagIds(matchedTagIds);
@@ -71,6 +88,14 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 
   if (!record) return null;
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImageUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleSave = async () => {
     if (!title.trim() || !categoryId) {
       showToast('제목과 카테고리는 필수 입력 사항입니다.');
@@ -78,16 +103,26 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
     setIsLoading(true);
     try {
-      const selectedCategory = tagTree.find(c => String(c.id) === String(categoryId));
+      const selectedCategory = tagTree?.find(c => String(c.id) === String(categoryId));
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
 
-      // ⭐️ 빈 이미지로 저장 허용 (프론트에서 빈 이미지를 빈 텍스트로 처리)
+      let finalImageUrl = imageUrl;
+
+      if (imageFile) {
+        finalImageUrl = await new Promise((resolve) => {
+           const reader = new FileReader();
+           reader.onloadend = () => resolve(reader.result);
+           reader.readAsDataURL(imageFile);
+        });
+      }
+
       const payload = {
         title: title.trim(),
+        categoryId: selectedCategory?.id,
         categoryName: selectedCategory?.name || '분류 없음',
         recordDate: date.replace(/-/g, '.'),
-        imageUrl: imageUrl.trim(), // 빈 문자열 허용
-        youtubeUrl: selectedCategory?.name === '음악' ? youtubeUrl.trim() : '', 
+        imageUrl: finalImageUrl?.trim(),
+        youtubeUrl: selectedCategory?.name?.includes('음악') || selectedCategory?.name?.includes('URL') ? youtubeUrl.trim() : '',
         content: content.trim(),
         isPublic: isPublic,
         tagIds: numericTagIds
@@ -102,7 +137,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         await fetchAllData(true);
         showToast('기록이 성공적으로 수정되었습니다! ✨');
         setIsEditMode(false);
-        onClose();
       } else {
         showToast('수정에 실패했습니다.');
       }
@@ -110,12 +144,11 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
       console.error(e);
       showToast('서버 연결 중 오류가 발생했습니다.');
     } finally {
-        // ⭐️ 종료 시 로딩 해제
         setIsLoading(false);
     }
   };
 
-  const handleDelete = async () => {
+  const executeDelete = async () => {
     try {
       const res = await apiFetch(`/me/records/${record.id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -125,12 +158,13 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
       }
     } catch(err) {
       console.error(err);
+      showToast('삭제 중 오류가 발생했습니다.');
     }
   };
 
-  const videoId = record.category === '음악' && !isEditMode ? getYoutubeId(record.youtubeUrl) : null;
-  const hasImage = record.image && record.image.trim() !== '' && record.image !== DEFAULT_IMAGE;
-  const isTextOnly = record.category !== '음악' && !hasImage; // 텍스트 전용 판별
+  const currentCategoryName = tagTree?.find(c => String(c.id) === String(categoryId))?.name || '';
+  const isEditMusicCat = currentCategoryName.includes('음악');
+  const isEditUrlCat = currentCategoryName.includes('URL');
 
   return (
     <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
@@ -142,60 +176,64 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             <CloseIcon size={20}/>
         </button>
 
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-6 text-center">
+             <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+                <AlertTriangle size={56} className="text-rose-500 mx-auto mb-4" />
+                <h3 className="text-xl font-black text-white mb-2">정말 삭제하시겠습니까?</h3>
+                <p className="text-sm text-zinc-400 mb-8">이 기록은 영구적으로 삭제되며 복구할 수 없습니다.</p>
+                <div className="flex gap-3">
+                    <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 bg-zinc-800 text-white hover:bg-zinc-700 rounded-xl font-bold transition">취소</button>
+                    <button onClick={executeDelete} className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition">삭제하기</button>
+                </div>
+             </div>
+          </div>
+        )}
+
         <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full flex items-center justify-center relative border-r border-zinc-800 shrink-0 bg-black">
-            {isEditMode ? (
-                 <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-900">
-                     <p className="text-zinc-400 mb-4 font-bold text-sm">이미지/영상 미리보기</p>
-                     
-                     {tagTree.find(c => String(c.id) === String(categoryId))?.name === '음악' && getYoutubeId(youtubeUrl) ? (
-                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
-                             <img src={`https://img.youtube.com/vi/${getYoutubeId(youtubeUrl)}/hqdefault.jpg`} alt="youtube thumbnail" className="max-w-full max-h-full object-contain" />
-                         </div>
-                     ) : imageUrl ? (
-                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
-                             <img src={imageUrl} alt="preview" className="max-w-full max-h-full object-contain" />
+            {record.videoId ? (
+                <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${record.videoId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full border-none outline-none"></iframe>
+            ) : record.isUrlItem ? (
+                <div className="w-full h-full bg-gradient-to-br from-blue-900 via-zinc-900 to-black flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
+                    {record.youtubeUrl && record.domain ? (
+                        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-3xl p-4 shadow-2xl mb-6 flex items-center justify-center transform hover:scale-105 transition-transform z-10">
+                            <img 
+                                src={`https://www.google.com/s2/favicons?domain=${record.domain}&sz=128`} 
+                                onError={(e) => { 
+                                    e.target.onerror = null; 
+                                    e.target.src = `https://ui-avatars.com/api/?name=${record.domain?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
+                                }} 
+                                alt="favicon" 
+                                className="w-full h-full object-contain" 
+                            />
                         </div>
-                     ) : (
-                         <div className="w-full h-full border-2 border-dashed border-zinc-700 rounded-xl flex items-center justify-center text-zinc-600 bg-black/50 flex-col gap-2">
-                             <ImageIcon size={24} className="opacity-50" />
-                             <span>이미지 없음 (텍스트 전용)</span>
-                         </div>
-                     )}
-                 </div>
-            ) : videoId ? (
-                <iframe 
-                    width="100%" 
-                    height="100%" 
-                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1`} 
-                    title="YouTube video player" 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowFullScreen
-                    className="w-full h-full border-none outline-none"
-                ></iframe>
-            ) : isTextOnly ? (
-                // ⭐️ 모달 좌측: 이미지가 없을 경우 멋진 텍스트 인용구 렌더링
+                    ) : <LinkIcon size={80} className="text-blue-400 mb-6 z-10" />}
+                    
+                    <h2 className="text-2xl md:text-4xl font-black text-white leading-tight tracking-tight drop-shadow-lg mb-4 z-10">{record.title}</h2>
+                    {record.content && <p className="text-zinc-400 text-base md:text-lg font-medium leading-relaxed max-w-md line-clamp-3 z-10">{record.content}</p>}
+                    
+                    {record.youtubeUrl && (
+                        <div className="mt-8 flex flex-col items-center justify-center gap-6 bg-white/5 p-5 md:p-6 rounded-[2rem] backdrop-blur-md border border-white/10 z-10">
+                            <div className="flex flex-col items-center text-center">
+                                <p className="text-zinc-300 font-bold text-sm mb-3">아래 버튼을 눌러 웹사이트로 이동하세요.</p>
+                                <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-colors shadow-lg shadow-blue-900/50 font-black text-base md:text-lg">
+                                    <ExternalLink size={20} /> 웹사이트 방문하기
+                                </a>
+                            </div>
+                        </div>
+                    )}
+                    <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/20 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="absolute top-20 -left-20 w-64 h-64 bg-indigo-500/20 blur-[100px] rounded-full pointer-events-none" />
+                </div>
+            ) : record.isTextOnly ? (
                 <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-zinc-900 to-black flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
                     <Quote size={80} className="absolute -top-4 -left-4 text-white/5" />
                     <Quote size={80} className="absolute -bottom-4 -right-4 text-white/5 rotate-180" />
-                    
-                    <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-lg mb-6">
-                        {record.title}
-                    </h2>
-                    {record.content && (
-                      <p className="text-zinc-300 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">
-                          "{record.content}"
-                      </p>
-                    )}
+                    <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-lg mb-6">{record.title}</h2>
+                    {record.content && <p className="text-zinc-300 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">"{record.content}"</p>}
                 </div>
             ) : (
-                // 일반 이미지
-                <img 
-                    src={record.image} 
-                    onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
-                    alt={record.title} 
-                    className="w-full h-full object-contain" 
-                />
+                <img src={record.image} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={record.title} className="w-full h-full object-contain" />
             )}
         </div>
 
@@ -203,17 +241,10 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-800 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-700">
-                         {user?.profileImageUrl ? (
-                            <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
-                        ) : (
-                             <span className="text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>
-                        )}
+                         {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" /> : <span className="text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>}
                     </div>
                     <div className="leading-tight">
-                        <p className="text-sm font-bold text-white flex items-center gap-1.5">
-                            {user?.handle || 'User'} 
-                            <span className="text-[10px] text-zinc-500 font-medium tracking-wider">• {record.category}</span>
-                        </p>
+                        <p className="text-sm font-bold text-white flex items-center gap-1.5">{user?.handle || 'User'} <span className="text-[10px] text-zinc-500 font-medium tracking-wider">• {record.category}</span></p>
                         {user?.location && <p className="text-[10px] text-zinc-400">{user.location}</p>}
                     </div>
                 </div>
@@ -222,7 +253,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     {!isEditMode && isAdmin && !isGuestMode && (
                         <div className="flex items-center gap-1 mr-6 md:mr-0">
                             <button onClick={() => setIsEditMode(true)} className="p-2 text-zinc-400 hover:text-white transition-colors" title="수정"><Edit2 size={16}/></button>
-                            <button onClick={handleDelete} className="p-2 text-zinc-400 hover:text-rose-500 transition-colors" title="삭제"><Trash2 size={16}/></button>
+                            <button onClick={() => setShowDeleteConfirm(true)} className="p-2 text-zinc-400 hover:text-rose-500 transition-colors" title="삭제"><Trash2 size={16}/></button>
                         </div>
                     )}
                 </div>
@@ -249,7 +280,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none appearance-none transition-colors"
                             >
                                 <option value="">선택해주세요</option>
-                                {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                                {tagTree?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                             </select>
                             </div>
                             <div>
@@ -258,7 +289,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             </div>
                         </div>
                         
-                        {tagTree.find(c => String(c.id) === String(categoryId))?.children?.length > 0 && (
+                        {tagTree?.find(c => String(c.id) === String(categoryId))?.children?.length > 0 && (
                             <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg overflow-hidden">
                             <button 
                                 type="button"
@@ -271,7 +302,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             
                             {isTagExpanded && (
                                 <div className="p-3 border-t border-zinc-800 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                                {tagTree.find(c => String(c.id) === String(categoryId)).children.map(tag => {
+                                {tagTree?.find(c => String(c.id) === String(categoryId)).children.map(tag => {
                                     const isSelected = tagIds.includes(tag.id);
                                     return (
                                     <button 
@@ -288,18 +319,16 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             </div>
                         )}
 
-                        {tagTree.find(c => String(c.id) === String(categoryId))?.name === '음악' ? (
-                          <div className="p-3 bg-red-950/30 border border-red-900/50 rounded-lg">
-                            <label className="text-[10px] font-bold text-red-500 uppercase tracking-wider block mb-1.5">유튜브 URL 연결</label>
-                            <input 
-                              type="text" 
-                              value={youtubeUrl} 
-                              onChange={e => setYoutubeUrl(e.target.value)} 
-                              placeholder="https://www.youtube.com/watch?v=..." 
-                              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-red-500/50 outline-none transition-colors" 
-                            />
+                        {isEditMusicCat || isEditUrlCat ? (
+                          <div className={`p-3 border rounded-lg ${isEditMusicCat ? 'bg-red-950/30 border-red-900/50' : 'bg-indigo-950/30 border-indigo-900/50'}`}>
+                            <label className={`text-[10px] font-bold uppercase tracking-wider block mb-1.5 ${isEditMusicCat ? 'text-red-500' : 'text-indigo-400'}`}>
+                                {isEditMusicCat ? '유튜브 URL 연결' : '웹사이트 링크 (URL)'}
+                            </label>
+                            <input type="text" value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="https://..." className={`w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none transition-colors ${isEditMusicCat ? 'focus:border-red-500/50' : 'focus:border-indigo-500/50'}`} />
                           </div>
-                        ) : (
+                        ) : null}
+
+                        {!isEditMusicCat && !isEditUrlCat && (
                           <div>
                               <div className="flex items-center justify-between mb-1.5">
                                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">이미지 소스</label>
@@ -308,17 +337,10 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                       <button type="button" onClick={() => setImageInputType('url')} className={`px-2 py-0.5 text-[10px] font-bold rounded transition ${imageInputType === 'url' ? 'bg-zinc-600 text-white' : 'text-zinc-500'}`}>URL</button>
                                   </div>
                               </div>
-
                               {imageInputType === 'file' ? (
-                                  <input 
-                                      type="file" accept="image/*" onChange={handleImageUpload} 
-                                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-400 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer" 
-                                  />
+                                  <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-400 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer" />
                               ) : (
-                                  <input 
-                                      type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="선택: 새 이미지 URL을 입력하거나 비워두세요." 
-                                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none" 
-                                  />
+                                  <input type="text" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="선택: 새 이미지 URL을 입력하거나 비워두세요." className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white outline-none" />
                               )}
                           </div>
                         )}
@@ -335,11 +357,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                               {isPublic ? '전체 공개' : '나만 보기 (비공개)'}
                             </h4>
                           </div>
-                          <button 
-                            type="button" 
-                            onClick={() => setIsPublic(!isPublic)}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPublic ? 'bg-indigo-500' : 'bg-zinc-600'}`}
-                          >
+                          <button type="button" onClick={() => setIsPublic(!isPublic)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPublic ? 'bg-indigo-500' : 'bg-zinc-600'}`}>
                             <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-1'}`} />
                           </button>
                         </div>
@@ -348,11 +366,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     <div className="animate-in fade-in duration-300">
                         <div className="flex gap-3">
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700">
-                                {user?.profileImageUrl ? (
-                                    <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="w-full h-full flex items-center justify-center text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>
-                                )}
+                                {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" /> : <span className="w-full h-full flex items-center justify-center text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>}
                             </div>
                             <div className="flex-1 pt-1">
                                 <span className="text-sm font-bold text-white mr-2">{user?.handle || 'User'}</span>
@@ -364,14 +378,18 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                     {record.content}
                                 </span>
                                 
-                                <div className="mt-3 flex flex-wrap gap-1.5">
-                                    {(record.tags || []).map(tag => (
-                                        <span key={tag} className="text-xs font-medium text-[#E0F2FE] hover:text-white cursor-pointer transition-colors">#{tag}</span>
-                                    ))}
+                                {record.isUrlItem && record.youtubeUrl && (
+                                    <div className="mt-4">
+                                        <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 text-blue-300 hover:bg-blue-500/40 hover:text-white rounded-lg transition-colors text-xs font-bold border border-blue-500/30">
+                                            <LinkIcon size={12} /> 바로가기
+                                        </a>
+                                    </div>
+                                )}
+
+                                <div className="mt-4 flex flex-wrap gap-1.5">
+                                    {(record.tags || []).map(tag => <span key={tag} className="text-xs font-medium text-[#E0F2FE] hover:text-white cursor-pointer transition-colors">#{tag}</span>)}
                                 </div>
-                                <div className="mt-3 text-[11px] text-zinc-500 font-medium">
-                                    {record.date}
-                                </div>
+                                <div className="mt-3 text-[11px] text-zinc-500 font-medium">{record.date}</div>
                             </div>
                         </div>
                     </div>
@@ -382,14 +400,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                  <div className="p-4 border-t border-zinc-800 bg-zinc-950 shrink-0">
                     <div className="flex gap-2">
                         <button onClick={() => setIsEditMode(false)} className="flex-1 py-2.5 bg-zinc-900 text-zinc-300 border border-zinc-800 rounded-lg font-bold text-sm hover:bg-zinc-800 transition">취소</button>
-                        {/* ⭐️ 변경: 로딩 중일 때 비활성화 및 텍스트/아이콘 변경 */}
-                        <button 
-                            onClick={handleSave} 
-                            disabled={isLoading}
-                            className={`flex-1 py-2.5 rounded-lg font-black text-sm transition flex items-center justify-center gap-2 ${
-                                isLoading ? 'bg-zinc-400 text-zinc-800 cursor-not-allowed' : 'bg-zinc-100 text-zinc-900 hover:bg-white'
-                            }`}
-                        >
+                        <button onClick={handleSave} disabled={isLoading} className={`flex-1 py-2.5 rounded-lg font-black text-sm transition flex items-center justify-center gap-2 ${isLoading ? 'bg-zinc-400 text-zinc-800 cursor-not-allowed' : 'bg-zinc-100 text-zinc-900 hover:bg-white'}`}>
                             {isLoading && <Loader2 size={16} className="animate-spin" />}
                             {isLoading ? '저장 중...' : '저장 완료'}
                         </button>
@@ -416,43 +427,65 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 };
 
 const ArchiveView = () => {
-  const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
+  // 런타임 에러를 방지하는 임시 폴백입니다. (주석이 해제되면 실제 스토어가 연결됩니다)
+  const appStore = typeof useAppStore !== 'undefined' ? useAppStore() : { 
+      records: [], tagTree: [], isAdmin: false, isGuestMode: false, searchQuery: '',
+      setLoginModalOpen: () => {}, setAddRecordModalOpen: () => {}, 
+      apiFetch: async () => ({ok: true}), fetchAllData: async () => {}, showToast: () => {}
+  };
+  const EmptyStateCmp = typeof EmptyState !== 'undefined' ? EmptyState : () => null;
+
+  const { records: rawRecords, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = appStore;
+  
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
-  
   const [activeCategory, setActiveCategory] = useState('전체');
+  
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  const records = useMemo(() => {
+      return (rawRecords || []).map(r => ({
+          ...r,
+          category: r.category || r.categoryName || '분류 없음',
+          image: r.image || r.imageUrl || '',
+          isPublic: r.isPublic ?? r.public ?? true
+      }));
+  }, [rawRecords]);
+
+  useEffect(() => {
+    fetchAllData(true);
+  }, [fetchAllData]);
 
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
 
-  const handleDeleteGridRecord = async (recordId, e) => {
-    e.stopPropagation();
-    if (!apiFetch) return;
-
+  const executeGridDelete = async () => {
+    if (!confirmDeleteId || !apiFetch) return;
     try {
-      const res = await apiFetch(`/me/records/${recordId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/me/records/${confirmDeleteId}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchAllData(true);
         showToast('기록이 보관함에서 삭제되었습니다.');
       }
     } catch(err) {
       console.error(err);
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
   const categories = useMemo(() => {
-    const uniqueCategories = new Set(records.map(r => r.category).filter(Boolean));
+    const uniqueCategories = new Set((records || []).map(r => r.category).filter(Boolean));
     return ['전체', ...Array.from(uniqueCategories)];
   }, [records]);
 
-const displayRecords = useMemo(() => {
-    let result = records;
+  const displayRecords = useMemo(() => {
+    let result = records || [];
 
-    // ⭐️ 게스트 모드이거나(!isAdmin), 호스트가 게스트 뷰 체험 중(isGuestMode)일 때 비공개 글 제외
     const isGuest = !isAdmin || isGuestMode; 
     if (isGuest) {
-      result = result.filter(r => r.isPublic === true); // 명확하게 true인 것만 남김
+      result = result.filter(r => r.isPublic === true);
     }
 
     if (searchQuery.trim()) {
@@ -469,13 +502,23 @@ const displayRecords = useMemo(() => {
       result = result.filter(r => r.category === activeCategory);
     }
 
-    return result;
-  }, [records, searchQuery, activeCategory, isGuestMode]);
+    return result.map(item => {
+        const catUpper = (item.category || '').toUpperCase();
+        const isMusic = catUpper.includes('음악');
+        const isUrlItem = catUpper.includes('URL');
+        const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
+        const domain = isUrlItem && item.youtubeUrl ? getDomain(item.youtubeUrl) : null;
+        const hasImage = typeof item.image === 'string' && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
+        const isTextOnly = !isMusic && !isUrlItem && !hasImage;
 
-  if (records.length === 0) {
+        return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly };
+    });
+  }, [records, searchQuery, activeCategory, isGuestMode, isAdmin]);
+
+  if (!records || records.length === 0) {
       return (
           <div className="h-full bg-[#F8FAFC]">
-            <EmptyState 
+            <EmptyStateCmp 
                 title="텅 빈 보관함입니다" 
                 icon={<FolderOpen size={32}/>} 
                 onAction={() => isAdmin && !isGuestMode ? setAddRecordModalOpen(true) : setLoginModalOpen(true)}
@@ -488,16 +531,32 @@ const displayRecords = useMemo(() => {
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative">
       
-      <RecordDetailModal 
-        record={selectedRecord} 
-        onClose={() => setSelectedRecord(null)}
-        isAdmin={isAdmin}
-        isGuestMode={isGuestMode}
-        tagTree={tagTree}
-        apiFetch={apiFetch}
-        fetchAllData={fetchAllData}
-        showToast={showToast}
-      />
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-4">
+           <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full text-center">
+               <AlertTriangle size={56} className="text-rose-500 mx-auto mb-4" />
+               <h3 className="text-xl font-black text-zinc-900 mb-2">기록 삭제</h3>
+               <p className="text-sm text-zinc-500 mb-8">선택한 기록을 정말 삭제하시겠습니까?<br/>삭제 후에는 복구할 수 없습니다.</p>
+               <div className="flex gap-3">
+                   <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl font-bold transition">취소</button>
+                   <button onClick={executeGridDelete} className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition">삭제하기</button>
+               </div>
+           </div>
+        </div>
+      )}
+
+      {selectedRecord && (
+        <RecordDetailModal 
+          record={selectedRecord} 
+          onClose={() => setSelectedRecord(null)}
+          isAdmin={isAdmin}
+          isGuestMode={isGuestMode}
+          tagTree={tagTree}
+          apiFetch={apiFetch}
+          fetchAllData={fetchAllData}
+          showToast={showToast}
+        />
+      )}
 
       <header className="px-6 md:px-10 pt-8 pb-4 shrink-0 relative z-10 bg-[#F8FAFC]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -547,112 +606,92 @@ const displayRecords = useMemo(() => {
             </div>
         )}
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 pb-10">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6 lg:gap-8 pb-10 justify-items-center">
             {displayRecords.map(item => {
-                
-                const isMusic = item.category === '음악';
-                const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
-                const hasImage = item.image && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
-                
-                // ⭐️ 이미지가 없는 일반 텍스트 메모 기록인지 판별
-                const isTextOnly = !isMusic && !hasImage;
-                
-                if (isMusic) {
-                  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
+                if (item.isMusic) {
+                  const thumbnailUrl = item.videoId ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
                   return (
-                    <div 
-                      key={item.id} 
-                      onClick={() => !isEditing && setSelectedRecord(item)}
-                      className={`group cursor-pointer flex flex-col items-center animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}
-                    >
-                      <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-lg border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[280px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                      <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-                        
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
                             <PlayCircle size={18} className="text-white/80 translate-x-[1px]" />
                         </div>
-                        
                         {isEditing && (
-                            <button 
-                            onClick={(e) => handleDeleteGridRecord(item.id, e)}
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50"
-                            >
-                            <Trash2 size={20} />
+                            <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
+                                <Trash2 size={20} />
                             </button>
                         )}
-                        
-                        {!item.isPublic && !isEditing && (
-                          <div className="absolute top-2 right-2 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20">
-                            <Lock size={12} />
-                          </div>
-                        )}
                       </div>
-                      <div className="mt-3 text-center px-2">
+                      <div className="mt-4 text-center px-2">
                         <h3 className="text-sm font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                        <p className="text-[10px] font-bold text-red-500 mt-1 flex items-center justify-center gap-1 uppercase tracking-widest">
-                          <Disc size={12} /> Record
-                        </p>
+                        <p className="text-[10px] font-bold text-red-500 mt-1.5 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={12} /> Record</p>
                       </div>
+                      {!item.isPublic && !isEditing && <div className="absolute top-0 right-0 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
                     </div>
                   );
                 }
 
-                // 일반 카테고리의 갤러리 뷰
                 return (
-                  <div 
-                    key={item.id} 
-                    onClick={() => !isEditing && setSelectedRecord(item)}
-                    className={`group relative aspect-[4/5] rounded-2xl md:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-100/50 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.04] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-200' : ''}`}
-                  >
-                      {/* ⭐️ 이미지가 없는 텍스트 전용 카드 (갤러리 뷰) */}
-                      {isTextOnly ? (
-                          <div className="w-full h-full bg-gradient-to-br from-indigo-50 via-white to-zinc-50 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-                              <Quote size={40} className="text-indigo-100 absolute top-4 left-4" />
-                              <div className="absolute top-4 left-4 px-2.5 py-1 bg-indigo-100/50 text-indigo-600 text-[10px] font-black rounded-md uppercase tracking-wider">{item.category}</div>
-                              <h3 className="text-lg font-black text-zinc-800 mb-2 mt-4 leading-tight group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                              {item.content && (
-                                <p className="text-xs font-medium text-zinc-500 line-clamp-4 leading-relaxed px-2">"{item.content}"</p>
-                              )}
+                  <div key={item.id} onClick={() => { 
+                      if (isEditing) return;
+                      if (item.isUrlItem && item.youtubeUrl) {
+                          window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
+                      } else {
+                          setSelectedRecord(item);
+                      }
+                  }} className={`group relative aspect-[4/5] w-full max-w-[280px] rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                      {item.isUrlItem ? (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden group/card">
+                              <div className="absolute top-5 left-5 px-3 py-1.5 bg-blue-100/60 text-blue-700 text-[11px] font-black rounded-xl flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
+                              <div className="flex flex-col items-center w-full h-full justify-center mt-4">
+                                  {item.youtubeUrl && item.domain ? (
+                                      <div className="w-20 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center p-3 mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
+                                          <img 
+                                            src={`https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`} 
+                                            onError={(e) => { 
+                                                e.target.onerror = null; 
+                                                e.target.src = `https://ui-avatars.com/api/?name=${item.domain?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
+                                            }} 
+                                            className="w-full h-full object-contain" 
+                                            alt="site logo" 
+                                          />
+                                      </div>
+                                  ) : <div className="w-20 h-20 bg-blue-50 text-blue-300 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} /></div>}
+                                  <h3 className="text-lg font-black text-zinc-800 mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
+                                  <p className="text-[10px] font-bold text-zinc-400 mt-2 bg-white/80 px-3 py-1.5 rounded-lg border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
+                              </div>
+                          </div>
+                      ) : item.isTextOnly ? (
+                          <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+                              <div className="absolute top-5 left-5 px-3 py-1.5 bg-indigo-100/60 text-indigo-600 text-[11px] font-black rounded-xl flex items-center gap-1.5 shadow-sm"><Quote size={12} /> {item.category}</div>
+                              <h3 className="text-lg font-black text-zinc-800 mb-3 mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-2">{item.title}</h3>
+                              {item.content && <p className="text-xs font-medium text-zinc-500 line-clamp-3 leading-relaxed px-4">"{item.content}"</p>}
                           </div>
                       ) : (
-                          // 일반 이미지 렌더링
                           <>
                             <div className="relative w-full flex-1 overflow-hidden bg-zinc-100">
-                                <img 
-                                    src={item.image} 
-                                    onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
-                                    alt={item.title} 
-                                    className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-110'}`} 
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                                <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black rounded-lg shadow-sm uppercase tracking-wider">{item.category}</div>
+                                <img src={item.image} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={item.title} className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105'}`} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                                <div className="absolute top-4 left-4 px-3 py-1.5 bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black rounded-xl shadow-sm uppercase tracking-wider">{item.category}</div>
                             </div>
-                            <div className="p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100">
+                            <div className="p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100 shrink-0 h-[72px]">
                                 <h4 className="text-sm font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
                                 {(item.tags || []).length > 0 && (
                                   <div className="mt-1.5 flex flex-wrap gap-1.5 overflow-hidden h-4">
-                                    {item.tags.slice(0, 2).map(tag => (
-                                      <span key={tag} className="text-[10px] font-bold text-zinc-400 truncate max-w-[60px]">#{tag}</span>
-                                    ))}
+                                    {item.tags.slice(0, 2).map(tag => <span key={tag} className="text-[10px] font-bold text-zinc-400 truncate max-w-[80px]">#{tag}</span>)}
                                   </div>
                                 )}
                             </div>
                           </>
                       )}
 
-                      {!item.isPublic && (
-                        <div className="absolute top-3 right-3 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20">
-                          <Lock size={12} />
-                        </div>
-                      )}
+                      {!item.isPublic && <div className="absolute top-4 right-4 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
                       
                       {isEditing && (
-                          <button 
-                          onClick={(e) => handleDeleteGridRecord(item.id, e)}
-                          className="absolute top-3 right-3 z-30 p-2.5 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50"
-                          >
-                          <Trash2 size={16} />
+                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
+                              <Trash2 size={20} />
                           </button>
                       )}
                   </div>

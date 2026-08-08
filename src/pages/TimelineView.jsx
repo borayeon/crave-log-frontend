@@ -1,13 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote } from 'lucide-react'; // ⭐️ Quote(따옴표) 아이콘 추가
+import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
-// ⭐️ 기본 이미지 상수 (이미지가 정말 필요할 때만 사용)
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
 const MUSIC_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop';
 
-// ⭐️ 유튜브 ID 추출 함수 
 const getYoutubeId = (url) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\/shorts\/)([^#&?]*).*/;
@@ -15,8 +13,18 @@ const getYoutubeId = (url) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
+const getDomain = (url) => {
+    try {
+        const domain = new URL(url).hostname;
+        return domain.replace('www.', '');
+    } catch (e) {
+        return null;
+    }
+};
+
 const TimelineView = () => {
-  const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
+  // 실제 스토어에서 데이터 로드
+  const { records: rawRecords, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
   
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState({ type: 'all', value: '전체', id: 'all' });
@@ -24,7 +32,16 @@ const TimelineView = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newTagNames, setNewTagNames] = useState({});
 
-  const safeRecords = Array.isArray(records) ? records : [];
+  // ⭐️ 핵심 해결 로직: 백엔드에서 오는 데이터 키(Key) 이름이 달라도 완벽하게 정규화 매핑!
+  const safeRecords = useMemo(() => {
+      return (rawRecords || []).map(r => ({
+          ...r,
+          category: r.category || r.categoryName || '분류 없음',
+          image: r.image || r.imageUrl || '',
+          isPublic: r.isPublic ?? r.public ?? true
+      }));
+  }, [rawRecords]);
+
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
 
   const filteredRecords = useMemo(() => {
@@ -62,6 +79,10 @@ const TimelineView = () => {
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
+
+  useEffect(() => {
+    fetchAllData(true); 
+  }, [fetchAllData]);
 
   if (safeRecords.length === 0 && safeTagTree.length === 0 && !isEditing) {
       return (
@@ -117,11 +138,15 @@ const TimelineView = () => {
     e.stopPropagation();
     if (!apiFetch) return;
 
+    if (type === 'category') {
+        const targetCategory = safeTagTree.find(c => String(c.id) === String(nodeId));
+        if (targetCategory && (targetCategory.name.includes('음악') || targetCategory.name.includes('URL'))) {
+            return showToast("시스템 기본 폴더는 삭제할 수 없습니다.");
+        }
+    }
+
     try {
-      const url = type === 'category' 
-        ? `/me/categories/${nodeId}`
-        : `/me/tags/${nodeId}`;
-        
+      const url = type === 'category' ? `/me/categories/${nodeId}` : `/me/tags/${nodeId}`;
       const res = await apiFetch(url, { method: 'DELETE' });
       
       if (res.ok) {
@@ -136,7 +161,7 @@ const TimelineView = () => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
+    <div className="flex flex-col h-screen animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
       <header className="px-6 md:px-10 py-8 shrink-0 flex justify-between items-end border-b border-zinc-200/50">
         <div>
           <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Timeline</h2>
@@ -154,7 +179,6 @@ const TimelineView = () => {
 
       <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden flex flex-col md:flex-row gap-8">
         
-        {/* 우측 네비게이션 트리 */}
         <div className="w-full md:w-64 shrink-0 flex flex-col h-[40vh] md:h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
           <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -173,6 +197,8 @@ const TimelineView = () => {
             {safeTagTree.map(cat => {
               const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
               const isExpanded = expandedFolders[cat.id];
+              const isSystemCat = cat.name.includes('음악') || cat.name.includes('URL');
+
               return (
                 <div key={cat.id} className="pt-1">
                   <div className={`group flex items-center justify-between rounded-xl transition-colors ${isCatSelected ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-zinc-50 text-zinc-700'}`}>
@@ -189,9 +215,13 @@ const TimelineView = () => {
                     </button>
                     
                     {isEditing && (
-                      <button onClick={(e) => handleDeleteNode('category', null, cat.id, e)} className="p-2 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
-                        <Trash2 size={14}/>
-                      </button>
+                        isSystemCat ? (
+                            <div className="p-2 text-zinc-300 shrink-0" title="시스템 폴더는 삭제 불가"><Lock size={14}/></div>
+                        ) : (
+                            <button onClick={(e) => handleDeleteNode('category', null, cat.id, e)} className="p-2 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
+                                <Trash2 size={14}/>
+                            </button>
+                        )
                     )}
                   </div>
                   
@@ -263,7 +293,6 @@ const TimelineView = () => {
           )}
         </div>
 
-        {/* 메인 리스트 영역 */}
         <div className="flex-1 min-w-0 overflow-y-auto pr-2 pl-2 md:pl-4 py-2 scrollbar-hide">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
@@ -280,13 +309,15 @@ const TimelineView = () => {
           <div className="relative border-l-2 border-dashed border-zinc-200 ml-3 md:ml-4 space-y-5 pb-10 mt-2">
             {filteredRecords.map((item) => {
               
-              const isMusic = item.category === '음악';
-              const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
+              // ⭐️ 대소문자 무시, 이모지 무시하고 포함 여부만 안전하게 검사!
+              const catUpper = item.category.toUpperCase();
+              const isMusic = catUpper.includes('음악');
+              const isUrlItem = catUpper.includes('URL');
               
-              // ⭐️ 변경: DB에 저장된 빈 이미지 URL 필터링 강화
-              const hasImage = item.image && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
-              // 음악이 아니고, 이미지도 없는 순수 텍스트/메모 기록인지 확인
-              const isTextOnly = !isMusic && !hasImage;
+              const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
+              const hasImage = typeof item.image === 'string' && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
+              
+              const isTextOnly = !isMusic && !isUrlItem && !hasImage;
 
               return (
                 <div key={item.id} className="relative pl-6 md:pl-8 group">
@@ -294,7 +325,6 @@ const TimelineView = () => {
                   
                   <div className={`bg-white border border-zinc-200/80 rounded-2xl p-3 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1 ${isTextOnly ? 'bg-gradient-to-br from-white to-zinc-50/50' : ''}`}>
                     
-                    {/* ⭐️ 이미지 렌더링 영역 (음악, 이미지 있음, 텍스트 전용에 따라 분기) */}
                     {isMusic ? (
                       <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-full border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700">
                         <img 
@@ -308,14 +338,38 @@ const TimelineView = () => {
                             <PlayCircle size={10} className="text-white/80 translate-x-[1px]" />
                         </div>
                       </div>
+                    ) : isUrlItem ? (
+                      <a 
+                          href={item.youtubeUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 bg-white border-2 border-zinc-100 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center relative shadow-sm hover:shadow-md transition-all duration-300 group/link overflow-hidden"
+                      >
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
+                              {item.youtubeUrl && getDomain(item.youtubeUrl) ? (
+                                  <img 
+                                    src={`https://www.google.com/s2/favicons?domain=${getDomain(item.youtubeUrl)}&sz=128`} 
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `https://ui-avatars.com/api/?name=${getDomain(item.youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`;
+                                    }}
+                                    alt="favicon" 
+                                    className="w-8 h-8 sm:w-10 sm:h-10 mb-2 rounded-lg shadow-sm" 
+                                  />
+                              ) : (
+                                  <LinkIcon size={28} className="text-blue-300 mb-2" />
+                              )}
+                              <span className="text-[9px] font-bold text-zinc-400 max-w-[80%] truncate">{getDomain(item.youtubeUrl)}</span>
+                          </div>
+                          
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-blue-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50 z-10">{item.category}</div>
+                      </a>
                     ) : isTextOnly ? (
-                      // ⭐️ 이미지가 없는 텍스트 전용 UI (포스트잇 느낌)
                       <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100/50 rounded-xl flex items-center justify-center relative shadow-inner group-hover:shadow-md transition-shadow duration-300">
                          <Quote size={28} className="text-indigo-200 group-hover:text-indigo-300 transition-colors transform -translate-y-2" />
                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-indigo-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50">{item.category}</div>
                       </div>
                     ) : (
-                      // ⭐️ 이미지가 있는 일반 기록 UI
                       <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-xl">
                         <img 
                           src={item.image} 
@@ -327,7 +381,6 @@ const TimelineView = () => {
                       </div>
                     )}
                     
-                    {/* 우측 텍스트 정보 영역 */}
                     <div className="flex-1 w-full text-left py-0.5 flex flex-col justify-center min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Calendar size={12} className="text-indigo-500" />
