@@ -122,8 +122,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         categoryName: selectedCategory?.name || '분류 없음',
         recordDate: date.replace(/-/g, '.'),
         imageUrl: finalImageUrl?.trim(),
-        
-        // 💡 타입 기반 조건으로 변경 (안전 장치 포함)
         youtubeUrl: (selectedCategory?.type === 'MUSIC' || selectedCategory?.type === 'URL' || selectedCategory?.name?.includes('음악') || selectedCategory?.name?.includes('URL')) ? youtubeUrl.trim() : '',
         content: content.trim(),
         isPublic: isPublic,
@@ -164,7 +162,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-  // 💡 모달 내에서도 타입 기반 식별 
   const currentCategory = tagTree.find(c => String(c.id) === String(categoryId));
   const catType = currentCategory?.type || (currentCategory?.name?.includes('음악') ? 'MUSIC' : currentCategory?.name?.includes('URL') ? 'URL' : 'GENERAL');
   
@@ -550,7 +547,6 @@ const ArchiveView = () => {
         const catName = item.category || item.categoryName || '분류 없음';
         const imgUrl = item.image || item.imageUrl || '';
         
-        // 💡 백엔드의 type 필드를 가장 먼저 확인하고, 없으면 tagTree에서 찾고, 그래도 없으면 기존처럼 이름으로 유추
         const matchedCat = tagTree.find(c => c.name === catName || String(c.id) === String(item.categoryId));
         const catType = item.categoryType || matchedCat?.type || (catName.includes('음악') ? 'MUSIC' : catName.includes('URL') ? 'URL' : 'GENERAL');
 
@@ -640,12 +636,11 @@ const ArchiveView = () => {
       );
   }
 
-  // 💡 타입 기반으로 뷰 토글 버튼 띄울지 결정
   const isActiveCategoryMusic = customOrderedRecords.some(r => r.type === 'MUSIC');
   const isListMode = isActiveCategoryMusic && musicViewMode === 'list';
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative w-full">
       
       {confirmDeleteId && (
         <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-4">
@@ -718,7 +713,6 @@ const ArchiveView = () => {
                 ))}
             </div>
 
-            {/* 🎵 음악 카테고리 전용 뷰 토글 스위치 */}
             {isActiveCategoryMusic && (
                 <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 ml-auto">
                     <button 
@@ -776,9 +770,10 @@ const ArchiveView = () => {
             </div>
         )}
         
+        {/* 💡 요청하신 반응형 3열~6열 그리드 및 간격 축소 적용 부분 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
-            : "grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6 lg:gap-8 pb-10 justify-items-center"
+            : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-10 justify-items-center w-full"
         }>
             {customOrderedRecords.map((item, index) => {
                 if (item.isMusic) {
@@ -892,40 +887,42 @@ const ArchiveView = () => {
                       );
                   }
 
+                  // 💡 음악 그리드 카드: 최소/최대 크기(min-w-[90px] max-w-[240px] 지정)
                   return (
-                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[280px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
-                      <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full min-w-[90px] max-w-[240px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                      <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
-                            <PlayCircle size={18} className="text-white/80 translate-x-[1px]" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
+                            <PlayCircle size={16} className="text-white/80 translate-x-[1px]" />
                         </div>
                         {isEditing && (
-                            <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
-                                <Trash2 size={20} />
+                            <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
+                                <Trash2 size={16} className="sm:w-5 sm:h-5" />
                             </button>
                         )}
                       </div>
-                      <div className="mt-4 text-center px-2">
-                        <h3 className="text-sm font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                        <p className="text-[10px] font-bold text-red-500 mt-1.5 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={12} /> Record</p>
+                      <div className="mt-2 sm:mt-4 text-center px-1 sm:px-2">
+                        <h3 className="text-xs sm:text-sm font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                        <p className="text-[8px] sm:text-[10px] font-bold text-red-500 mt-1 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={10} /> Record</p>
                       </div>
-                      {!item.isPublic && !isEditing && <div className="absolute top-0 right-0 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
+                      {!item.isPublic && !isEditing && <div className="absolute top-0 right-0 p-1 sm:p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={10} className="sm:w-3 sm:h-3" /></div>}
                     </div>
                   );
                 }
 
+                // 💡 일반 그리드 카드: 최소/최대 크기(min-w-[90px] max-w-[240px] 지정)
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       setSelectedRecord(item);
-                  }} className={`group relative aspect-[4/5] w-full max-w-[280px] rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                  }} className={`group relative aspect-[4/5] w-full min-w-[90px] max-w-[240px] rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden group/card">
-                              <div className="absolute top-5 left-5 px-3 py-1.5 bg-blue-100/60 text-blue-700 text-[11px] font-black rounded-xl flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
-                              <div className="flex flex-col items-center w-full h-full justify-center mt-4">
+                          <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-3 sm:p-6 text-center relative overflow-hidden group/card">
+                              <div className="absolute top-2 sm:top-5 left-2 sm:left-5 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[8px] sm:text-[11px] font-black rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-sm z-10"><LinkIcon size={10} /> {item.category}</div>
+                              <div className="flex flex-col items-center w-full h-full justify-center mt-3 sm:mt-4">
                                   {item.youtubeUrl && item.domain ? (
-                                      <div className="w-20 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center p-3 mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
+                                      <div className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white rounded-lg sm:rounded-2xl shadow-md flex items-center justify-center p-1.5 sm:p-3 mb-2 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
                                           <img 
                                             src={`https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`} 
                                             onError={(e) => { 
@@ -936,40 +933,40 @@ const ArchiveView = () => {
                                             alt="site logo" 
                                           />
                                       </div>
-                                  ) : <div className="w-20 h-20 bg-blue-50 text-blue-300 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} /></div>}
-                                  <h3 className="text-lg font-black text-zinc-800 mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
-                                  <p className="text-[10px] font-bold text-zinc-400 mt-2 bg-white/80 px-3 py-1.5 rounded-lg border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
+                                  ) : <div className="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-blue-50 text-blue-300 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={24} className="sm:w-8 sm:h-8" /></div>}
+                                  <h3 className="text-xs sm:text-sm md:text-base font-black text-zinc-800 mb-1 sm:mb-2 leading-snug line-clamp-2 px-1 w-full">{item.title}</h3>
+                                  <p className="text-[8px] sm:text-[10px] font-bold text-zinc-400 mt-1 sm:mt-2 bg-white/80 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[90%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
                           </div>
                       ) : item.isTextOnly ? (
-                          <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-                              <div className="absolute top-5 left-5 px-3 py-1.5 bg-indigo-100/60 text-indigo-600 text-[11px] font-black rounded-xl flex items-center gap-1.5 shadow-sm"><Quote size={12} /> {item.category}</div>
-                              <h3 className="text-lg font-black text-zinc-800 mb-3 mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-2">{item.title}</h3>
-                              {item.content && <p className="text-xs font-medium text-zinc-500 line-clamp-3 leading-relaxed px-4">"{item.content}"</p>}
+                          <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-3 sm:p-6 text-center relative overflow-hidden">
+                              <div className="absolute top-2 sm:top-5 left-2 sm:left-5 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-indigo-100/60 text-indigo-600 text-[8px] sm:text-[11px] font-black rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-sm"><Quote size={10} /> {item.category}</div>
+                              <h3 className="text-sm sm:text-lg md:text-xl font-black text-zinc-800 mb-1 sm:mb-3 mt-4 sm:mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-1">{item.title}</h3>
+                              {item.content && <p className="text-[9px] sm:text-xs font-medium text-zinc-500 line-clamp-3 sm:line-clamp-4 leading-relaxed px-2">"{item.content}"</p>}
                           </div>
                       ) : (
                           <>
                             <div className="relative w-full flex-1 overflow-hidden bg-zinc-100">
                                 <img src={item.image} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={item.title} className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105'}`} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                                <div className="absolute top-4 left-4 px-3 py-1.5 bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black rounded-xl shadow-sm uppercase tracking-wider">{item.category}</div>
+                                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-white/90 backdrop-blur-md text-indigo-600 text-[8px] sm:text-[10px] font-black rounded-lg shadow-sm uppercase tracking-wider">{item.category}</div>
                             </div>
-                            <div className="p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100 shrink-0 h-[72px]">
-                                <h4 className="text-sm font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
+                            <div className="p-2 sm:p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100 shrink-0 h-auto sm:h-[72px] min-h-[50px]">
+                                <h4 className="text-xs sm:text-sm font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
                                 {(item.tags || []).length > 0 && (
-                                  <div className="mt-1.5 flex flex-wrap gap-1.5 overflow-hidden h-4">
-                                    {item.tags.slice(0, 2).map(tag => <span key={tag} className="text-[10px] font-bold text-zinc-400 truncate max-w-[80px]">#{tag}</span>)}
+                                  <div className="mt-1 sm:mt-1.5 flex flex-wrap gap-1 sm:gap-1.5 overflow-hidden h-3 sm:h-4">
+                                    {item.tags.slice(0, 2).map(tag => <span key={tag} className="text-[8px] sm:text-[10px] font-bold text-zinc-400 truncate max-w-[60px] sm:max-w-[80px]">#{tag}</span>)}
                                   </div>
                                 )}
                             </div>
                           </>
                       )}
 
-                      {!item.isPublic && <div className="absolute top-4 right-4 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
+                      {!item.isPublic && <div className="absolute top-2 sm:top-4 right-2 sm:right-4 p-1 sm:p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={10} className="sm:w-3 sm:h-3" /></div>}
                       
                       {isEditing && (
-                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-50 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
-                              <Trash2 size={20} />
+                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 bg-rose-50 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
+                              <Trash2 size={16} className="sm:w-5 sm:h-5" />
                           </button>
                       )}
                   </div>
