@@ -197,7 +197,6 @@ const TimelineView = () => {
     }
   };
 
-  // 💡 최상단 div의 h-screen을 h-full flex-1 min-h-0 으로 변경하여 전체 스크롤 방지
   return (
     <div className="flex flex-col h-full flex-1 min-h-0 animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
       <header className="px-6 md:px-10 py-8 shrink-0 flex justify-between items-end border-b border-zinc-200/50">
@@ -215,41 +214,33 @@ const TimelineView = () => {
         )}
       </header>
 
-      {/* 💡 overflow-hidden을 주어 내부 스크롤만 작동하도록 강제 */}
       <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden min-h-0 flex flex-col md:flex-row gap-8">
         
-        {/* 사이드바 필터 (max-h-full 추가) */}
-        <div className="w-full md:w-64 shrink-0 flex flex-col h-full max-h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between shrink-0">
-            <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-              <FolderOpen size={14} className="text-indigo-500"/> Tag Explorer
+        {/* 사이드바 영역 */}
+        <div className="w-full md:w-[320px] shrink-0 flex flex-col h-full max-h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden transition-all duration-300">
+          
+          <div className={`p-4 border-b flex items-center justify-between shrink-0 ${isEditing ? 'bg-rose-50/30 border-rose-100' : 'bg-zinc-50/50 border-zinc-100'}`}>
+            <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-zinc-600">
+              <FolderOpen size={14} className={isEditing ? 'text-rose-500' : 'text-indigo-500'}/> 
+              {isEditing ? '카테고리 관리자' : 'Tag Explorer'}
             </h3>
+            {isEditing && <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded-md text-[9px] font-black animate-pulse">편집 중</span>}
           </div>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide min-h-0">
-            <button 
-              onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${selectedFilter.type === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
-            >
-              <Network size={16} className={selectedFilter.type === 'all' ? 'text-indigo-600' : 'text-zinc-400'}/> 전체보기
-            </button>
+          {/* 💡 편집 모드일 때 나오는 직관적인 관리자 전용 UI (카드형) */}
+          {isEditing ? (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 scrollbar-hide min-h-0">
+              {safeTagTree.map(cat => {
+                const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
+                const isSystemCat = catType === 'MUSIC' || catType === 'URL';
+                const isEditingThisCat = editingCategoryId === cat.id;
 
-            {safeTagTree.map(cat => {
-              const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
-              const isExpanded = expandedFolders[cat.id];
-              
-              const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
-              const isSystemCat = catType === 'MUSIC' || catType === 'URL';
-              
-              const isEditingThisCat = editingCategoryId === cat.id;
-
-              return (
-                <div key={cat.id} className="pt-1">
-                  <div className={`group flex items-center justify-between rounded-xl transition-colors ${isCatSelected ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-zinc-50 text-zinc-700'}`}>
-                    
-                    {isEditingThisCat ? (
-                      <div className="flex-1 flex items-center gap-2.5 px-3 py-1.5 ml-3">
-                        <input 
+                return (
+                  <div key={cat.id} className="bg-white border border-zinc-200 rounded-2xl p-3.5 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md">
+                    {/* 카테고리 헤더 */}
+                    <div className="flex items-center justify-between gap-2">
+                      {isEditingThisCat ? (
+                        <input
                           autoFocus
                           value={editCategoryName}
                           onChange={(e) => setEditCategoryName(e.target.value)}
@@ -258,10 +249,95 @@ const TimelineView = () => {
                             if (e.key === 'Escape') setEditingCategoryId(null);
                           }}
                           onBlur={() => handleUpdateCategory(cat)}
-                          className="flex-1 w-full bg-white border border-indigo-400 rounded px-2 py-1 text-sm outline-none font-bold text-zinc-900 shadow-sm"
+                          className="flex-1 w-full bg-indigo-50 border border-indigo-300 rounded-lg px-2 py-1.5 text-sm outline-none font-black text-indigo-900 shadow-sm"
                         />
-                      </div>
-                    ) : (
+                      ) : (
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-500 rounded-md text-[10px] font-black shrink-0 shadow-sm border border-zinc-200">
+                            {catType === 'MUSIC' ? '🎵' : catType === 'URL' ? '🔗' : '📁'}
+                          </span>
+                          <span className="font-black text-[15px] text-zinc-800 truncate">{cat.name}</span>
+                        </div>
+                      )}
+                      
+                      {!isEditingThisCat && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button onClick={() => { setEditingCategoryId(cat.id); setEditCategoryName(cat.name); }} className="p-1.5 text-zinc-400 hover:text-indigo-600 bg-zinc-50 hover:bg-indigo-50 rounded-lg transition-colors border border-zinc-100"><Edit2 size={14}/></button>
+                          {isSystemCat ? (
+                              <div className="p-1.5 text-zinc-300 bg-zinc-50 rounded-lg border border-zinc-100 cursor-not-allowed" title="시스템 폴더 삭제 불가"><Lock size={14}/></div>
+                          ) : (
+                              <button onClick={(e) => handleDeleteNode('category', null, cat, e)} className="p-1.5 text-rose-400 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors border border-rose-100"><Trash2 size={14}/></button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 카테고리별 태그 목록 */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-100">
+                      {(cat.children || []).map(tag => (
+                        <div key={tag.id} className="group/tag flex items-center gap-1 pl-2.5 pr-1 py-1 bg-zinc-100 text-zinc-600 rounded-lg text-xs font-bold border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 transition-colors">
+                          <span>#{tag.name}</span>
+                          <button onClick={(e) => handleDeleteNode('tag', cat.id, tag, e)} className="text-zinc-400 hover:text-rose-500 hover:bg-white rounded-md p-0.5 transition-colors"><CloseIcon size={12}/></button>
+                        </div>
+                      ))}
+                      
+                      {/* 개별 태그 추가 인풋 */}
+                      <input 
+                        type="text"
+                        placeholder="+ 새 태그 추가"
+                        value={newTagNames[cat.id] || ''}
+                        onChange={e => setNewTagNames(prev => ({ ...prev, [cat.id]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') handleAddTag(cat.id); }}
+                        disabled={isAddingTag}
+                        className="w-24 focus:w-32 transition-all px-2.5 py-1 bg-white border border-dashed border-zinc-300 rounded-lg text-xs font-bold outline-none focus:border-indigo-400 focus:border-solid placeholder:text-zinc-400 disabled:opacity-50 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 💡 새로운 카테고리 추가 카드 (바닥 고정이 아닌 리스트 마지막에 붙는 형태) */}
+              <div className="bg-white border border-dashed border-zinc-300 rounded-2xl p-4 flex flex-col gap-3 mt-6 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
+                <div className="text-[11px] font-black text-indigo-500 flex items-center gap-1.5"><Plus size={14} strokeWidth={3}/> 카테고리 새로 만들기</div>
+                <div className="flex gap-2">
+                    <select 
+                        value={newCategoryType} onChange={e=>setNewCategoryType(e.target.value)} disabled={isAddingCategory}
+                        className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2 text-xs font-bold outline-none focus:border-indigo-400 focus:bg-white text-zinc-700 shrink-0 w-[72px]"
+                    >
+                        <option value="GENERAL">📁 일반</option>
+                        <option value="MUSIC">🎵 음악</option>
+                        <option value="URL">🔗 URL</option>
+                    </select>
+                    <input 
+                        value={newCategoryName} onChange={e=>setNewCategoryName(e.target.value)} disabled={isAddingCategory}
+                        onKeyDown={e=>{if(e.key==='Enter') handleAddCategory()}}
+                        placeholder="카테고리 이름 지정"
+                        className="flex-1 min-w-0 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-400 focus:bg-white placeholder:font-medium placeholder:text-zinc-400"
+                    />
+                </div>
+                <button onClick={handleAddCategory} disabled={isAddingCategory || !newCategoryName.trim()} className="w-full py-2 bg-zinc-900 text-white rounded-lg text-xs font-black hover:bg-zinc-800 disabled:bg-zinc-300 disabled:text-zinc-500 transition-colors flex justify-center items-center gap-1.5 shadow-sm">
+                    {isAddingCategory ? <Loader2 size={14} className="animate-spin" /> : '완료 및 추가'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            // 💡 뷰 모드일 때 나오는 탐색용 트리 UI (기존과 동일)
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide min-h-0">
+              <button 
+                onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${selectedFilter.type === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
+              >
+                <Network size={16} className={selectedFilter.type === 'all' ? 'text-indigo-600' : 'text-zinc-400'}/> 전체보기
+              </button>
+
+              {safeTagTree.map(cat => {
+                const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
+                const isExpanded = expandedFolders[cat.id];
+
+                return (
+                  <div key={cat.id} className="pt-1">
+                    <div className={`group flex items-center justify-between rounded-xl transition-colors ${isCatSelected ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-zinc-50 text-zinc-700'}`}>
                       <button 
                         onClick={() => setSelectedFilter({ type: 'category', value: cat.name, id: cat.id })} 
                         className="flex-1 flex items-center gap-2.5 px-3 py-2 text-sm font-bold truncate"
@@ -272,121 +348,30 @@ const TimelineView = () => {
                         {isExpanded ? <FolderOpen size={16} className="text-indigo-400 shrink-0"/> : <Folder size={16} className="text-indigo-400 shrink-0"/>}
                         <span className="truncate">{cat.name}</span>
                       </button>
-                    )}
+                    </div>
                     
-                    {isEditing && !isEditingThisCat && (
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                setEditingCategoryId(cat.id); 
-                                setEditCategoryName(cat.name); 
-                              }} 
-                              className="p-2 text-zinc-400 hover:text-indigo-500 transition-colors shrink-0"
-                              title="카테고리 이름 수정"
-                            >
-                                <Edit2 size={14}/>
-                            </button>
-                            {isSystemCat ? (
-                                <div className="p-2 text-zinc-300 shrink-0" title="시스템 기본 폴더는 삭제 불가"><Lock size={14}/></div>
-                            ) : (
-                                <button onClick={(e) => handleDeleteNode('category', null, cat, e)} className="p-2 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
-                                    <Trash2 size={14}/>
-                                </button>
-                            )}
-                        </div>
+                    {isExpanded && (
+                      <div className="ml-8 mt-1 space-y-1 relative before:absolute before:left-[-11px] before:top-0 before:bottom-2 before:w-px before:bg-zinc-200">
+                        {(cat.children || []).map(tag => {
+                          const isTagSelected = selectedFilter.type === 'tag' && String(selectedFilter.id) === String(tag.id);
+                          return (
+                            <div key={tag.id} className="group relative flex items-center justify-between rounded-lg transition-colors">
+                              <div className="absolute left-[-11px] top-1/2 w-2.5 h-px bg-zinc-200" />
+                              <button 
+                                onClick={() => setSelectedFilter({ type: 'tag', value: tag.name, id: tag.id, parentId: cat.id })}
+                                className={`flex-1 flex items-center gap-2.5 px-3 py-1.5 text-sm font-medium transition-colors truncate ${isTagSelected ? 'text-indigo-600 bg-indigo-50/50 rounded-lg font-bold' : 'text-zinc-500 hover:text-zinc-900'}`}
+                              >
+                                <Hash size={14} className="shrink-0 opacity-50"/>
+                                <span className="truncate">{tag.name}</span>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                  
-                  {isExpanded && (
-                    <div className="ml-8 mt-1 space-y-1 relative before:absolute before:left-[-11px] before:top-0 before:bottom-2 before:w-px before:bg-zinc-200">
-                      {(cat.children || []).map(tag => {
-                        const isTagSelected = selectedFilter.type === 'tag' && String(selectedFilter.id) === String(tag.id);
-                        return (
-                          <div key={tag.id} className="group relative flex items-center justify-between rounded-lg transition-colors">
-                            <div className="absolute left-[-11px] top-1/2 w-2.5 h-px bg-zinc-200" />
-                            <button 
-                              onClick={() => setSelectedFilter({ type: 'tag', value: tag.name, id: tag.id, parentId: cat.id })}
-                              className={`flex-1 flex items-center gap-2.5 px-3 py-1.5 text-sm font-medium transition-colors truncate ${isTagSelected ? 'text-indigo-600 bg-indigo-50/50 rounded-lg font-bold' : 'text-zinc-500 hover:text-zinc-900'}`}
-                            >
-                              <Hash size={14} className="shrink-0 opacity-50"/>
-                              <span className="truncate">{tag.name}</span>
-                            </button>
-                            {isEditing && (
-                              <button onClick={(e) => handleDeleteNode('tag', cat.id, tag, e)} className="p-1.5 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0 mr-1">
-                                <Trash2 size={12}/>
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                      {isEditing && (
-                        <div className="relative flex items-center pl-3 py-1 pr-2 mt-1">
-                          <div className="absolute left-[-11px] top-1/2 w-2.5 h-px bg-zinc-200" />
-                          <input 
-                            type="text" 
-                            value={newTagNames[cat.id] || ''} 
-                            onChange={(e) => setNewTagNames(prev => ({ ...prev, [cat.id]: e.target.value }))} 
-                            placeholder="태그 추가" 
-                            disabled={isAddingTag}
-                            className="flex-1 w-full bg-zinc-100 border-none rounded-md px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-400 disabled:text-zinc-400 disabled:cursor-not-allowed" 
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                                e.preventDefault();
-                                handleAddTag(cat.id);
-                              }
-                            }} 
-                          />
-                          <button 
-                            onClick={() => handleAddTag(cat.id)} 
-                            disabled={isAddingTag}
-                            className="ml-1 p-1 text-indigo-500 hover:bg-indigo-50 rounded-md disabled:text-zinc-400 disabled:hover:bg-transparent shrink-0"
-                          >
-                            {isAddingTag ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14}/>}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 💡 하단 고정 영역 (shrink-0 추가) */}
-          {isEditing && (
-            <div className="p-3 border-t border-zinc-100 bg-zinc-50/50 flex gap-2 shrink-0">
-              <select 
-                  value={newCategoryType}
-                  onChange={(e) => setNewCategoryType(e.target.value)}
-                  disabled={isAddingCategory}
-                  className="bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 disabled:bg-zinc-100 disabled:text-zinc-400 text-zinc-600 shrink-0"
-              >
-                  <option value="GENERAL">📁 일반</option>
-                  <option value="MUSIC">🎵 음악</option>
-                  <option value="URL">🔗 URL</option>
-              </select>
-              <input 
-                type="text" 
-                value={newCategoryName} 
-                onChange={(e) => setNewCategoryName(e.target.value)} 
-                placeholder="새 카테고리 추가" 
-                disabled={isAddingCategory}
-                className="flex-1 min-w-0 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed" 
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    handleAddCategory();
-                  }
-                }} 
-              />
-              <button 
-                onClick={handleAddCategory} 
-                disabled={isAddingCategory}
-                className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[36px] shrink-0"
-              >
-                {isAddingCategory ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16}/>}
-              </button>
+                );
+              })}
             </div>
           )}
         </div>
