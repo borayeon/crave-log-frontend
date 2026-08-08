@@ -40,10 +40,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [isLoading, setIsLoading] = useState(false);
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
-  // 런타임 에러 방지를 위한 임시 기본값 처리 (실제로는 주석 해제된 useAppStore에서 데이터를 가져옵니다)
-  const appStore = typeof useAppStore !== 'undefined' ? useAppStore() : { user: {} };
-  const { user } = appStore;
+  const { user } = useAppStore(); 
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -65,14 +62,17 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     if (record && isEditMode) {
       setTitle(record.title);
       setDate(record.date?.replace(/\./g, '-') || '');
-      setImageUrl(record.image === DEFAULT_IMAGE ? '' : record.image);
+      
+      const recordImage = record.image || record.imageUrl || '';
+      setImageUrl(recordImage === DEFAULT_IMAGE ? '' : recordImage);
       setImageFile(null);
       setYoutubeUrl(record.youtubeUrl || ''); 
       setContent(record.content || '');
       setIsPublic(record.isPublic ?? true);
       setIsTagExpanded(true);
 
-      const cat = tagTree?.find(c => c.name === record.category);
+      const recordCategory = record.category || record.categoryName || '';
+      const cat = tagTree.find(c => c.name === recordCategory);
       setCategoryId(cat ? cat.id : '');
 
       if (cat && cat.children) {
@@ -103,7 +103,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
     setIsLoading(true);
     try {
-      const selectedCategory = tagTree?.find(c => String(c.id) === String(categoryId));
+      const selectedCategory = tagTree.find(c => String(c.id) === String(categoryId));
       const numericTagIds = tagIds.map(id => Number(String(id).replace(/^(cat_|tag_)/, '')));
 
       let finalImageUrl = imageUrl;
@@ -162,9 +162,12 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-  const currentCategoryName = tagTree?.find(c => String(c.id) === String(categoryId))?.name || '';
+  const currentCategoryName = tagTree.find(c => String(c.id) === String(categoryId))?.name || '';
   const isEditMusicCat = currentCategoryName.includes('음악');
   const isEditUrlCat = currentCategoryName.includes('URL');
+  
+  const recordImage = record.image || record.imageUrl || '';
+  const recordCategory = record.category || record.categoryName || '';
 
   return (
     <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={onClose}>
@@ -191,7 +194,41 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         )}
 
         <div className="w-full md:w-[55%] lg:w-[60%] h-64 md:h-full flex items-center justify-center relative border-r border-zinc-800 shrink-0 bg-black">
-            {record.videoId ? (
+            {isEditMode ? (
+                 <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-zinc-900">
+                     <p className="text-zinc-400 mb-4 font-bold text-sm">이미지/영상 미리보기</p>
+                     
+                     {isEditMusicCat && getYoutubeId(youtubeUrl) ? (
+                         <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
+                             <img src={`https://img.youtube.com/vi/${getYoutubeId(youtubeUrl)}/hqdefault.jpg`} alt="youtube thumbnail" className="max-w-full max-h-full object-contain" />
+                         </div>
+                     ) : isEditUrlCat && youtubeUrl ? (
+                         <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black p-6 text-center">
+                             {getDomain(youtubeUrl) ? (
+                                <img 
+                                  src={`https://www.google.com/s2/favicons?domain=${getDomain(youtubeUrl)}&sz=128`} 
+                                  onError={(e) => { 
+                                      e.target.onerror = null; 
+                                      e.target.src = `https://ui-avatars.com/api/?name=${getDomain(youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
+                                  }}
+                                  className="w-20 h-20 bg-white p-2 rounded-2xl mb-4" 
+                                  alt="favicon" 
+                                />
+                             ) : <LinkIcon size={48} className="text-zinc-500 mb-4" />}
+                             <span className="text-zinc-400 font-bold">{getDomain(youtubeUrl)}</span>
+                         </div>
+                     ) : imageUrl ? (
+                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-black">
+                             <img src={imageUrl} alt="preview" className="max-w-full max-h-full object-contain" />
+                        </div>
+                     ) : (
+                         <div className="w-full h-full border-2 border-dashed border-zinc-700 rounded-xl flex items-center justify-center text-zinc-600 bg-black/50 flex-col gap-2">
+                             <ImageIcon size={24} className="opacity-50" />
+                             <span>이미지 없음 (텍스트 전용)</span>
+                         </div>
+                     )}
+                 </div>
+            ) : record.videoId ? (
                 <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${record.videoId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full border-none outline-none"></iframe>
             ) : record.isUrlItem ? (
                 <div className="w-full h-full bg-gradient-to-br from-blue-900 via-zinc-900 to-black flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
@@ -233,7 +270,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                     {record.content && <p className="text-zinc-300 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">"{record.content}"</p>}
                 </div>
             ) : (
-                <img src={record.image} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={record.title} className="w-full h-full object-contain" />
+                <img src={recordImage} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={record.title} className="w-full h-full object-contain" />
             )}
         </div>
 
@@ -244,7 +281,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                          {user?.profileImageUrl ? <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" /> : <span className="text-xs font-bold text-zinc-400">{user?.name?.charAt(0) || '?'}</span>}
                     </div>
                     <div className="leading-tight">
-                        <p className="text-sm font-bold text-white flex items-center gap-1.5">{user?.handle || 'User'} <span className="text-[10px] text-zinc-500 font-medium tracking-wider">• {record.category}</span></p>
+                        <p className="text-sm font-bold text-white flex items-center gap-1.5">{user?.handle || 'User'} <span className="text-[10px] text-zinc-500 font-medium tracking-wider">• {recordCategory}</span></p>
                         {user?.location && <p className="text-[10px] text-zinc-400">{user.location}</p>}
                     </div>
                 </div>
@@ -280,7 +317,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-white focus:border-zinc-600 outline-none appearance-none transition-colors"
                             >
                                 <option value="">선택해주세요</option>
-                                {tagTree?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                                {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                             </select>
                             </div>
                             <div>
@@ -289,7 +326,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             </div>
                         </div>
                         
-                        {tagTree?.find(c => String(c.id) === String(categoryId))?.children?.length > 0 && (
+                        {tagTree.find(c => String(c.id) === String(categoryId))?.children?.length > 0 && (
                             <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg overflow-hidden">
                             <button 
                                 type="button"
@@ -302,7 +339,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             
                             {isTagExpanded && (
                                 <div className="p-3 border-t border-zinc-800 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                                {tagTree?.find(c => String(c.id) === String(categoryId)).children.map(tag => {
+                                {tagTree.find(c => String(c.id) === String(categoryId)).children.map(tag => {
                                     const isSelected = tagIds.includes(tag.id);
                                     return (
                                     <button 
@@ -427,33 +464,15 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 };
 
 const ArchiveView = () => {
-  // 런타임 에러를 방지하는 임시 폴백입니다. (주석이 해제되면 실제 스토어가 연결됩니다)
-  const appStore = typeof useAppStore !== 'undefined' ? useAppStore() : { 
-      records: [], tagTree: [], isAdmin: false, isGuestMode: false, searchQuery: '',
-      setLoginModalOpen: () => {}, setAddRecordModalOpen: () => {}, 
-      apiFetch: async () => ({ok: true}), fetchAllData: async () => {}, showToast: () => {}
-  };
-  const EmptyStateCmp = typeof EmptyState !== 'undefined' ? EmptyState : () => null;
-
-  const { records: rawRecords, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = appStore;
-  
+  const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [activeCategory, setActiveCategory] = useState('전체');
   
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  const records = useMemo(() => {
-      return (rawRecords || []).map(r => ({
-          ...r,
-          category: r.category || r.categoryName || '분류 없음',
-          image: r.image || r.imageUrl || '',
-          isPublic: r.isPublic ?? r.public ?? true
-      }));
-  }, [rawRecords]);
-
   useEffect(() => {
-    fetchAllData(true);
+    fetchAllData(true); 
   }, [fetchAllData]);
 
   useEffect(() => {
@@ -476,7 +495,7 @@ const ArchiveView = () => {
   };
 
   const categories = useMemo(() => {
-    const uniqueCategories = new Set((records || []).map(r => r.category).filter(Boolean));
+    const uniqueCategories = new Set((records || []).map(r => r.category || r.categoryName).filter(Boolean));
     return ['전체', ...Array.from(uniqueCategories)];
   }, [records]);
 
@@ -494,31 +513,32 @@ const ArchiveView = () => {
           (r.title && r.title.toLowerCase().includes(q)) || 
           (r.content && r.content.toLowerCase().includes(q)) ||
           (r.tags && r.tags.some(t => t.toLowerCase().includes(q))) ||
-          (r.category && r.category.toLowerCase().includes(q))
+          ((r.category || r.categoryName) && (r.category || r.categoryName).toLowerCase().includes(q))
       );
     }
 
     if (activeCategory !== '전체') {
-      result = result.filter(r => r.category === activeCategory);
+      result = result.filter(r => (r.category || r.categoryName) === activeCategory);
     }
 
     return result.map(item => {
-        const catUpper = (item.category || '').toUpperCase();
-        const isMusic = catUpper.includes('음악');
-        const isUrlItem = catUpper.includes('URL');
+        const catName = item.category || item.categoryName || '분류 없음';
+        const imgUrl = item.image || item.imageUrl || '';
+        const isMusic = catName.includes('음악');
+        const isUrlItem = catName.includes('URL');
         const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
         const domain = isUrlItem && item.youtubeUrl ? getDomain(item.youtubeUrl) : null;
-        const hasImage = typeof item.image === 'string' && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
+        const hasImage = imgUrl && imgUrl.trim() !== '' && imgUrl !== DEFAULT_IMAGE;
         const isTextOnly = !isMusic && !isUrlItem && !hasImage;
 
-        return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly };
+        return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly, category: catName, image: imgUrl };
     });
   }, [records, searchQuery, activeCategory, isGuestMode, isAdmin]);
 
   if (!records || records.length === 0) {
       return (
           <div className="h-full bg-[#F8FAFC]">
-            <EmptyStateCmp 
+            <EmptyState 
                 title="텅 빈 보관함입니다" 
                 icon={<FolderOpen size={32}/>} 
                 onAction={() => isAdmin && !isGuestMode ? setAddRecordModalOpen(true) : setLoginModalOpen(true)}
@@ -636,11 +656,8 @@ const ArchiveView = () => {
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
-                      if (item.isUrlItem && item.youtubeUrl) {
-                          window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
-                      } else {
-                          setSelectedRecord(item);
-                      }
+                      // 💡 URL 아이템 클릭 시 새 탭 이동 방지를 위해 window.open 로직 삭제 및 통일
+                      setSelectedRecord(item);
                   }} className={`group relative aspect-[4/5] w-full max-w-[280px] rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden group/card">
