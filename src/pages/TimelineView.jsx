@@ -30,7 +30,7 @@ const TimelineView = () => {
   const [expandedFolders, setExpandedFolders] = useState({});
   
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryType, setNewCategoryType] = useState('GENERAL'); // 💡 카테고리 타입 상태 추가
+  const [newCategoryType, setNewCategoryType] = useState('GENERAL');
   const [newTagNames, setNewTagNames] = useState({});
 
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -107,7 +107,6 @@ const TimelineView = () => {
     try {
       const res = await apiFetch(`/me/categories`, {
         method: 'POST',
-        // 💡 백엔드에 type 속성도 함께 전송
         body: JSON.stringify({ name: newCategoryName.trim(), type: newCategoryType })
       });
       if (res.ok) {
@@ -178,11 +177,10 @@ const TimelineView = () => {
       return;
     }
 
-    // 💡 이름 강제 제약 로직 완전히 삭제! (어떤 이름으로든 자유롭게 수정 가능)
     try {
       const res = await apiFetch(`/me/categories/${cat.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: newName }) // 타입은 그대로 유지하고 이름만 변경
+        body: JSON.stringify({ name: newName }) 
       });
       if (res.ok) {
         await fetchAllData(true);
@@ -199,8 +197,9 @@ const TimelineView = () => {
     }
   };
 
+  // 💡 최상단 div의 h-screen을 h-full flex-1 min-h-0 으로 변경하여 전체 스크롤 방지
   return (
-    <div className="flex flex-col h-screen animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
+    <div className="flex flex-col h-full flex-1 min-h-0 animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
       <header className="px-6 md:px-10 py-8 shrink-0 flex justify-between items-end border-b border-zinc-200/50">
         <div>
           <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Timeline</h2>
@@ -216,17 +215,18 @@ const TimelineView = () => {
         )}
       </header>
 
-      <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden flex flex-col md:flex-row gap-8">
+      {/* 💡 overflow-hidden을 주어 내부 스크롤만 작동하도록 강제 */}
+      <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden min-h-0 flex flex-col md:flex-row gap-8">
         
-        {/* 사이드바 필터 */}
-        <div className="w-full md:w-64 shrink-0 flex flex-col h-[40vh] md:h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
+        {/* 사이드바 필터 (max-h-full 추가) */}
+        <div className="w-full md:w-64 shrink-0 flex flex-col h-full max-h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between shrink-0">
             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
               <FolderOpen size={14} className="text-indigo-500"/> Tag Explorer
             </h3>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide min-h-0">
             <button 
               onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${selectedFilter.type === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
@@ -238,7 +238,6 @@ const TimelineView = () => {
               const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
               const isExpanded = expandedFolders[cat.id];
               
-              // 💡 카테고리 타입 판별 (백엔드 필드 우선, 없으면 과거 이름 폴백)
               const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
               const isSystemCat = catType === 'MUSIC' || catType === 'URL';
               
@@ -341,7 +340,7 @@ const TimelineView = () => {
                           <button 
                             onClick={() => handleAddTag(cat.id)} 
                             disabled={isAddingTag}
-                            className="ml-1 p-1 text-indigo-500 hover:bg-indigo-50 rounded-md disabled:text-zinc-400 disabled:hover:bg-transparent"
+                            className="ml-1 p-1 text-indigo-500 hover:bg-indigo-50 rounded-md disabled:text-zinc-400 disabled:hover:bg-transparent shrink-0"
                           >
                             {isAddingTag ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14}/>}
                           </button>
@@ -354,9 +353,9 @@ const TimelineView = () => {
             })}
           </div>
 
+          {/* 💡 하단 고정 영역 (shrink-0 추가) */}
           {isEditing && (
-            <div className="p-3 border-t border-zinc-100 bg-zinc-50/50 flex gap-2">
-              {/* 💡 카테고리 추가 시 타입을 선택할 수 있는 드롭다운 추가 */}
+            <div className="p-3 border-t border-zinc-100 bg-zinc-50/50 flex gap-2 shrink-0">
               <select 
                   value={newCategoryType}
                   onChange={(e) => setNewCategoryType(e.target.value)}
@@ -384,7 +383,7 @@ const TimelineView = () => {
               <button 
                 onClick={handleAddCategory} 
                 disabled={isAddingCategory}
-                className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[36px]"
+                className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center min-w-[36px] shrink-0"
               >
                 {isAddingCategory ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16}/>}
               </button>
@@ -409,7 +408,6 @@ const TimelineView = () => {
           <div className="relative border-l-2 border-dashed border-zinc-200 ml-3 md:ml-4 space-y-5 pb-10 mt-2">
             {filteredRecords.map((item) => {
               
-              // 💡 렌더링 시 이름이 아닌 type 기준으로 식별
               const matchedCat = safeTagTree.find(c => c.name === item.category || String(c.id) === String(item.categoryId));
               const catType = item.categoryType || matchedCat?.type || (item.category?.includes('음악') ? 'MUSIC' : item.category?.includes('URL') ? 'URL' : 'GENERAL');
               
