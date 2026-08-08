@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, ChevronUp, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic, GripVertical } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -474,6 +474,14 @@ const ArchiveView = () => {
   // 🎵 음악 카테고리 전용 뷰 모드 상태 (grid | list)
   const [musicViewMode, setMusicViewMode] = useState('grid'); 
 
+  // 🔀 커스텀 재정렬용 목록 상태
+  const [customOrderedRecords, setCustomOrderedRecords] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  // ✍️ 순위 직접 수정 입력 상태
+  const [editingRankId, setEditingRankId] = useState(null);
+  const [rankInputValue, setRankInputValue] = useState('');
+
   useEffect(() => {
     fetchAllData(true); 
   }, [fetchAllData]);
@@ -537,6 +545,74 @@ const ArchiveView = () => {
         return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly, category: catName, image: imgUrl };
     });
   }, [records, searchQuery, activeCategory, isGuestMode, isAdmin]);
+
+  // displayRecords가 변경되면 customOrderedRecords에 동기화
+  useEffect(() => {
+    setCustomOrderedRecords(displayRecords);
+  }, [displayRecords]);
+
+  // 🔀 드래그 앤 드롭 순서 변경 핸들러
+  const handleDragStart = (e, index) => {
+    if (editingRankId) return; // 수정 중일 땐 드래그 방지
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const updated = [...customOrderedRecords];
+    const [draggedItem] = updated.splice(draggedIndex, 1);
+    updated.splice(targetIndex, 0, draggedItem);
+
+    setCustomOrderedRecords(updated);
+    setDraggedIndex(null);
+    showToast('순위가 재정렬되었습니다! 🎵');
+  };
+
+  // 🔼🔽 버튼을 통한 순서 이동 핸들러
+  const handleMoveItem = (e, index, direction) => {
+    e.stopPropagation();
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= customOrderedRecords.length) return;
+
+    const updated = [...customOrderedRecords];
+    const [movedItem] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, movedItem);
+
+    setCustomOrderedRecords(updated);
+  };
+
+  // ✍️ 직접 번호 입력으로 순위 변경 핸들러
+  const handleRankDirectChange = (id, currentIndex, newRankStr) => {
+    setEditingRankId(null);
+    const newRank = parseInt(newRankStr, 10);
+    
+    // 유효한 숫자가 아니면 무시
+    if (isNaN(newRank)) return;
+
+    let targetIndex = newRank - 1; 
+
+    // 범위 보정 (너무 큰 숫자는 맨 끝으로, 0 이하는 맨 처음으로)
+    if (targetIndex < 0) targetIndex = 0;
+    if (targetIndex >= customOrderedRecords.length) targetIndex = customOrderedRecords.length - 1;
+
+    // 제자리 이동이면 무시
+    if (targetIndex === currentIndex) return;
+
+    const updated = [...customOrderedRecords];
+    const [movedItem] = updated.splice(currentIndex, 1);
+    updated.splice(targetIndex, 0, movedItem);
+
+    setCustomOrderedRecords(updated);
+    showToast(`순위가 ${targetIndex + 1}위로 변경되었습니다! 🎵`);
+  };
 
   if (!records || records.length === 0) {
       return (
@@ -648,7 +724,7 @@ const ArchiveView = () => {
       </header>
       
       <div className="flex-1 px-6 md:px-10 py-6 overflow-y-auto scrollbar-hide">
-        {displayRecords.length === 0 && (
+        {customOrderedRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed">
               선택한 카테고리에 해당하는 기록이 없습니다.
             </div>
@@ -659,22 +735,89 @@ const ArchiveView = () => {
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
             : "grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6 lg:gap-8 pb-10 justify-items-center"
         }>
-            {displayRecords.map((item, index) => {
+            {customOrderedRecords.map((item, index) => {
                 if (item.isMusic) {
                   const thumbnailUrl = item.videoId ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
                   
-                  // 🎵 멜론 차트형 리스트 뷰 UI
+                  // 🎵 멜론 차트형 리스트 뷰 UI (드래그, 버튼, 그리고 ✍️직접 입력 지원)
                   if (isListMode) {
                       return (
-                          <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full flex items-center gap-3 sm:gap-4 p-3 bg-white border border-zinc-200/80 rounded-2xl shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-indigo-200 ${isEditing ? 'opacity-90' : ''}`}>
-                              
-                              {/* 차트 순위 (리스트 인덱스 기반) */}
-                              <div className="w-6 sm:w-8 text-center shrink-0">
-                                  <span className="text-sm sm:text-base font-black text-zinc-300 italic group-hover:text-indigo-400 transition-colors">{index + 1}</span>
+                          <div 
+                              key={item.id} 
+                              draggable={!isEditing && editingRankId !== item.id}
+                              onDragStart={(e) => handleDragStart(e, index)}
+                              onDragOver={(e) => handleDragOver(e, index)}
+                              onDrop={(e) => handleDrop(e, index)}
+                              onClick={() => !isEditing && setSelectedRecord(item)} 
+                              className={`group relative w-full flex items-center gap-3 sm:gap-4 p-3 bg-white border border-zinc-200/80 rounded-2xl shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-indigo-200 ${draggedIndex === index ? 'opacity-40 border-dashed border-indigo-400' : ''} ${isEditing ? 'opacity-90' : ''}`}
+                          >
+                              {/* 드래그 핸들 (스팀 찜목록 스타일) */}
+                              {!isEditing && (
+                                  <div className="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 p-1 shrink-0 transition-colors" title="드래그하여 순서 변경">
+                                      <GripVertical size={18} />
+                                  </div>
+                              )}
+
+                              {/* ✍️ 차트 순위 (직접 수정 가능) & 위/아래 조작 버튼 */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                  <div className="w-10 text-center flex items-center justify-center">
+                                      {editingRankId === item.id && !isEditing ? (
+                                          <input
+                                              type="number"
+                                              autoFocus
+                                              value={rankInputValue}
+                                              onChange={(e) => setRankInputValue(e.target.value)}
+                                              onBlur={() => handleRankDirectChange(item.id, index, rankInputValue)}
+                                              onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                      e.preventDefault();
+                                                      handleRankDirectChange(item.id, index, rankInputValue);
+                                                  }
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="w-full text-center text-sm sm:text-base font-black text-indigo-600 bg-indigo-50 rounded border border-indigo-200 outline-none py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                              min="1"
+                                              max={customOrderedRecords.length}
+                                          />
+                                      ) : (
+                                          <span 
+                                              onClick={(e) => {
+                                                  if (isEditing) return;
+                                                  e.stopPropagation();
+                                                  setEditingRankId(item.id);
+                                                  setRankInputValue(index + 1);
+                                              }}
+                                              className="text-sm sm:text-base font-black text-zinc-400 italic group-hover:text-indigo-600 transition-colors cursor-pointer px-1.5 py-0.5 hover:bg-zinc-50 rounded"
+                                              title="클릭하여 순위 직접 변경"
+                                          >
+                                              {index + 1}
+                                          </span>
+                                      )}
+                                  </div>
+                                  {!isEditing && (
+                                      <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button 
+                                              onClick={(e) => handleMoveItem(e, index, 'up')}
+                                              disabled={index === 0}
+                                              className="p-0.5 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 hover:bg-zinc-100 rounded"
+                                              title="위로 이동"
+                                          >
+                                              <ChevronUp size={12} />
+                                          </button>
+                                          <button 
+                                              onClick={(e) => handleMoveItem(e, index, 'down')}
+                                              disabled={index === customOrderedRecords.length - 1}
+                                              className="p-0.5 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 hover:bg-zinc-100 rounded"
+                                              title="아래로 이동"
+                                          >
+                                              <ChevronDown size={12} />
+                                          </button>
+                                      </div>
+                                  )}
                               </div>
 
                               {/* 썸네일 */}
-                              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-100">
+                              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-100 ml-1">
                                   <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-900/80 rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
@@ -788,7 +931,7 @@ const ArchiveView = () => {
                       {!item.isPublic && <div className="absolute top-4 right-4 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
                       
                       {isEditing && (
-                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
+                          <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-50 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
                               <Trash2 size={20} />
                           </button>
                       )}
