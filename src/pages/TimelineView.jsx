@@ -3,11 +3,9 @@ import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, 
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
-// 기본 이미지 상수
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
 const MUSIC_DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop';
 
-// 유튜브 ID 추출 함수 
 const getYoutubeId = (url) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\/shorts\/)([^#&?]*).*/;
@@ -15,7 +13,6 @@ const getYoutubeId = (url) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
-// 도메인 추출 함수 (파비콘 가져올 때 사용)
 const getDomain = (url) => {
     try {
         const domain = new URL(url).hostname;
@@ -26,20 +23,19 @@ const getDomain = (url) => {
 };
 
 const TimelineView = () => {
-  // 실제 스토어에서 데이터 로드
   const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
   
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState({ type: 'all', value: '전체', id: 'all' });
   const [expandedFolders, setExpandedFolders] = useState({});
+  
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryType, setNewCategoryType] = useState('GENERAL'); // 💡 카테고리 타입 상태 추가
   const [newTagNames, setNewTagNames] = useState({});
 
-  // 🛡️ 중복 요청 방지를 위한 로딩 상태 추가
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingTag, setIsAddingTag] = useState(false);
   
-  // ✍️ 카테고리 이름 수정 상태
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState('');
 
@@ -111,11 +107,13 @@ const TimelineView = () => {
     try {
       const res = await apiFetch(`/me/categories`, {
         method: 'POST',
-        body: JSON.stringify({ name: newCategoryName.trim() })
+        // 💡 백엔드에 type 속성도 함께 전송
+        body: JSON.stringify({ name: newCategoryName.trim(), type: newCategoryType })
       });
       if (res.ok) {
         await fetchAllData(true);
         setNewCategoryName('');
+        setNewCategoryType('GENERAL');
         showToast('새 카테고리가 추가되었습니다.');
       }
     } catch(e) { 
@@ -147,24 +145,24 @@ const TimelineView = () => {
     }
   };
 
-  const handleDeleteNode = async (type, parentId, nodeId, e) => {
+  const handleDeleteNode = async (type, parentId, cat, e) => {
     e.stopPropagation();
     if (!apiFetch) return;
 
     if (type === 'category') {
-        const targetCategory = safeTagTree.find(c => String(c.id) === String(nodeId));
-        if (targetCategory && (targetCategory.name.includes('음악') || targetCategory.name.includes('URL'))) {
+        const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
+        if (catType === 'MUSIC' || catType === 'URL') {
             return showToast("시스템 기본 폴더는 삭제할 수 없습니다.");
         }
     }
 
     try {
-      const url = type === 'category' ? `/me/categories/${nodeId}` : `/me/tags/${nodeId}`;
+      const url = type === 'category' ? `/me/categories/${cat.id}` : `/me/tags/${cat.id}`;
       const res = await apiFetch(url, { method: 'DELETE' });
       
       if (res.ok) {
         await fetchAllData(true);
-        if(String(selectedFilter.id) === String(nodeId) && selectedFilter.type === type) {
+        if(String(selectedFilter.id) === String(cat.id) && selectedFilter.type === type) {
           if (type === 'category') setSelectedFilter({ type: 'all', value: '전체', id: 'all' });
           else setSelectedFilter({ type: 'category', value: safeTagTree.find(c => String(c.id) === String(parentId))?.name, id: parentId });
         }
@@ -173,39 +171,21 @@ const TimelineView = () => {
     } catch(e) { console.error(e); }
   };
 
-  // ✍️ 카테고리 이름 변경 핸들러
   const handleUpdateCategory = async (cat) => {
     const newName = editCategoryName.trim();
-    
-    // 변경 사항이 없거나 빈 칸이면 취소
     if (!newName || newName === cat.name) {
       setEditingCategoryId(null);
       return;
     }
 
-    // 🛡️ 시스템 폴더 키워드 보호 로직
-    const isSystemCat = cat.name.includes('음악') || cat.name.includes('URL');
-    if (isSystemCat) {
-      if (cat.name.includes('음악') && !newName.includes('음악')) {
-        showToast("시스템 폴더는 '음악' 단어가 반드시 포함되어야 합니다.");
-        setEditingCategoryId(null);
-        return;
-      }
-      if (cat.name.includes('URL') && !newName.toUpperCase().includes('URL')) {
-        showToast("시스템 폴더는 'URL' 단어가 반드시 포함되어야 합니다.");
-        setEditingCategoryId(null);
-        return;
-      }
-    }
-
+    // 💡 이름 강제 제약 로직 완전히 삭제! (어떤 이름으로든 자유롭게 수정 가능)
     try {
       const res = await apiFetch(`/me/categories/${cat.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: newName })
+        body: JSON.stringify({ name: newName }) // 타입은 그대로 유지하고 이름만 변경
       });
       if (res.ok) {
         await fetchAllData(true);
-        // 만약 선택된 카테고리를 수정했다면 필터값도 함께 갱신
         if (selectedFilter.type === 'category' && selectedFilter.id === cat.id) {
           setSelectedFilter({ ...selectedFilter, value: newName });
         }
@@ -257,7 +237,11 @@ const TimelineView = () => {
             {safeTagTree.map(cat => {
               const isCatSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id);
               const isExpanded = expandedFolders[cat.id];
-              const isSystemCat = cat.name.includes('음악') || cat.name.includes('URL');
+              
+              // 💡 카테고리 타입 판별 (백엔드 필드 우선, 없으면 과거 이름 폴백)
+              const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
+              const isSystemCat = catType === 'MUSIC' || catType === 'URL';
+              
               const isEditingThisCat = editingCategoryId === cat.id;
 
               return (
@@ -307,7 +291,7 @@ const TimelineView = () => {
                             {isSystemCat ? (
                                 <div className="p-2 text-zinc-300 shrink-0" title="시스템 기본 폴더는 삭제 불가"><Lock size={14}/></div>
                             ) : (
-                                <button onClick={(e) => handleDeleteNode('category', null, cat.id, e)} className="p-2 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
+                                <button onClick={(e) => handleDeleteNode('category', null, cat, e)} className="p-2 text-rose-400 hover:text-rose-600 transition-opacity shrink-0">
                                     <Trash2 size={14}/>
                                 </button>
                             )}
@@ -330,7 +314,7 @@ const TimelineView = () => {
                               <span className="truncate">{tag.name}</span>
                             </button>
                             {isEditing && (
-                              <button onClick={(e) => handleDeleteNode('tag', cat.id, tag.id, e)} className="p-1.5 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0 mr-1">
+                              <button onClick={(e) => handleDeleteNode('tag', cat.id, tag, e)} className="p-1.5 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 transition-opacity shrink-0 mr-1">
                                 <Trash2 size={12}/>
                               </button>
                             )}
@@ -372,11 +356,22 @@ const TimelineView = () => {
 
           {isEditing && (
             <div className="p-3 border-t border-zinc-100 bg-zinc-50/50 flex gap-2">
+              {/* 💡 카테고리 추가 시 타입을 선택할 수 있는 드롭다운 추가 */}
+              <select 
+                  value={newCategoryType}
+                  onChange={(e) => setNewCategoryType(e.target.value)}
+                  disabled={isAddingCategory}
+                  className="bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 disabled:bg-zinc-100 disabled:text-zinc-400 text-zinc-600 shrink-0"
+              >
+                  <option value="GENERAL">📁 일반</option>
+                  <option value="MUSIC">🎵 음악</option>
+                  <option value="URL">🔗 URL</option>
+              </select>
               <input 
                 type="text" 
                 value={newCategoryName} 
                 onChange={(e) => setNewCategoryName(e.target.value)} 
-                placeholder="카테고리 추가" 
+                placeholder="새 카테고리 추가" 
                 disabled={isAddingCategory}
                 className="flex-1 min-w-0 bg-white border border-zinc-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed" 
                 onKeyDown={(e) => {
@@ -414,8 +409,12 @@ const TimelineView = () => {
           <div className="relative border-l-2 border-dashed border-zinc-200 ml-3 md:ml-4 space-y-5 pb-10 mt-2">
             {filteredRecords.map((item) => {
               
-              const isMusic = item.category?.includes('음악');
-              const isUrlItem = item.category?.includes('URL');
+              // 💡 렌더링 시 이름이 아닌 type 기준으로 식별
+              const matchedCat = safeTagTree.find(c => c.name === item.category || String(c.id) === String(item.categoryId));
+              const catType = item.categoryType || matchedCat?.type || (item.category?.includes('음악') ? 'MUSIC' : item.category?.includes('URL') ? 'URL' : 'GENERAL');
+              
+              const isMusic = catType === 'MUSIC';
+              const isUrlItem = catType === 'URL';
               
               const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
               const hasImage = item.image && item.image.trim() !== '' && item.image !== DEFAULT_IMAGE;
