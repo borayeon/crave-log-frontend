@@ -122,7 +122,9 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         categoryName: selectedCategory?.name || '분류 없음',
         recordDate: date.replace(/-/g, '.'),
         imageUrl: finalImageUrl?.trim(),
-        youtubeUrl: selectedCategory?.name?.includes('음악') || selectedCategory?.name?.includes('URL') ? youtubeUrl.trim() : '',
+        
+        // 💡 타입 기반 조건으로 변경 (안전 장치 포함)
+        youtubeUrl: (selectedCategory?.type === 'MUSIC' || selectedCategory?.type === 'URL' || selectedCategory?.name?.includes('음악') || selectedCategory?.name?.includes('URL')) ? youtubeUrl.trim() : '',
         content: content.trim(),
         isPublic: isPublic,
         tagIds: numericTagIds
@@ -162,9 +164,12 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-  const currentCategoryName = tagTree.find(c => String(c.id) === String(categoryId))?.name || '';
-  const isEditMusicCat = currentCategoryName.includes('음악');
-  const isEditUrlCat = currentCategoryName.includes('URL');
+  // 💡 모달 내에서도 타입 기반 식별 
+  const currentCategory = tagTree.find(c => String(c.id) === String(categoryId));
+  const catType = currentCategory?.type || (currentCategory?.name?.includes('음악') ? 'MUSIC' : currentCategory?.name?.includes('URL') ? 'URL' : 'GENERAL');
+  
+  const isEditMusicCat = catType === 'MUSIC';
+  const isEditUrlCat = catType === 'URL';
   
   const recordImage = record.image || record.imageUrl || '';
   const recordCategory = record.category || record.categoryName || '';
@@ -469,19 +474,15 @@ const ArchiveView = () => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   
   const [activeCategory, setActiveCategory] = useState('전체');
-  // 🏷️ 새로운 상태: 현재 선택된 카테고리의 활성 태그 필터
   const [activeTag, setActiveTag] = useState('전체');
 
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  // 🎵 음악 카테고리 전용 뷰 모드 상태 (grid | list)
   const [musicViewMode, setMusicViewMode] = useState('grid'); 
 
-  // 🔀 커스텀 재정렬용 목록 상태
   const [customOrderedRecords, setCustomOrderedRecords] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
-  // ✍️ 순위 직접 수정 입력 상태
   const [editingRankId, setEditingRankId] = useState(null);
   const [rankInputValue, setRankInputValue] = useState('');
 
@@ -513,7 +514,6 @@ const ArchiveView = () => {
     return ['전체', ...Array.from(uniqueCategories)];
   }, [records]);
 
-  // 🏷️ 선택된 카테고리에 속한 태그 목록 추출
   const activeCategoryTags = useMemo(() => {
     if (activeCategory === '전체') return [];
     const catNode = tagTree.find(c => c.name === activeCategory);
@@ -538,12 +538,10 @@ const ArchiveView = () => {
       );
     }
 
-    // 1. 카테고리 필터링
     if (activeCategory !== '전체') {
       result = result.filter(r => (r.category || r.categoryName) === activeCategory);
     }
 
-    // 2. 🏷️ 태그 필터링
     if (activeTag !== '전체') {
       result = result.filter(r => (r.tags || []).includes(activeTag));
     }
@@ -551,25 +549,29 @@ const ArchiveView = () => {
     return result.map(item => {
         const catName = item.category || item.categoryName || '분류 없음';
         const imgUrl = item.image || item.imageUrl || '';
-        const isMusic = catName.includes('음악');
-        const isUrlItem = catName.includes('URL');
+        
+        // 💡 백엔드의 type 필드를 가장 먼저 확인하고, 없으면 tagTree에서 찾고, 그래도 없으면 기존처럼 이름으로 유추
+        const matchedCat = tagTree.find(c => c.name === catName || String(c.id) === String(item.categoryId));
+        const catType = item.categoryType || matchedCat?.type || (catName.includes('음악') ? 'MUSIC' : catName.includes('URL') ? 'URL' : 'GENERAL');
+
+        const isMusic = catType === 'MUSIC';
+        const isUrlItem = catType === 'URL';
+        
         const videoId = isMusic && item.youtubeUrl ? getYoutubeId(item.youtubeUrl) : null;
         const domain = isUrlItem && item.youtubeUrl ? getDomain(item.youtubeUrl) : null;
         const hasImage = imgUrl && imgUrl.trim() !== '' && imgUrl !== DEFAULT_IMAGE;
         const isTextOnly = !isMusic && !isUrlItem && !hasImage;
 
-        return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly, category: catName, image: imgUrl };
+        return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly, category: catName, image: imgUrl, type: catType };
     });
-  }, [records, searchQuery, activeCategory, activeTag, isGuestMode, isAdmin]);
+  }, [records, searchQuery, activeCategory, activeTag, isGuestMode, isAdmin, tagTree]);
 
-  // displayRecords가 변경되면 customOrderedRecords에 동기화
   useEffect(() => {
     setCustomOrderedRecords(displayRecords);
   }, [displayRecords]);
 
-  // 🔀 드래그 앤 드롭 순서 변경 핸들러
   const handleDragStart = (e, index) => {
-    if (editingRankId) return; // 수정 중일 땐 드래그 방지
+    if (editingRankId) return; 
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -592,7 +594,6 @@ const ArchiveView = () => {
     showToast('순위가 재정렬되었습니다! 🎵');
   };
 
-  // 🔼🔽 버튼을 통한 순서 이동 핸들러
   const handleMoveItem = (e, index, direction) => {
     e.stopPropagation();
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -605,21 +606,17 @@ const ArchiveView = () => {
     setCustomOrderedRecords(updated);
   };
 
-  // ✍️ 직접 번호 입력으로 순위 변경 핸들러
   const handleRankDirectChange = (id, currentIndex, newRankStr) => {
     setEditingRankId(null);
     const newRank = parseInt(newRankStr, 10);
     
-    // 유효한 숫자가 아니면 무시
     if (isNaN(newRank)) return;
 
     let targetIndex = newRank - 1; 
 
-    // 범위 보정 (너무 큰 숫자는 맨 끝으로, 0 이하는 맨 처음으로)
     if (targetIndex < 0) targetIndex = 0;
     if (targetIndex >= customOrderedRecords.length) targetIndex = customOrderedRecords.length - 1;
 
-    // 제자리 이동이면 무시
     if (targetIndex === currentIndex) return;
 
     const updated = [...customOrderedRecords];
@@ -643,8 +640,9 @@ const ArchiveView = () => {
       );
   }
 
-  // 리스트 뷰 모드인지 확인 (음악 카테고리이면서 list 모드일 때만)
-  const isListMode = activeCategory.includes('음악') && musicViewMode === 'list';
+  // 💡 타입 기반으로 뷰 토글 버튼 띄울지 결정
+  const isActiveCategoryMusic = customOrderedRecords.some(r => r.type === 'MUSIC');
+  const isListMode = isActiveCategoryMusic && musicViewMode === 'list';
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative">
@@ -707,7 +705,7 @@ const ArchiveView = () => {
                         key={cat}
                         onClick={() => {
                             setActiveCategory(cat);
-                            setActiveTag('전체'); // 🏷️ 카테고리 변경 시 태그 필터 초기화
+                            setActiveTag('전체'); 
                         }}
                         className={`px-4 py-2 rounded-full text-sm font-black whitespace-nowrap transition-all duration-300 ${
                             activeCategory === cat 
@@ -721,7 +719,7 @@ const ArchiveView = () => {
             </div>
 
             {/* 🎵 음악 카테고리 전용 뷰 토글 스위치 */}
-            {activeCategory.includes('음악') && (
+            {isActiveCategoryMusic && (
                 <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 ml-auto">
                     <button 
                         onClick={() => setMusicViewMode('grid')} 
@@ -741,7 +739,6 @@ const ArchiveView = () => {
             )}
         </div>
 
-        {/* 🏷️ 하위 태그 필터 바 */}
         {activeCategory !== '전체' && activeCategoryTags.length > 0 && (
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pt-1 pb-2 items-center animate-in fade-in slide-in-from-top-2">
                 <button
@@ -779,7 +776,6 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* 리스트 모드일 때는 flex-col, 아닐 때는 기존 grid 유지 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
             : "grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6 lg:gap-8 pb-10 justify-items-center"
@@ -788,7 +784,6 @@ const ArchiveView = () => {
                 if (item.isMusic) {
                   const thumbnailUrl = item.videoId ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
                   
-                  // 🎵 멜론 차트형 리스트 뷰 UI (드래그, 버튼, 그리고 ✍️직접 입력 지원)
                   if (isListMode) {
                       return (
                           <div 
@@ -800,14 +795,12 @@ const ArchiveView = () => {
                               onClick={() => !isEditing && setSelectedRecord(item)} 
                               className={`group relative w-full flex items-center gap-3 sm:gap-4 p-3 bg-white border border-zinc-200/80 rounded-2xl shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-indigo-200 ${draggedIndex === index ? 'opacity-40 border-dashed border-indigo-400' : ''} ${isEditing ? 'opacity-90' : ''}`}
                           >
-                              {/* 드래그 핸들 (스팀 찜목록 스타일) */}
                               {!isEditing && (
                                   <div className="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 p-1 shrink-0 transition-colors" title="드래그하여 순서 변경">
                                       <GripVertical size={18} />
                                   </div>
                               )}
 
-                              {/* ✍️ 차트 순위 (직접 수정 가능) & 위/아래 조작 버튼 */}
                               <div className="flex items-center gap-1 shrink-0">
                                   <div className="w-10 text-center flex items-center justify-center">
                                       {editingRankId === item.id && !isEditing ? (
@@ -865,7 +858,6 @@ const ArchiveView = () => {
                                   )}
                               </div>
 
-                              {/* 썸네일 */}
                               <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-100 ml-1">
                                   <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
@@ -874,7 +866,6 @@ const ArchiveView = () => {
                                   </div>
                               </div>
 
-                              {/* 음악 정보 */}
                               <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
                                   <div className="flex items-center gap-2 mb-0.5">
                                       <h3 className="text-sm sm:text-base font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h3>
@@ -883,7 +874,6 @@ const ArchiveView = () => {
                                   {item.content && <p className="text-xs text-zinc-500 truncate font-medium">{item.content}</p>}
                               </div>
 
-                              {/* 우측 부가정보 및 버튼 */}
                               <div className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 ml-4">
                                   <span className="text-[10px] font-bold text-zinc-400">{item.date}</span>
                                   <div className="flex gap-1.5">
@@ -893,7 +883,6 @@ const ArchiveView = () => {
                                   </div>
                               </div>
 
-                              {/* 편집 모드 삭제 버튼 */}
                               {isEditing && (
                                   <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="p-2 sm:p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-colors ml-2 shrink-0">
                                       <Trash2 size={16} />
@@ -903,7 +892,6 @@ const ArchiveView = () => {
                       );
                   }
 
-                  // 📀 기존 레코드판 그리드 뷰 UI
                   return (
                     <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[280px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
