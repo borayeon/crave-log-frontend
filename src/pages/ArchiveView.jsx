@@ -779,10 +779,10 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* 💡 화면 크기에 따라 2~6열 동적 배치 및 유연한 꽉참 적용 */}
+        {/* 💡 auto-fill과 minmax(224px, 1fr)을 사용해 최소 크기 224px을 엄격히 보장하면서 빈 공간을 채우는 완벽한 반응형 그리드 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
-            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 pb-10 justify-items-center w-full"
+            : "grid grid-cols-[repeat(auto-fill,minmax(224px,1fr))] gap-4 sm:gap-5 md:gap-6 pb-10 w-full"
         }>
             {customOrderedRecords.map((item, index) => {
                 if (item.isMusic) {
@@ -896,14 +896,14 @@ const ArchiveView = () => {
                       );
                   }
 
-                  // 💡 음악 카드: max-w 유연화 및 꽉 차도록 w-full 사용
+                  // 💡 음악 카드: w-full과 max-w-[320px] 적용, 최소 너비는 그리드가 보장
                   return (
-                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-sm flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[320px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
-                            <PlayCircle size={18} className="text-white/80 translate-x-[1px]" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
+                            <PlayCircle size={20} className="text-white/80 translate-x-[1px]" />
                         </div>
                         {isEditing && (
                             <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
@@ -911,27 +911,27 @@ const ArchiveView = () => {
                             </button>
                         )}
                       </div>
-                      <div className="mt-3 sm:mt-4 text-center px-2">
-                        <h3 className="text-sm sm:text-base font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                        <p className="text-[9px] sm:text-[11px] font-bold text-red-500 mt-1.5 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={12} /> Record</p>
+                      <div className="mt-4 text-center px-2">
+                        <h3 className="text-sm font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                        <p className="text-[10px] font-bold text-red-500 mt-1.5 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={12} /> Record</p>
                       </div>
-                      {!item.isPublic && !isEditing && <div className="absolute top-0 right-0 p-1.5 sm:p-2 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
+                      {!item.isPublic && !isEditing && <div className="absolute top-0 right-0 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
                     </div>
                   );
                 }
 
-                // 💡 일반/URL 카드: 3:4 비율 (aspect-[3/4])에 맞춰 부모 그리드 셀에 유연하게 꽉 차도록 w-full max-w-sm 설정
+                // 💡 일반/URL 카드: 3:4 비율 (aspect-[3/4])에 맞춰 부모 그리드 셀에 유연하게 꽉 참
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       setSelectedRecord(item);
-                  }} className={`group relative aspect-[3/4] w-full max-w-sm rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                  }} className={`group relative aspect-[3/4] w-full max-w-[320px] mx-auto rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden group/card">
-                              <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
+                          <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-5 text-center relative overflow-hidden group/card">
+                              <div className="absolute top-4 left-4 px-2 py-1 bg-blue-100/60 text-blue-700 text-[10px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
                               <div className="flex flex-col items-center w-full h-full justify-center mt-4">
                                   {item.youtubeUrl && item.domain ? (
-                                      <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
+                                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl shadow-md flex items-center justify-center p-3 mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
                                           <img 
                                             src={`https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`} 
                                             onError={(e) => { 
@@ -942,36 +942,36 @@ const ArchiveView = () => {
                                             alt="site logo" 
                                           />
                                       </div>
-                                  ) : <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
-                                  <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
-                                  <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
+                                  ) : <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 text-blue-300 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} /></div>}
+                                  <h3 className="text-base sm:text-lg font-black text-zinc-800 mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
+                                  <p className="text-[10px] font-bold text-zinc-400 mt-2 bg-white/80 px-3 py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
                           </div>
                       ) : item.isTextOnly ? (
-                          <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden">
-                              <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-100/60 text-indigo-600 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm"><Quote size={12} /> {item.category}</div>
-                              <h3 className="text-base sm:text-xl md:text-2xl font-black text-zinc-800 mb-2 sm:mb-3 mt-4 sm:mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-2">{item.title}</h3>
-                              {item.content && <p className="text-[10px] sm:text-sm md:text-base font-medium text-zinc-500 line-clamp-3 sm:line-clamp-4 leading-relaxed px-3">"{item.content}"</p>}
+                          <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+                              <div className="absolute top-4 left-4 px-2 py-1 bg-indigo-100/60 text-indigo-600 text-[10px] font-black rounded-lg flex items-center gap-1.5 shadow-sm"><Quote size={12} /> {item.category}</div>
+                              <h3 className="text-xl sm:text-2xl font-black text-zinc-800 mb-3 mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-2">{item.title}</h3>
+                              {item.content && <p className="text-xs sm:text-sm font-medium text-zinc-500 line-clamp-4 leading-relaxed px-3">"{item.content}"</p>}
                           </div>
                       ) : (
                           <>
                             <div className="relative w-full flex-1 overflow-hidden bg-zinc-100">
                                 <img src={item.image} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={item.title} className={`w-full h-full object-cover transition-transform duration-700 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105'}`} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                                <div className="absolute top-3 sm:top-4 left-3 sm:left-4 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/90 backdrop-blur-md text-indigo-600 text-[9px] sm:text-[11px] font-black rounded-lg shadow-sm uppercase tracking-wider">{item.category}</div>
+                                <div className="absolute top-4 left-4 px-2 py-1 bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black rounded-lg shadow-sm uppercase tracking-wider">{item.category}</div>
                             </div>
-                            <div className="p-3 sm:p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100 shrink-0 h-auto sm:h-[72px] min-h-[60px]">
-                                <h4 className="text-sm sm:text-base font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
+                            <div className="p-4 flex flex-col justify-center bg-white z-10 border-t border-zinc-100 shrink-0 h-[72px]">
+                                <h4 className="text-sm font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h4>
                                 {(item.tags || []).length > 0 && (
-                                  <div className="mt-1 sm:mt-1.5 flex flex-wrap gap-1 sm:gap-1.5 overflow-hidden h-4">
-                                    {item.tags.slice(0, 2).map(tag => <span key={tag} className="text-[9px] sm:text-[11px] font-bold text-zinc-400 truncate max-w-[70px] sm:max-w-[90px]">#{tag}</span>)}
+                                  <div className="mt-1.5 flex flex-wrap gap-1.5 overflow-hidden h-4">
+                                    {item.tags.slice(0, 2).map(tag => <span key={tag} className="text-[10px] font-bold text-zinc-400 truncate max-w-[80px]">#{tag}</span>)}
                                   </div>
                                 )}
                             </div>
                           </>
                       )}
 
-                      {!item.isPublic && <div className="absolute top-3 sm:top-4 right-3 sm:right-4 p-1.5 sm:p-2 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
+                      {!item.isPublic && <div className="absolute top-4 right-4 p-1.5 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
                       
                       {isEditing && (
                           <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 sm:p-4 bg-rose-50 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
