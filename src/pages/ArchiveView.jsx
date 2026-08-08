@@ -491,7 +491,6 @@ const ArchiveView = () => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
 
-  // 🔄 수정된 데이터 실시간 동기화 로직 추가
   useEffect(() => {
     if (selectedRecord && records) {
       const latestRecord = records.find(r => r.id === selectedRecord.id);
@@ -780,9 +779,10 @@ const ArchiveView = () => {
             </div>
         )}
         
+        {/* 💡 3열~6열 고정 및 간격 축소 적용 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
-            : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 pb-10 justify-items-center w-full"
+            : "grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-2 lg:gap-2.5 pb-10 justify-items-center w-full"
         }>
             {customOrderedRecords.map((item, index) => {
                 if (item.isMusic) {
@@ -896,8 +896,9 @@ const ArchiveView = () => {
                       );
                   }
 
+                  // 💡 음악 카드: max-w 제약 적용
                   return (
-                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full min-w-[90px] max-w-[240px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full min-w-[90px] md:min-w-[150px] lg:min-w-[184px] max-w-[238px] sm:max-w-[335px] md:max-w-[315px] lg:max-w-[290px] xl:max-w-[242px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
@@ -919,11 +920,12 @@ const ArchiveView = () => {
                   );
                 }
 
+                // 💡 일반/URL 카드: 비율 3:4 (aspect-[3/4]) 및 max-w 제약 적용
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       setSelectedRecord(item);
-                  }} className={`group relative aspect-[4/5] w-full min-w-[90px] max-w-[240px] rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                  }} className={`group relative aspect-[3/4] w-full min-w-[90px] md:min-w-[150px] lg:min-w-[184px] max-w-[238px] sm:max-w-[335px] md:max-w-[315px] lg:max-w-[290px] xl:max-w-[242px] rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-3 sm:p-6 text-center relative overflow-hidden group/card">
                               <div className="absolute top-2 sm:top-5 left-2 sm:left-5 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[8px] sm:text-[11px] font-black rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-sm z-10"><LinkIcon size={10} /> {item.category}</div>
