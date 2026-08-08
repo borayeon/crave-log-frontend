@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -471,6 +471,9 @@ const ArchiveView = () => {
   
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
+  // 🎵 음악 카테고리 전용 뷰 모드 상태 (grid | list)
+  const [musicViewMode, setMusicViewMode] = useState('grid'); 
+
   useEffect(() => {
     fetchAllData(true); 
   }, [fetchAllData]);
@@ -548,6 +551,9 @@ const ArchiveView = () => {
       );
   }
 
+  // 리스트 뷰 모드인지 확인 (음악 카테고리이면서 list 모드일 때만)
+  const isListMode = activeCategory.includes('음악') && musicViewMode === 'list';
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative">
       
@@ -602,20 +608,42 @@ const ArchiveView = () => {
             )}
         </div>
 
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-            {categories.map(cat => (
-                <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-2 rounded-full text-sm font-black whitespace-nowrap transition-all duration-300 ${
-                        activeCategory === cat 
-                        ? 'bg-zinc-900 text-white shadow-md' 
-                        : 'bg-white border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
-                    }`}
-                >
-                    {cat}
-                </button>
-            ))}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 items-center">
+            <div className="flex-1 flex gap-2">
+                {categories.map(cat => (
+                    <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-4 py-2 rounded-full text-sm font-black whitespace-nowrap transition-all duration-300 ${
+                            activeCategory === cat 
+                            ? 'bg-zinc-900 text-white shadow-md' 
+                            : 'bg-white border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+                        }`}
+                    >
+                        {cat}
+                    </button>
+                ))}
+            </div>
+
+            {/* 🎵 음악 카테고리 전용 뷰 토글 스위치 */}
+            {activeCategory.includes('음악') && (
+                <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 ml-auto">
+                    <button 
+                        onClick={() => setMusicViewMode('grid')} 
+                        className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'grid' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
+                        title="그리드 뷰 (레코드판)"
+                    >
+                        <LayoutGrid size={16} />
+                    </button>
+                    <button 
+                        onClick={() => setMusicViewMode('list')} 
+                        className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'list' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
+                        title="리스트 뷰 (멜론 차트형)"
+                    >
+                        <ListMusic size={16} />
+                    </button>
+                </div>
+            )}
         </div>
       </header>
       
@@ -626,10 +654,64 @@ const ArchiveView = () => {
             </div>
         )}
         
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6 lg:gap-8 pb-10 justify-items-center">
-            {displayRecords.map(item => {
+        {/* 리스트 모드일 때는 flex-col, 아닐 때는 기존 grid 유지 */}
+        <div className={isListMode 
+            ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
+            : "grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6 lg:gap-8 pb-10 justify-items-center"
+        }>
+            {displayRecords.map((item, index) => {
                 if (item.isMusic) {
                   const thumbnailUrl = item.videoId ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
+                  
+                  // 🎵 멜론 차트형 리스트 뷰 UI
+                  if (isListMode) {
+                      return (
+                          <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full flex items-center gap-3 sm:gap-4 p-3 bg-white border border-zinc-200/80 rounded-2xl shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-indigo-200 ${isEditing ? 'opacity-90' : ''}`}>
+                              
+                              {/* 차트 순위 (리스트 인덱스 기반) */}
+                              <div className="w-6 sm:w-8 text-center shrink-0">
+                                  <span className="text-sm sm:text-base font-black text-zinc-300 italic group-hover:text-indigo-400 transition-colors">{index + 1}</span>
+                              </div>
+
+                              {/* 썸네일 */}
+                              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-100">
+                                  <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-900/80 rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <PlayCircle size={14} className="text-white/90 translate-x-[1px]" />
+                                  </div>
+                              </div>
+
+                              {/* 음악 정보 */}
+                              <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                      <h3 className="text-sm sm:text-base font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                                      {!item.isPublic && !isEditing && <Lock size={12} className="text-rose-400 shrink-0" />}
+                                  </div>
+                                  {item.content && <p className="text-xs text-zinc-500 truncate font-medium">{item.content}</p>}
+                              </div>
+
+                              {/* 우측 부가정보 및 버튼 */}
+                              <div className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 ml-4">
+                                  <span className="text-[10px] font-bold text-zinc-400">{item.date}</span>
+                                  <div className="flex gap-1.5">
+                                      {(item.tags || []).slice(0, 2).map(tag => (
+                                          <span key={tag} className="px-1.5 py-0.5 bg-zinc-50 border border-zinc-100 rounded-md text-[9px] font-bold text-zinc-500">#{tag}</span>
+                                      ))}
+                                  </div>
+                              </div>
+
+                              {/* 편집 모드 삭제 버튼 */}
+                              {isEditing && (
+                                  <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="p-2 sm:p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-colors ml-2 shrink-0">
+                                      <Trash2 size={16} />
+                                  </button>
+                              )}
+                          </div>
+                      );
+                  }
+
+                  // 📀 기존 레코드판 그리드 뷰 UI
                   return (
                     <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[280px] flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
@@ -656,7 +738,6 @@ const ArchiveView = () => {
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
-                      // 💡 URL 아이템 클릭 시 새 탭 이동 방지를 위해 window.open 로직 삭제 및 통일
                       setSelectedRecord(item);
                   }} className={`group relative aspect-[4/5] w-full max-w-[280px] rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
