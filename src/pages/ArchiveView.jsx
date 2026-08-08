@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, ChevronUp, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic, GripVertical } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, ChevronUp, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic, GripVertical, Hash } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -467,8 +467,11 @@ const ArchiveView = () => {
   const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('전체');
   
+  const [activeCategory, setActiveCategory] = useState('전체');
+  // 🏷️ 새로운 상태: 현재 선택된 카테고리의 활성 태그 필터
+  const [activeTag, setActiveTag] = useState('전체');
+
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // 🎵 음악 카테고리 전용 뷰 모드 상태 (grid | list)
@@ -510,6 +513,13 @@ const ArchiveView = () => {
     return ['전체', ...Array.from(uniqueCategories)];
   }, [records]);
 
+  // 🏷️ 선택된 카테고리에 속한 태그 목록 추출
+  const activeCategoryTags = useMemo(() => {
+    if (activeCategory === '전체') return [];
+    const catNode = tagTree.find(c => c.name === activeCategory);
+    return catNode && catNode.children ? catNode.children.map(t => t.name) : [];
+  }, [activeCategory, tagTree]);
+
   const displayRecords = useMemo(() => {
     let result = records || [];
 
@@ -528,8 +538,14 @@ const ArchiveView = () => {
       );
     }
 
+    // 1. 카테고리 필터링
     if (activeCategory !== '전체') {
       result = result.filter(r => (r.category || r.categoryName) === activeCategory);
+    }
+
+    // 2. 🏷️ 태그 필터링
+    if (activeTag !== '전체') {
+      result = result.filter(r => (r.tags || []).includes(activeTag));
     }
 
     return result.map(item => {
@@ -544,7 +560,7 @@ const ArchiveView = () => {
 
         return { ...item, isMusic, isUrlItem, videoId, domain, hasImage, isTextOnly, category: catName, image: imgUrl };
     });
-  }, [records, searchQuery, activeCategory, isGuestMode, isAdmin]);
+  }, [records, searchQuery, activeCategory, activeTag, isGuestMode, isAdmin]);
 
   // displayRecords가 변경되면 customOrderedRecords에 동기화
   useEffect(() => {
@@ -689,7 +705,10 @@ const ArchiveView = () => {
                 {categories.map(cat => (
                     <button
                         key={cat}
-                        onClick={() => setActiveCategory(cat)}
+                        onClick={() => {
+                            setActiveCategory(cat);
+                            setActiveTag('전체'); // 🏷️ 카테고리 변경 시 태그 필터 초기화
+                        }}
                         className={`px-4 py-2 rounded-full text-sm font-black whitespace-nowrap transition-all duration-300 ${
                             activeCategory === cat 
                             ? 'bg-zinc-900 text-white shadow-md' 
@@ -721,12 +740,42 @@ const ArchiveView = () => {
                 </div>
             )}
         </div>
+
+        {/* 🏷️ 하위 태그 필터 바 */}
+        {activeCategory !== '전체' && activeCategoryTags.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pt-1 pb-2 items-center animate-in fade-in slide-in-from-top-2">
+                <button
+                    onClick={() => setActiveTag('전체')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-300 ${
+                        activeTag === '전체' 
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                        : 'bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50'
+                    }`}
+                >
+                    전체보기
+                </button>
+                {activeCategoryTags.map(tag => (
+                    <button
+                        key={tag}
+                        onClick={() => setActiveTag(tag)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-300 flex items-center gap-1.5 ${
+                            activeTag === tag 
+                            ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                            : 'bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50'
+                        }`}
+                    >
+                        <Hash size={12} className={activeTag === tag ? "text-indigo-500" : "text-zinc-400"}/>
+                        {tag}
+                    </button>
+                ))}
+            </div>
+        )}
       </header>
       
       <div className="flex-1 px-6 md:px-10 py-6 overflow-y-auto scrollbar-hide">
         {customOrderedRecords.length === 0 && (
             <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed">
-              선택한 카테고리에 해당하는 기록이 없습니다.
+              선택한 필터 조건에 해당하는 기록이 없습니다.
             </div>
         )}
         
