@@ -16,7 +16,7 @@ const EditProfileView = () => {
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
     
     // ⭐️ 핵심 수정: 서버에서 온 privacy 데이터가 문자열이면 무조건 객체로 뜯어냅니다!
-    let parsedPrivacy = { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true };
+    let parsedPrivacy = { developer: false, career: false, idol: false, qna: false, hobby: false, vision: false, quotes: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
