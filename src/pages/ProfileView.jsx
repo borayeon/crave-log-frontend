@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-    Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
-    Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
-    ArrowRight, Heart, MessageSquare, Lock, 
-    ExternalLink, Terminal 
+  Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
+  Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
+  ArrowRight, Heart, MessageSquare, Lock, 
+  ExternalLink, Terminal 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -33,7 +33,33 @@ const ProfileView = () => {
     });
   };
 
-  const safeUser = user || {};
+  /* =========================================================
+   * ⭐️ 핵심 변경점: DB에서 문자열(String)로 내려온 세부 프로필 데이터를
+   * 안전하게 자바스크립트 객체(Object)로 변환하는 useMemo 추가!
+   * ========================================================= */
+  const safeUser = useMemo(() => {
+    if (!user) return {};
+    
+    // 깊은 복사로 원본 훼손 방지
+    const parsedUser = JSON.parse(JSON.stringify(user));
+    
+    // 파싱이 필요한 주요 필드 목록
+    const jsonFields = ['developer', 'career', 'idol', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
+    
+    jsonFields.forEach(field => {
+      if (typeof parsedUser[field] === 'string') {
+        try {
+          parsedUser[field] = JSON.parse(parsedUser[field]);
+        } catch (e) {
+          console.warn(`[ProfileView] ${field} 데이터 파싱 실패:`, e);
+          parsedUser[field] = null; // 파싱 실패 시 빈 값 처리
+        }
+      }
+    });
+
+    return parsedUser;
+  }, [user]);
+
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
 
@@ -43,7 +69,7 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
   };
 
-  // ⭐️ 핵심 수정: 화면을 그릴 때에도 무조건 객체화 진행!
+  // 화면을 그릴 때에도 무조건 객체화 진행!
   const privacyObj = useMemo(() => {
       let p = { developer: true, career: true, idol: true };
       if (safeUser.privacy) {
@@ -61,7 +87,7 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  // ⭐️ 게스트에게 비공개 탭을 완전히 숨기는 렌더링 필터
+  // 게스트에게 비공개 탭을 완전히 숨기는 렌더링 필터
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
@@ -372,7 +398,7 @@ const ProfileView = () => {
                   {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
                       <div className="space-y-6">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              <div className="md:col-span-1 bg-gradient-to-br from-rose-50 to-pink-50 p-8 rounded-[2rem] shadow-sm border border-rose-100">
+                              <div className="md:col-span-1 bg-gradient-to-br from-rose-50 to-pink-50 p-8 rounded-[2rem] shadow-sm border border-rose-100 space-y-5">
                                   <h3 className="text-xl font-black text-rose-900 mb-6 flex items-center gap-2"><Sparkles size={20} className="text-rose-400"/> Profile</h3>
                                   <div className="space-y-4 text-sm">
                                       <div className="flex justify-between border-b border-rose-200/50 pb-2"><span className="font-bold text-rose-400">Nickname</span><span className="font-black text-rose-900">{safeUser.idol?.nickname || ''}</span></div>
@@ -397,7 +423,8 @@ const ProfileView = () => {
                           <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
                               <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
                               <div className="space-y-6">
-                                  {(safeUser.idol?.qna || []).map((item, idx) => (
+                                  {/* QnA 데이터는 최상위 qna 필드 또는 idol.qna 필드를 우선순위대로 사용 */}
+                                  {((safeUser.qna?.length ? safeUser.qna : safeUser.idol?.qna) || []).map((item, idx) => (
                                       <div key={idx} className="flex flex-col gap-2">
                                           <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
                                           <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
