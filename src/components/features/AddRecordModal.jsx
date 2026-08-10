@@ -41,7 +41,7 @@ const AddRecordModal = () => {
 
   const selectedCategoryNode = categoryId ? tagTree.find(c => String(c.id) === String(categoryId)) : null;
   
-  // ⭐️ 픽스: 카테고리 이름에 이모지(🔗, 🎵)가 포함되어 있어도 유연하게 인식하도록 includes 사용
+  // 카테고리 이름에 이모지(🔗, 🎵)가 포함되어 있어도 유연하게 인식하도록 includes 사용
   const isMusicCat = selectedCategoryNode?.name?.includes('음악');
   const isUrlCat = selectedCategoryNode?.name?.includes('URL');
 
@@ -55,16 +55,47 @@ const AddRecordModal = () => {
 
   if (!addRecordModalOpen) return null;
 
+  /* =========================================================
+   * ⭐️ 핵심 변경점: Base64 폭탄 제거 및 서버 파일 업로드 로직 적용
+   * ========================================================= */
+  const uploadImageToServer = async (file) => {
+    setIsLoading(true); // 업로드 중 로딩 스피너 표시
+    const fileData = new FormData();
+    fileData.append("file", file);
+
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      const res = await fetch('https://api.cravelog.me/api/v1/files/upload', {
+        method: 'POST',
+        body: fileData,
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        // 성공 시 서버에서 반환한 짧고 깔끔한 이미지 주소를 상태(imageUrl)에 저장
+        const fullImageUrl = `https://api.cravelog.me${data.imageUrl}`;
+        setImageUrl(fullImageUrl);
+        showToast("이미지가 성공적으로 업로드되었습니다.");
+      } else {
+        showToast("이미지 업로드에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("서버와 연결할 수 없습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+      uploadImageToServer(file);
     }
   };
+  /* ========================================================= */
 
   const handleSave = async () => {
     // 1. 필수 입력값 검증 (새 카테고리 추가인 경우 로직 포함)
