@@ -3,7 +3,7 @@ import {
   Code, Briefcase, HeartHandshake, Eye, EyeOff, Link, Edit2, 
   Rocket, User, Sparkles, GraduationCap, MapPin, Target, 
   ArrowRight, Heart, MessageSquare, Lock, 
-  ExternalLink, Terminal 
+  ExternalLink, Terminal, Quote, Palette, Compass
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -11,12 +11,19 @@ const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
 
-  // 게스트 판단 로직
   const isGuest = !isAdmin || isGuestMode;
 
+  // ⭐️ 수정: 누락되었던 4개의 탭(qna, hobby, vision, quotes)을 기본 순서에 모두 추가!
   const [tabOrder, setTabOrder] = useState(() => {
     const saved = localStorage.getItem('cravelog_tab_order');
-    return saved ? JSON.parse(saved) : ['developer', 'career', 'idol'];
+    const defaultOrder = ['developer', 'career', 'idol', 'qna', 'hobby', 'vision', 'quotes'];
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        // 기존에 저장된 순서가 있더라도 새로 추가된 탭이 있으면 뒤에 이어붙임
+        const missing = defaultOrder.filter(id => !parsed.includes(id));
+        return [...parsed, ...missing];
+    }
+    return defaultOrder;
   });
   const [draggedTab, setDraggedTab] = useState(null);
 
@@ -33,29 +40,24 @@ const ProfileView = () => {
     });
   };
 
-  /* =========================================================
-   * ⭐️ 핵심 변경점: DB에서 문자열(String)로 내려온 세부 프로필 데이터를
-   * 안전하게 자바스크립트 객체(Object)로 변환하는 useMemo 추가!
-   * ========================================================= */
   const safeUser = useMemo(() => {
     if (!user) return {};
-    
-    // 깊은 복사로 원본 훼손 방지
     const parsedUser = JSON.parse(JSON.stringify(user));
-    
-    // 파싱이 필요한 주요 필드 목록
     const jsonFields = ['developer', 'career', 'idol', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
     
     jsonFields.forEach(field => {
       if (typeof parsedUser[field] === 'string') {
-        try {
-          parsedUser[field] = JSON.parse(parsedUser[field]);
-        } catch (e) {
-          console.warn(`[ProfileView] ${field} 데이터 파싱 실패:`, e);
-          parsedUser[field] = null; // 파싱 실패 시 빈 값 처리
-        }
+        try { parsedUser[field] = JSON.parse(parsedUser[field]); } 
+        catch (e) { parsedUser[field] = null; }
       }
     });
+
+    // 호환성 처리: qna가 idol 안에만 있다면 최상위 qna로 끌어올림
+    if (!parsedUser.qna || parsedUser.qna.length === 0) {
+        if (parsedUser.idol?.qna?.length > 0) {
+            parsedUser.qna = parsedUser.idol.qna;
+        }
+    }
 
     return parsedUser;
   }, [user]);
@@ -63,15 +65,19 @@ const ProfileView = () => {
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
   const shouldBlur = isProfileEmpty && !isAdmin;
 
+  // ⭐️ 수정: 전체 7개 탭의 아이콘과 이름 매핑
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code size={16}/>, label: 'Developer Profile' },
     career: { id: 'career', icon: <Briefcase size={16}/>, label: 'Career Info' },
-    idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' }
+    idol: { id: 'idol', icon: <HeartHandshake size={16}/>, label: 'Personal (Idol)' },
+    qna: { id: 'qna', icon: <MessageSquare size={16}/>, label: 'Q&A' },
+    hobby: { id: 'hobby', icon: <Palette size={16}/>, label: 'Hobby' },
+    vision: { id: 'vision', icon: <Compass size={16}/>, label: 'Mandalart' },
+    quotes: { id: 'quotes', icon: <Quote size={16}/>, label: 'Quotes' }
   };
 
-  // 화면을 그릴 때에도 무조건 객체화 진행!
   const privacyObj = useMemo(() => {
-      let p = { developer: true, career: true, idol: true };
+      let p = { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
@@ -87,12 +93,10 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  // 게스트에게 비공개 탭을 완전히 숨기는 렌더링 필터
   const availableTabs = tabOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
-        // 게스트이면서 비공개 설정된 탭이면 화면에서 삭제
         if (isGuest && isTabPrivate(tab.id)) return false; 
         return true; 
     });
@@ -127,6 +131,55 @@ const ProfileView = () => {
     
     setTabOrder(newOrder);
     setDraggedTab(null);
+  };
+
+  // 만다라트 렌더링 함수
+  const renderVisionPreview = () => {
+    const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
+    const v = {
+        core: safeUser.vision?.core || defaultVision.core,
+        subs: safeUser.vision?.subs?.length === 8 ? safeUser.vision.subs : defaultVision.subs,
+        details: safeUser.vision?.details?.length === 8 ? safeUser.vision.details : defaultVision.details
+    };
+    const blocks = [];
+    for (let i = 0; i < 9; i++) {
+        if (i === 4) {
+            blocks.push([v.subs[0], v.subs[1], v.subs[2], v.subs[3], v.core, v.subs[4], v.subs[5], v.subs[6], v.subs[7]]);
+        } else {
+            const subIdx = i < 4 ? i : i - 1;
+            const d = v.details[subIdx] || Array(8).fill("");
+            blocks.push([d[0], d[1], d[2], d[3], v.subs[subIdx], d[4], d[5], d[6], d[7]]);
+        }
+    }
+    return (
+        <div className="bg-gradient-to-br from-teal-900 to-slate-900 p-8 md:p-12 rounded-[2.5rem] shadow-xl text-white">
+            <div className="text-center mb-10">
+                <h3 className="text-3xl md:text-4xl font-black mb-3 flex items-center justify-center gap-3"><Compass className="text-teal-400"/> Mandalart</h3>
+                <p className="text-teal-200/80 text-sm font-medium">나의 비전을 이루기 위한 81가지 세부 계획</p>
+            </div>
+            <div className="grid grid-cols-3 gap-1 md:gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl w-full max-w-3xl mx-auto aspect-square border border-white/20 shadow-2xl">
+                {blocks.map((block, bIdx) => (
+                    <div key={bIdx} className="grid grid-cols-3 gap-px bg-white/20 border border-white/10 rounded overflow-hidden shadow-inner">
+                        {block.map((cell, cIdx) => {
+                            const isCore = bIdx === 4 && cIdx === 4;
+                            const isMainSub = bIdx === 4 && cIdx !== 4;
+                            const isCenterOfOuter = bIdx !== 4 && cIdx === 4;
+                            let bg = "bg-white/90";
+                            let text = "text-slate-800";
+                            let font = "font-bold text-[8px] sm:text-[10px] md:text-xs";
+                            if (isCore) { bg = "bg-teal-500 shadow-lg z-10"; text = "text-white"; font = "font-black text-[10px] sm:text-xs md:text-sm"; } 
+                            else if (isMainSub || isCenterOfOuter) { bg = "bg-teal-100"; text = "text-teal-900"; font = "font-black text-[9px] sm:text-[11px] md:text-sm"; }
+                            return (
+                                <div key={cIdx} className={`${bg} ${text} ${font} flex items-center justify-center text-center p-0.5 sm:p-1 overflow-hidden break-words leading-tight transition-colors hover:brightness-95 cursor-default`}>
+                                    {cell || '-'}
+                                </div>
+                            )
+                        })}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
   };
 
   return (
@@ -216,9 +269,7 @@ const ProfileView = () => {
           {/* Detail Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
             {availableTabs.map(tab => {
-                // 호스트 뷰에서 비공개 탭에 자물쇠를 그리기 위한 확인
                 const isPrivate = isTabPrivate(tab.id); 
-                
                 return (
                   <div 
                       key={tab.id} 
@@ -419,21 +470,65 @@ const ProfileView = () => {
                                   </div>
                               </div>
                           </div>
+                      </div>
+                  )}
 
-                          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60">
-                              <h3 className="text-xl font-black text-zinc-900 mb-6 flex items-center gap-2"><MessageSquare size={20} className="text-indigo-500"/> Q & A</h3>
-                              <div className="space-y-6">
-                                  {/* QnA 데이터는 최상위 qna 필드 또는 idol.qna 필드를 우선순위대로 사용 */}
-                                  {((safeUser.qna?.length ? safeUser.qna : safeUser.idol?.qna) || []).map((item, idx) => (
-                                      <div key={idx} className="flex flex-col gap-2">
-                                          <span className="text-sm font-black text-indigo-600 flex items-center gap-2">Q. {item.q}</span>
-                                          <span className="text-sm font-medium text-zinc-700 bg-zinc-50 p-3 rounded-xl border border-zinc-100">A. {item.a}</span>
-                                      </div>
-                                  ))}
+                  {/* ⭐️ 새로 추가된 탭들: QnA, Hobby, Vision, Quotes */}
+                  
+                  {/* QnA Tab */}
+                  {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && (
+                      <div className="space-y-6">
+                          <h3 className="text-2xl font-black text-violet-900 flex items-center gap-2"><MessageSquare size={24} className="text-violet-500"/> 100문 100답</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {(safeUser.qna || []).map((item, idx) => (
+                                  <div key={idx} className="p-6 bg-violet-50/50 rounded-3xl relative overflow-hidden group border border-violet-100">
+                                      <div className="absolute -right-4 -top-6 text-9xl font-black text-white/50 select-none group-hover:scale-110 transition-transform duration-500">Q</div>
+                                      <h4 className="text-base md:text-lg font-black text-violet-700 relative z-10 mb-3 leading-snug">{item.q}</h4>
+                                      <p className="text-sm font-medium text-zinc-700 relative z-10 leading-relaxed bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white">{item.a}</p>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Hobby Tab */}
+                  {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && (
+                      <div className="bg-white rounded-[2.5rem] shadow-sm border border-amber-100/60 overflow-hidden flex flex-col md:flex-row group">
+                          <div className="md:w-1/2 h-72 md:h-auto relative overflow-hidden">
+                              <img src={safeUser.hobby?.image || 'https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81?q=80&w=1000'} alt="Hobby" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                              <h3 className="absolute bottom-8 left-8 text-3xl font-black text-white drop-shadow-md leading-tight">{safeUser.hobby?.title || '취미'}</h3>
+                          </div>
+                          <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/30">
+                              <Quote size={48} className="text-amber-300 mb-6 transform rotate-180" />
+                              <p className="text-base text-zinc-700 leading-relaxed font-medium mb-8">
+                                  {safeUser.hobby?.description || '취미 설명이 없습니다.'}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                  {(safeUser.hobby?.keywords || []).map(kw => <span key={kw} className="px-4 py-2 bg-white text-amber-700 text-xs font-black rounded-xl border border-amber-200 shadow-sm">#{kw}</span>)}
                               </div>
                           </div>
                       </div>
                   )}
+
+                  {/* Vision Tab */}
+                  {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && renderVisionPreview()}
+
+                  {/* Quotes Tab */}
+                  {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && (
+                      <div className="space-y-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                              {(safeUser.quotes || []).map((q, idx) => (
+                                  <div key={idx} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all">
+                                      <Quote size={20} className="text-slate-300 mb-3" />
+                                      <p className="text-sm font-bold text-slate-700 leading-relaxed mb-4">"{q.text}"</p>
+                                      <p className="text-[10px] font-black text-slate-400 text-right uppercase tracking-widest">- {q.author}</p>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  )}
+
               </div>
           )}
         </>
