@@ -63,7 +63,6 @@ const EditProfileView = () => {
     { id: 'quotes', label: 'Quotes', icon: <Quote size={16}/> }
   ];
 
-  // ⭐️ 객체화된 데이터를 바탕으로 완벽하게 상태 판별
   const isTabPrivate = (tabId) => {
       const val = formData.privacy?.[tabId];
       return String(val).toLowerCase() === 'false' || String(val) === '0';
@@ -91,24 +90,56 @@ const EditProfileView = () => {
     });
   };
 
-  /* STREAMING_CHUNK: Handlers */
+  /* =========================================================
+   * ⭐️ 핵심 변경점: Base64 폭탄 제거 및 서버 파일 업로드 로직 추가
+   * ========================================================= */
+  const uploadImageToServer = async (file, path) => {
+    setIsLoading(true); // 업로드 중 저장 버튼 비활성화 및 로딩 표시
+    const fileData = new FormData();
+    fileData.append("file", file);
+
+    try {
+      // 🚨 FormData를 보낼 때는 브라우저가 boundary를 세팅하게 둬야 하므로 fetch를 직접 사용
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken'); // 프로젝트의 토큰 키명에 맞게 수정
+      
+      const res = await fetch('https://api.cravelog.me/api/v1/files/upload', {
+        method: 'POST',
+        body: fileData,
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        // 서버에서 반환된 imageUrl(예: /uploads/abc_123.jpg)을 완전한 주소로 만들어서 폼에 저장
+        const fullImageUrl = `https://api.cravelog.me${data.imageUrl}`;
+        updateNested(path, fullImageUrl); 
+        showToast("이미지가 성공적으로 업로드되었습니다.");
+      } else {
+        showToast("이미지 업로드에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("서버와 연결할 수 없습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => { updateNested(["profileImageUrl"], reader.result); };
-      reader.readAsDataURL(file);
+      uploadImageToServer(file, ["profileImageUrl"]);
     }
   };
 
   const handleHobbyImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => { updateNested(["hobby", "image"], reader.result); };
-      reader.readAsDataURL(file);
+      uploadImageToServer(file, ["hobby", "image"]);
     }
   };
+  /* ========================================================= */
 
   const handleCheckDuplicateHandle = async () => {
     if (!formData.handle?.trim()) return showToast('아이디를 입력해주세요.');
@@ -620,7 +651,6 @@ const EditProfileView = () => {
           ))}
         </div>
 
-        {/* ⭐️ 토글 액션 수정됨: 이제 확실한 boolean 값을 저장합니다 */}
         <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
           <div>
             <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2">
