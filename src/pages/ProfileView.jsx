@@ -156,7 +156,6 @@ const ProfileView = () => {
       {/* 1. 메인 프로필 명함 (Business Card) */}
       <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
         
-        {/* 우측 상단 둥근 버튼 (공유/편집) */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
           {!isProfileEmpty && (
             <button onClick={handleShare} className="w-9 h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
@@ -183,11 +182,9 @@ const ProfileView = () => {
         ) : (
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4 md:mt-0">
             
-            {/* 좌측: 주요 정보 */}
             <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
               <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
                 
-                {/* 둥근 사각형 프로필 사진 */}
                 <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                   {safeUser.profileImageUrl ? (
                       <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -198,10 +195,8 @@ const ProfileView = () => {
                   )}
                 </div>
                 
-                {/* 텍스트 정보 */}
                 <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
                   <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                  {/* 연보라색 아이디 뱃지 */}
                   <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                   
                   <div className="space-y-1.5 md:space-y-2">
@@ -218,7 +213,6 @@ const ProfileView = () => {
                 </div>
               </div>
 
-              {/* 좌측 하단: 태그 리스트 */}
               {(safeUser.tags || []).length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                     {safeUser.tags.map(tag => (
@@ -228,10 +222,8 @@ const ProfileView = () => {
               )}
             </div>
 
-            {/* 중간 얇은 구분선 */}
             <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
-            {/* 우측: 자기소개 인용구 */}
             <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
               <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
               <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
@@ -248,10 +240,10 @@ const ProfileView = () => {
           {/* 2. 데이터 탐색 탭 */}
           <div className="mt-8 md:mt-12">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">더 알아보기</h3>
+              <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
               <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
             </div>
-            <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-3">탭을 눌러 저의 다양한 이야기와 관심사를 확인해 보세요.</p>
+            <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
             
             <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
               {availableTabs.map(tab => {
@@ -304,14 +296,26 @@ const ProfileView = () => {
                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
                             <div className="space-y-5">
                                 {['backend', 'db', 'frontend', 'tools'].map(type => {
-                                    const stackString = safeUser.developer?.techStack?.[type];
-                                    if (!stackString) return null;
+                                    const stackData = safeUser.developer?.techStack?.[type];
+                                    if (!stackData) return null;
+                                    
+                                    // ⭐️ 문자열인지 배열인지 확인하여 .split 에러 완벽 방지
+                                    const stackArray = Array.isArray(stackData) 
+                                        ? stackData 
+                                        : typeof stackData === 'string' 
+                                            ? stackData.split(',').filter(Boolean) 
+                                            : [];
+
+                                    if (stackArray.length === 0) return null;
+
                                     return (
                                         <div key={type}>
                                             <span className="block text-[10px] font-black text-zinc-300 uppercase mb-2">{type}</span>
                                             <div className="flex flex-wrap gap-2">
-                                                {stackString.split(',').map((tech, i) => (
-                                                    <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold cursor-default">{tech.trim()}</span>
+                                                {stackArray.map((tech, i) => (
+                                                    <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold cursor-default">
+                                                        {typeof tech === 'string' ? tech.trim() : String(tech)}
+                                                    </span>
                                                 ))}
                                             </div>
                                         </div>
