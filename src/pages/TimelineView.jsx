@@ -39,14 +39,12 @@ const TimelineView = () => {
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState('');
 
-  // 💡 카테고리 드래그 앤 드롭 순서 관리용 상태
   const [orderedCategories, setOrderedCategories] = useState([]);
   const [draggedCatIndex, setDraggedCatIndex] = useState(null);
 
   const safeRecords = Array.isArray(records) ? records : [];
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
 
-  // 스토어의 tagTree가 업데이트되면 로컬 정렬 상태 동기화
   useEffect(() => {
     setOrderedCategories(safeTagTree);
   }, [safeTagTree]);
@@ -206,9 +204,8 @@ const TimelineView = () => {
     }
   };
 
-  // 💡 드래그 앤 드롭 핸들러 로직
   const handleCatDragStart = (e, index) => {
-    if (editingCategoryId) return; // 이름 수정 중일 땐 드래그 방지
+    if (editingCategoryId) return; 
     setDraggedCatIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -229,7 +226,6 @@ const TimelineView = () => {
     setOrderedCategories(updated);
     setDraggedCatIndex(null);
 
-    // 백엔드 연동 (백엔드에 API가 있어야 완벽하게 저장됨)
     try {
         if (apiFetch) {
             const orderedIds = updated.map(c => c.id);
@@ -240,13 +236,16 @@ const TimelineView = () => {
             showToast('카테고리 순서가 저장되었습니다! 🔄');
         }
     } catch (err) {
-        console.error("순서 저장 API 연동 실패 (백엔드 추가 필요):", err);
+        console.error("순서 저장 API 연동 실패:", err);
     }
   };
 
   return (
     <div className="flex flex-col h-full flex-1 min-h-0 animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
-      <header className="px-6 md:px-10 py-8 shrink-0 flex justify-end items-end border-b border-zinc-200/50">  {isAdmin && !isGuestMode && (
+      
+      {/* ⭐️ 수정: 기존 텍스트 제거 및 우측 버튼 정렬 유지 */}
+      <header className="px-6 md:px-10 py-6 md:py-8 shrink-0 flex justify-end items-end border-b border-zinc-200/50">
+        {isAdmin && !isGuestMode && (
           <button 
             onClick={() => setIsEditing(!isEditing)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
@@ -256,10 +255,11 @@ const TimelineView = () => {
         )}
       </header>
 
-      <div className="flex-1 px-6 md:px-10 py-8 overflow-hidden min-h-0 flex flex-col md:flex-row gap-8">
+      {/* ⭐️ 수정: 모바일 레이아웃 최적화 (flex-col 구성, 높이 및 스크롤 제한 조정) */}
+      <div className="flex-1 px-4 sm:px-6 md:px-10 py-6 md:py-8 overflow-hidden min-h-0 flex flex-col md:flex-row gap-6 md:gap-8">
         
-        {/* 사이드바 영역 */}
-        <div className="w-full md:w-[320px] shrink-0 flex flex-col h-full max-h-full border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden transition-all duration-300">
+        {/* 사이드바 영역 (모바일: 위쪽 제한된 높이 / PC: 좌측 꽉 찬 높이) */}
+        <div className={`w-full md:w-[320px] shrink-0 flex flex-col border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden transition-all duration-300 ${isEditing ? 'h-[60vh] md:h-full max-h-[600px] md:max-h-full' : 'max-h-[35vh] md:h-full md:max-h-full'}`}>
           
           <div className={`p-4 border-b flex items-center justify-between shrink-0 ${isEditing ? 'bg-rose-50/30 border-rose-100' : 'bg-zinc-50/50 border-zinc-100'}`}>
             <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-zinc-600">
@@ -271,7 +271,7 @@ const TimelineView = () => {
           
           {/* 편집 모드 관리자 뷰 */}
           {isEditing ? (
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 scrollbar-hide min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 min-h-0">
               {orderedCategories.map((cat, index) => {
                 const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
                 const isSystemCat = catType === 'MUSIC' || catType === 'URL';
@@ -287,8 +287,6 @@ const TimelineView = () => {
                     className={`bg-white border border-zinc-200 rounded-2xl p-3.5 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md ${draggedCatIndex === index ? 'opacity-40 border-dashed border-indigo-400' : ''}`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      
-                      {/* 💡 드래그 핸들 추가 */}
                       {!editingCategoryId && (
                         <div className="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 p-1 shrink-0 transition-colors" title="드래그하여 순서 변경">
                             <GripVertical size={16} />
@@ -356,10 +354,10 @@ const TimelineView = () => {
               <div className="bg-white border border-dashed border-zinc-300 rounded-2xl p-4 flex flex-col gap-3 mt-6 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
                 <div className="text-[11px] font-black text-indigo-500 flex items-center gap-1.5"><Plus size={14} strokeWidth={3}/> 카테고리 새로 만들기</div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <select 
                         value={newCategoryType} onChange={e=>setNewCategoryType(e.target.value)} disabled={isAddingCategory}
-                        className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2 text-xs font-bold outline-none focus:border-indigo-400 focus:bg-white text-zinc-700 shrink-0 w-[72px]"
+                        className="bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2 text-xs font-bold outline-none focus:border-indigo-400 focus:bg-white text-zinc-700 shrink-0"
                     >
                         <option value="GENERAL">📁 일반</option>
                         <option value="MUSIC">🎵 음악</option>
@@ -369,7 +367,7 @@ const TimelineView = () => {
                         value={newCategoryName} onChange={e=>setNewCategoryName(e.target.value)} disabled={isAddingCategory}
                         onKeyDown={e=>{if(e.key==='Enter') handleAddCategory()}}
                         placeholder="카테고리 이름 지정"
-                        className="flex-1 min-w-0 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-400 focus:bg-white placeholder:font-medium placeholder:text-zinc-400"
+                        className="flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-indigo-400 focus:bg-white placeholder:font-medium placeholder:text-zinc-400"
                     />
                 </div>
                 <button onClick={handleAddCategory} disabled={isAddingCategory || !newCategoryName.trim()} className="w-full py-2 bg-zinc-900 text-white rounded-lg text-xs font-black hover:bg-zinc-800 disabled:bg-zinc-300 disabled:text-zinc-500 transition-colors flex justify-center items-center gap-1.5 shadow-sm">
@@ -378,8 +376,8 @@ const TimelineView = () => {
               </div>
             </div>
           ) : (
-            // 💡 뷰 모드 탐색용 트리 UI (변경된 orderedCategories 기준 렌더링)
-            <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide min-h-0">
+            // 뷰 모드 탐색용 트리 UI
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
               <button 
                 onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${selectedFilter.type === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
@@ -432,10 +430,10 @@ const TimelineView = () => {
           )}
         </div>
 
-        {/* 타임라인 메인 목록 */}
-        <div className="flex-1 min-w-0 overflow-y-auto pr-2 pl-2 md:pl-4 py-2 scrollbar-hide">
+        {/* ⭐️ 수정: 타임라인 메인 목록 영역 (모바일에서 사이드바 아래로 부드럽게 이어지도록 설정) */}
+        <div className="flex-1 min-w-0 overflow-y-auto pr-1 md:pr-2 pl-1 md:pl-4 py-2">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
-            <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
+            <div className="text-center py-16 md:py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
               <FolderOpen size={32} className="text-zinc-300" />
               해당 분류의 기록이 없습니다.
               {isAdmin && !isGuestMode && (
@@ -464,11 +462,11 @@ const TimelineView = () => {
                 <div key={item.id} className="relative pl-6 md:pl-8 group">
                   <div className="absolute w-3 h-3 bg-white border-[3px] border-indigo-400 rounded-full -left-[5px] top-6 group-hover:border-indigo-600 group-hover:scale-150 transition-all duration-300 shadow-sm z-10" />
                   
-                  <div className={`bg-white border border-zinc-200/80 rounded-2xl p-3 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1 ${isTextOnly ? 'bg-gradient-to-br from-white to-zinc-50/50' : ''}`}>
+                  <div className={`bg-white border border-zinc-200/80 rounded-2xl p-3.5 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1 ${isTextOnly ? 'bg-gradient-to-br from-white to-zinc-50/50' : ''}`}>
                     
                     {/* 타입별 썸네일 영역 */}
                     {isMusic ? (
-                      <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-full border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700">
+                      <div className="w-full h-32 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-xl sm:rounded-full sm:border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700">
                         <img 
                           src={videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE} 
                           onError={(e) => { e.target.src = MUSIC_DEFAULT_IMAGE; }} 
@@ -476,8 +474,8 @@ const TimelineView = () => {
                           className="w-full h-full object-cover transition-transform duration-700 ease-out scale-125" 
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-zinc-900 rounded-full border-2 border-zinc-700 flex items-center justify-center shadow-inner">
-                            <PlayCircle size={10} className="text-white/80 translate-x-[1px]" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-900 rounded-full border-2 border-zinc-700 flex items-center justify-center shadow-inner">
+                            <PlayCircle size={14} className="text-white/80 translate-x-[1px]" />
                         </div>
                       </div>
                     ) : isUrlItem ? (
@@ -485,7 +483,7 @@ const TimelineView = () => {
                           href={item.youtubeUrl} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 bg-white border-2 border-zinc-100 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center relative shadow-sm hover:shadow-md transition-all duration-300 group/link overflow-hidden"
+                          className="w-full h-24 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 bg-white border-2 border-zinc-100 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center relative shadow-sm hover:shadow-md transition-all duration-300 group/link overflow-hidden"
                       >
                           <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 group-hover/link:opacity-0 bg-white">
                               {item.youtubeUrl && getDomain(item.youtubeUrl) ? (
@@ -496,28 +494,28 @@ const TimelineView = () => {
                                         e.target.src = `https://ui-avatars.com/api/?name=${getDomain(item.youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`;
                                     }}
                                     alt="favicon" 
-                                    className="w-8 h-8 sm:w-10 sm:h-10 mb-2 rounded-lg shadow-sm" 
+                                    className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 rounded-lg shadow-sm" 
                                   />
                               ) : (
                                   <LinkIcon size={28} className="text-blue-300 mb-2" />
                               )}
-                              <span className="text-[9px] font-bold text-zinc-400 max-w-[80%] truncate">{getDomain(item.youtubeUrl)}</span>
+                              <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 max-w-[80%] truncate">{getDomain(item.youtubeUrl)}</span>
                           </div>
                           
                           <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
                               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(item.youtubeUrl || '')}`} alt="QR Code" className="w-12 h-12 sm:w-14 sm:h-14 mix-blend-multiply mb-1" />
-                              <span className="text-[9px] font-black text-blue-600 bg-white px-2 py-0.5 rounded-md shadow-sm">이동/스캔</span>
+                              <span className="text-[9px] font-black text-blue-600 bg-white px-2 py-0.5 rounded-md shadow-sm hidden sm:block">이동/스캔</span>
                           </div>
                           
                           <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-blue-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50 z-10">{item.category}</div>
                       </a>
                     ) : isTextOnly ? (
-                      <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100/50 rounded-xl flex items-center justify-center relative shadow-inner group-hover:shadow-md transition-shadow duration-300">
-                         <Quote size={28} className="text-indigo-200 group-hover:text-indigo-300 transition-colors transform -translate-y-2" />
+                      <div className="w-full h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100/50 rounded-xl flex items-center justify-center relative shadow-inner group-hover:shadow-md transition-shadow duration-300">
+                         <Quote size={28} className="text-indigo-200 group-hover:text-indigo-300 transition-colors transform sm:-translate-y-2" />
                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-indigo-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50">{item.category}</div>
                       </div>
                     ) : (
-                      <div className="w-20 h-24 sm:w-24 sm:h-24 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-xl">
+                      <div className="w-full h-40 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-xl">
                         <img 
                           src={item.image} 
                           onError={(e) => { e.target.src = DEFAULT_IMAGE; }} 
@@ -530,7 +528,7 @@ const TimelineView = () => {
                     
                     {/* 메인 텍스트 정보 */}
                     <div className="flex-1 w-full text-left py-0.5 flex flex-col justify-center min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1 sm:mb-1.5">
                         <Calendar size={12} className="text-indigo-500" />
                         <span className="text-[11px] md:text-xs font-black text-indigo-500 tracking-tight">{item.date}</span>
                       </div>
@@ -542,14 +540,14 @@ const TimelineView = () => {
                       </h3>
                       
                       {item.content && (
-                        <p className={`text-xs text-zinc-500 font-medium truncate ${isTextOnly ? 'text-sm text-zinc-600 mb-3 whitespace-normal line-clamp-2 leading-relaxed' : 'mb-2'}`}>
+                        <p className={`text-xs text-zinc-500 font-medium truncate ${isTextOnly ? 'text-sm sm:text-base text-zinc-600 mb-3 whitespace-normal line-clamp-2 leading-relaxed' : 'mb-2'}`}>
                           {isTextOnly && <span className="text-indigo-300 font-serif text-lg leading-none mr-1">"</span>}
                           {item.content}
                           {isTextOnly && <span className="text-indigo-300 font-serif text-lg leading-none ml-1">"</span>}
                         </p>
                       )}
                       
-                      <div className={`flex flex-wrap gap-1.5 ${isTextOnly && !item.content ? 'mt-4' : 'mt-auto'}`}>
+                      <div className={`flex flex-wrap gap-1.5 ${isTextOnly && !item.content ? 'mt-3 sm:mt-4' : 'mt-auto'}`}>
                         {(item.tags || []).slice(0, 3).map(tag => (
                           <span key={tag} className="px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-[9px] font-bold text-zinc-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-colors whitespace-nowrap">
                             #{tag}
