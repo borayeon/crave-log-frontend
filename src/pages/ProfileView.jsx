@@ -50,7 +50,7 @@ const ProfileView = () => {
     idol: { id: 'idol', icon: <HeartHandshake strokeWidth={2}/>, label: 'Idol', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
     qna: { id: 'qna', icon: <MessageSquare strokeWidth={2}/>, label: 'Q&A', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
     hobby: { id: 'hobby', icon: <Palette strokeWidth={2}/>, label: 'Hobby', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
-    vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-teal-50/80 text-teal-500 border-teal-100' },
+    vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
     quotes: { id: 'quotes', icon: <Quote strokeWidth={2}/>, label: 'Quotes', color: 'bg-slate-100/80 text-slate-500 border-slate-200' }
   };
 
@@ -107,12 +107,12 @@ const ProfileView = () => {
     }
     return (
         <div className="bg-zinc-900 p-6 md:p-10 rounded-3xl shadow-sm text-white relative overflow-hidden border border-zinc-800">
-            <div className="absolute -top-20 -right-20 w-80 h-80 bg-teal-500/10 md:bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-500/10 md:bg-violet-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
             
             <div className="text-center mb-8 relative z-10">
-                <h3 className="text-2xl md:text-3xl font-black mb-2 flex items-center justify-center gap-2"><Compass className="text-teal-400"/> Mandalart</h3>
-                <p className="text-teal-200/80 text-[11px] md:text-xs font-bold uppercase tracking-widest">나의 비전을 이루기 위한 81가지 세부 계획</p>
+                <h3 className="text-2xl md:text-3xl font-black mb-2 flex items-center justify-center gap-2"><Compass className="text-violet-400"/> Mandalart</h3>
+                <p className="text-violet-200/80 text-[11px] md:text-xs font-bold uppercase tracking-widest">나의 비전을 이루기 위한 81가지 세부 계획</p>
             </div>
             
             <div className="grid grid-cols-3 gap-1 md:gap-1.5 p-1.5 md:p-2 bg-white/10 backdrop-blur-md rounded-2xl w-full max-w-2xl mx-auto aspect-square relative z-10 shadow-2xl">
@@ -125,8 +125,8 @@ const ProfileView = () => {
                             let bg = "bg-white/95";
                             let text = "text-slate-800";
                             let font = "font-bold text-[7px] sm:text-[9px] md:text-xs";
-                            if (isCore) { bg = "bg-teal-500 shadow-lg z-10"; text = "text-white"; font = "font-black text-[9px] sm:text-[11px] md:text-sm"; } 
-                            else if (isMainSub || isCenterOfOuter) { bg = "bg-teal-50"; text = "text-teal-900"; font = "font-black text-[8px] sm:text-[10px] md:text-sm"; }
+                            if (isCore) { bg = "bg-violet-500 shadow-lg z-10"; text = "text-white"; font = "font-black text-[9px] sm:text-[11px] md:text-sm"; } 
+                            else if (isMainSub || isCenterOfOuter) { bg = "bg-violet-50"; text = "text-violet-900"; font = "font-black text-[8px] sm:text-[10px] md:text-sm"; }
                             return (
                                 <div key={cIdx} className={`${bg} ${text} ${font} flex items-center justify-center text-center p-0.5 md:p-1 overflow-hidden break-words leading-tight transition-colors hover:brightness-95 cursor-default`}>
                                     {cell || '-'}
@@ -143,39 +143,36 @@ const ProfileView = () => {
   return (
     <div className="max-w-md md:max-w-[1000px] mx-auto w-full min-h-screen bg-[#F0F2F5] pb-24 relative animate-in fade-in duration-300 md:pt-6">
       
-      {/* 1. 상단 커버 영역 (헤더) */}
-      {/* 둥글기를 조금 줄여서 데스크탑에서 모니터와 더 잘 어울리게 수정 */}
-      <div className="bg-gradient-to-br from-[#12B8A6] to-[#0F766E] h-56 md:h-72 rounded-b-[2rem] md:rounded-3xl relative px-6 md:px-10 pt-8 md:pt-10 flex flex-col justify-between overflow-hidden shadow-md md:mx-4">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-20 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-        
-        <div className="flex justify-end gap-2 relative z-10">
-           {!isProfileEmpty && (
-             <button onClick={handleShare} className="h-9 md:h-10 px-3 md:px-4 bg-black/20 hover:bg-black/30 backdrop-blur-md text-white rounded-full flex items-center justify-center gap-2 transition font-bold text-xs md:text-sm shadow-sm border border-white/10">
-                 <Share2 size={16} /> <span className="hidden md:inline">공유</span>
-             </button>
-           )}
-          {isAdmin && !isGuestMode ? (
-            <button onClick={() => setViewMode('edit_profile')} className="h-9 md:h-10 px-3 md:px-4 bg-white/90 hover:bg-white text-teal-800 rounded-full flex items-center justify-center gap-2 transition font-bold text-xs md:text-sm shadow-sm">
-              <Edit2 size={16} /> <span className="hidden md:inline">프로필 설정</span>
-            </button>
-          ) : !isAdmin ? (
-             <button onClick={() => setLoginModalOpen(true)} className="h-9 md:h-10 px-4 bg-white/90 hover:bg-white text-teal-800 rounded-full text-xs md:text-sm font-bold transition flex items-center gap-1.5 shadow-sm">
-              <Rocket size={14} /> 내 프로필 만들기
-            </button>
-          ) : null}
-        </div>
-
-        {!isProfileEmpty && safeUser.status && (
-          <div className="relative z-10 mb-14 md:mb-16 self-start md:self-end inline-flex items-center gap-1.5 bg-black/20 backdrop-blur-md border border-white/20 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-2xl shadow-sm">
-              <Sparkles size={12} className="text-yellow-300" />
-              <span className="text-[11px] md:text-xs font-bold tracking-wider">{safeUser.status}</span>
-          </div>
-        )}
+      {/* 1. 상단 액션 버튼 영역 (배경 제거됨) */}
+      <div className="flex justify-end gap-2 px-4 md:px-10 pt-6 md:pt-8 pb-4 relative z-10">
+         {!isProfileEmpty && (
+           <button onClick={handleShare} className="h-9 md:h-10 px-3 md:px-4 bg-white hover:bg-zinc-50 text-zinc-700 rounded-full flex items-center justify-center gap-2 transition font-bold text-xs md:text-sm shadow-sm border border-zinc-200">
+               <Share2 size={16} /> <span className="hidden md:inline">공유</span>
+           </button>
+         )}
+        {isAdmin && !isGuestMode ? (
+          <button onClick={() => setViewMode('edit_profile')} className="h-9 md:h-10 px-3 md:px-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center gap-2 transition font-bold text-xs md:text-sm shadow-sm">
+            <Edit2 size={16} /> <span className="hidden md:inline">프로필 설정</span>
+          </button>
+        ) : !isAdmin ? (
+           <button onClick={() => setLoginModalOpen(true)} className="h-9 md:h-10 px-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs md:text-sm font-bold transition flex items-center gap-1.5 shadow-sm">
+            <Rocket size={14} /> 내 프로필 만들기
+          </button>
+        ) : null}
       </div>
 
+      {/* 상태 메시지 배지 */}
+      {!isProfileEmpty && safeUser.status && (
+        <div className="mx-4 md:mx-10 mb-3 flex relative z-10">
+            <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-3 md:px-4 py-1.5 md:py-2 rounded-2xl shadow-sm">
+                <Sparkles size={14} className="text-yellow-500" />
+                <span className="text-[11px] md:text-xs font-bold tracking-wider">{safeUser.status}</span>
+            </div>
+        </div>
+      )}
+
       {/* 2. 메인 프로필 명함 (Business Card) */}
-      <div className="mx-4 md:mx-10 -mt-16 md:-mt-20 bg-white rounded-3xl p-6 md:p-8 shadow-md relative z-20 border border-zinc-100">
+      <div className="mx-4 md:mx-10 bg-white rounded-3xl p-6 md:p-8 shadow-sm relative z-20 border border-zinc-100">
         {isProfileEmpty && !isAdmin ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-zinc-50 text-zinc-300 rounded-full flex items-center justify-center mb-4 shadow-inner"><User size={32}/></div>
@@ -185,7 +182,7 @@ const ProfileView = () => {
         ) : (
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch">
             
-            {/* 좌측: 주요 정보 (이름, 사진, 소속) */}
+            {/* 좌측: 주요 정보 */}
             <div className="flex-1 flex flex-col min-w-0">
               <div className="flex justify-between items-center mb-5 border-b border-zinc-100 md:border-none pb-3 md:pb-0">
                 <span className="text-[10px] md:text-xs font-black text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full uppercase tracking-widest border border-zinc-100">Business Card</span>
@@ -204,7 +201,8 @@ const ProfileView = () => {
                 
                 <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
                   <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                  <p className="text-xs md:text-sm font-bold text-teal-600 mb-3 truncate">@{safeUser.handle || 'handle'}</p>
+                  {/* 연보라색 포인트 컬러 적용 */}
+                  <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-lg inline-block w-max mb-3 truncate shadow-sm">@{safeUser.handle || 'handle'}</p>
                   
                   <div className="space-y-1.5 md:space-y-2">
                     <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-zinc-600 truncate">
@@ -221,13 +219,12 @@ const ProfileView = () => {
               </div>
             </div>
 
-            {/* 중간 구분선 (PC에만 보임) */}
+            {/* 중간 구분선 */}
             <div className="hidden md:block w-px bg-zinc-100 my-2"></div>
 
             {/* 우측: 자기소개 인용구 및 태그 */}
-            {/* 이전의 어색했던 거대한 회색 박스를 제거하고 여백과 타이포그래피로 세련되게 정리했습니다. */}
             <div className="flex-1 flex flex-col justify-center md:pl-2">
-              <Quote size={24} className="text-teal-200 mb-3"/>
+              <Quote size={24} className="text-violet-300 mb-3"/>
               <p className="text-sm md:text-base text-zinc-800 font-bold leading-relaxed mb-5 md:mb-6">
                 "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
               </p>
@@ -250,10 +247,10 @@ const ProfileView = () => {
               <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
               <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
             </div>
-            <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-5">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
+            <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
             
-            {/* 탭 크기 축소 (w-24 -> w-16 / md:w-20) 및 디자인 개선 */}
-            <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+            {/* ⭐️ 여백(pt-4) 추가 및 PC에서는 스크롤 속성 해제 */}
+            <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
               {availableTabs.map(tab => {
                   const isActive = activeTab === tab.id;
                   const isPrivate = isTabPrivate(tab.id);
@@ -266,9 +263,8 @@ const ProfileView = () => {
                     >
                       <div className={`w-16 h-16 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
                         {React.cloneElement(tab.icon, { className: 'w-6 h-6 md:w-7 md:h-7 transition-colors' })}
-                        {/* 자물쇠 아이콘 위치 교정 */}
                         {isPrivate && (
-                          <div className="absolute -top-1.5 -right-1.5 bg-white border border-zinc-200 p-1 rounded-full shadow-sm">
+                          <div className="absolute -top-2 -right-2 bg-white border border-zinc-200 p-1.5 rounded-full shadow-sm z-10">
                             <Lock size={10} className="text-zinc-400"/>
                           </div>
                         )}
@@ -281,7 +277,6 @@ const ProfileView = () => {
           </div>
 
           {/* 4. 활성화된 탭 컨텐츠 영역 */}
-          {/* 전체적인 모서리 둥글기(rounded-[2rem] -> rounded-3xl)를 줄여 모니터 환경 최적화 */}
           {availableTabs.length === 0 && isGuest ? (
               <div className="mx-4 md:mx-10 mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
@@ -289,7 +284,7 @@ const ProfileView = () => {
                   <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">세부 정보가 비공개 설정되어 있습니다.</p>
               </div>
           ) : (
-              <div className="mx-4 md:mx-10 mt-4 md:mt-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
+              <div className="mx-4 md:mx-10 mt-2 md:mt-4 animate-in slide-in-from-bottom-4 duration-500 pb-10">
                   
                   {/* Developer Tab */}
                   {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
@@ -313,7 +308,7 @@ const ProfileView = () => {
                                             <span className="block text-[10px] font-black text-zinc-300 uppercase mb-2">{type}</span>
                                             <div className="flex flex-wrap gap-2">
                                                 {stackString.split(',').map((tech, i) => (
-                                                    <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg text-[11px] font-bold cursor-default">{tech.trim()}</span>
+                                                    <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold cursor-default">{tech.trim()}</span>
                                                 ))}
                                             </div>
                                         </div>
@@ -453,13 +448,13 @@ const ProfileView = () => {
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90"></div>
                               <h3 className="absolute bottom-6 left-6 md:left-8 text-2xl md:text-3xl font-black text-white drop-shadow-md">{safeUser.hobby?.title || '취미 생활'}</h3>
                           </div>
-                          <div className="p-6 md:p-10 md:w-1/2 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/10">
+                          <div className="p-6 md:p-12 md:w-1/2 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/10">
                               <Quote size={32} className="text-amber-200 mb-4 transform rotate-180" />
                               <p className="text-sm text-zinc-700 leading-relaxed font-medium mb-6">
                                   {safeUser.hobby?.description || '설명이 없습니다.'}
                               </p>
                               <div className="flex flex-wrap gap-2 mt-auto">
-                                  {(safeUser.hobby?.keywords || []).map(kw => <span key={kw} className="px-3 py-1.5 bg-white text-amber-600 text-[10px] font-black rounded-lg border border-amber-100 shadow-sm">#{kw}</span>)}
+                                  {(safeUser.hobby?.keywords || []).map(kw => <span key={kw} className="px-3 md:px-4 py-1.5 md:py-2 bg-white text-amber-600 text-[10px] md:text-xs font-black rounded-xl border border-amber-100 shadow-sm">#{kw}</span>)}
                               </div>
                           </div>
                       </div>
@@ -472,9 +467,9 @@ const ProfileView = () => {
                   {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           {(safeUser.quotes || []).map((q, idx) => (
-                              <div key={idx} className="bg-white p-6 rounded-3xl shadow-sm border border-zinc-100 relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                              <div key={idx} className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                                   <Quote size={24} className="text-slate-100 absolute top-5 right-6" />
-                                  <p className="text-sm font-bold text-slate-800 leading-relaxed pr-6 mb-4">"{q.text}"</p>
+                                  <p className="text-sm md:text-base font-bold text-slate-800 leading-relaxed pr-6 mb-4">"{q.text}"</p>
                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">- {q.author}</p>
                               </div>
                           ))}

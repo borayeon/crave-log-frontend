@@ -8,12 +8,12 @@ const TopNavBar = () => {
     setLoginModalOpen, setAddRecordModalOpen, showToast, handleLogout, 
     isGuestMode, setIsGuestMode, searchQuery, setSearchQuery, searchUsers,
     visitedHandle, resetToMyProfile 
-  } = useAppStore(); // 쓰이지 않던 setIsAdmin 제거
+  } = useAppStore();
 
-  // 모바일 검색창 팝업 상태 관리
+  // 상태 관리: 모바일 검색창 & 사용자 드롭다운 메뉴
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); 
 
-  // ⭐️ 1. 직관적으로 바뀐 명칭 적용
   const titleMap = { 
     profile: '프로필 (Profile)', 
     edit_profile: '프로필 설정 (Set Profile)', 
@@ -26,23 +26,21 @@ const TopNavBar = () => {
   const handleSearchSubmit = () => {
     searchUsers(searchQuery);
     setViewMode('search');
-    setIsMobileSearchOpen(false); // 검색 시 모바일 팝업 닫기
+    setIsMobileSearchOpen(false); 
   };
 
-  // ✨ 중복 로직 1: 내 프로필로 복귀 및 홈으로 이동하는 공통 핸들러
   const handleGoToProfile = () => {
     if (visitedHandle) resetToMyProfile();
     setViewMode('profile');
   };
 
-  // ✨ 중복 로직 2: UI 렌더링용 권한 조건 변수화 (가독성 향상)
-  const isViewingOther = isGuestMode || visitedHandle; // 다른 사람의 뷰(게스트/방문)를 보고 있는지
-  const canEdit = !isViewingOther; // 권한이 있고(Admin) 오롯이 내 프로필을 보고 있는 상태인지
+  const isViewingOther = isGuestMode || visitedHandle; 
+  const canEdit = !isViewingOther; 
 
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-zinc-200/60 flex items-center justify-between px-4 md:px-8 sticky top-0 z-50 shrink-0 gap-4 relative">
       
-      {/* ⭐️ 모바일 검색 팝업 오버레이 */}
+      {/* 모바일 검색 팝업 오버레이 */}
       {isMobileSearchOpen && (
         <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[60] flex items-center px-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <Search size={18} className="text-zinc-400 shrink-0 mr-2" />
@@ -68,7 +66,6 @@ const TopNavBar = () => {
       <div className="flex items-center gap-3 shrink-0">
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hidden md:flex w-9 h-9 rounded-xl bg-zinc-50 items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"><Menu size={18} /></button>
         
-        {/* ⭐️ 2. 모바일용 아이콘 로고를 홈 버튼으로 변경 */}
         <button 
           onClick={handleGoToProfile}
           className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors"
@@ -76,7 +73,6 @@ const TopNavBar = () => {
           <Sparkles size={14} />
         </button>
 
-        {/* ⭐️ 3. 상단 텍스트 'CraveLog'를 누르면 홈으로 가도록 변경 */}
         <h2 className="text-sm font-black text-zinc-800 tracking-tight flex items-center gap-2">
           <button 
             onClick={handleGoToProfile}
@@ -89,10 +85,10 @@ const TopNavBar = () => {
         </h2>
       </div>
       
-      {/* 우측 아이콘 메뉴들 */}
+      {/* 우측 메뉴 영역 */}
       <div className="flex items-center justify-end gap-2 md:gap-3 flex-1">
         
-        {/* 데스크톱용 기본 검색창 */}
+        {/* 검색창 (데스크톱) */}
         <div className="hidden sm:flex items-center relative w-full max-w-[200px] md:max-w-[260px] lg:max-w-[320px]">
           <button onClick={handleSearchSubmit} className="absolute left-2.5 p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-zinc-200/50 rounded-full transition-colors z-10" title="검색하기">
             <Search size={16} />
@@ -107,7 +103,7 @@ const TopNavBar = () => {
           />
         </div>
 
-        {/* 모바일용 검색 돋보기 아이콘 */}
+        {/* 검색 돋보기 아이콘 (모바일) */}
         <button 
           onClick={() => setIsMobileSearchOpen(true)} 
           className="sm:hidden w-9 h-9 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors"
@@ -117,43 +113,71 @@ const TopNavBar = () => {
 
         {isAdmin ? (
           <>
-            {/* 게스트뷰 / 내 프로필 복귀 버튼 */}
-            <button 
-              onClick={() => {
-                if (visitedHandle) resetToMyProfile();
-                else setIsGuestMode(!isGuestMode);
-                setViewMode('profile');
-              }}
-              className={`hidden md:flex px-3.5 py-2 rounded-xl text-xs font-black transition shadow-sm items-center gap-1.5 md:mr-2 ${isViewingOther ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
-            >
-              {isViewingOther ? <EyeOff size={14} /> : <Eye size={14} />}
-              <span>{isViewingOther ? '내 프로필로 복귀' : '게스트 뷰 체험'}</span>
-            </button>
-
-            {/* 계정 설정 & 새 기록 버튼 (내 프로필일 때만 표시) */}
+            {/* ⭐️ 가장 중요한 '새 기록' 액션은 외부에 단독 배치 */}
             {canEdit && (
-              <>
-                <button 
-                  onClick={() => setViewMode('account_settings')} 
-                  className="flex w-9 h-9 rounded-full bg-white border border-zinc-200 items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm md:mr-2" title="계정 설정">
-                  <Settings size={16} />
-                </button>
-                
-                <button onClick={() => setAddRecordModalOpen(true)} className="px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5 md:mr-2">
-                  <Plus size={14} /> <span className="hidden md:inline">새 기록</span>
-                </button>
-              </>
+              <button onClick={() => setAddRecordModalOpen(true)} className="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5 md:mr-1">
+                <Plus size={14} /> <span className="hidden md:inline">새 기록</span>
+              </button>
             )}
             
-            {/* 마이페이지 버튼 */}
-            <button onClick={handleGoToProfile} className="hidden sm:flex w-9 h-9 rounded-full bg-zinc-50 items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 transition shadow-sm" title="마이페이지">
-              <User size={16} />
-            </button>
+            {/* ⭐️ 나머지 메뉴를 깔끔하게 통합한 사용자 드롭다운 */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition shadow-sm border ${isUserMenuOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                title="사용자 메뉴"
+              >
+                <User size={16} />
+              </button>
 
-            {/* 로그아웃 버튼 */}
-            <button onClick={() => { handleLogout(); showToast("로그아웃 되었습니다. 👋"); }} className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 hover:text-rose-600 hover:bg-rose-50 transition shadow-sm" title="로그아웃">
-              <LogOut size={16} />
-            </button>
+              {isUserMenuOpen && (
+                <>
+                  {/* 드롭다운 외부 영역 클릭 시 닫히도록 하는 투명 배경 */}
+                  <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)}></div>
+                  
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-zinc-100 rounded-2xl shadow-xl overflow-hidden py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    
+                    <button 
+                      onClick={() => { handleGoToProfile(); setIsUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
+                    >
+                      <User size={16} className="text-zinc-400" /> 마이페이지
+                    </button>
+
+                    {canEdit && (
+                      <button 
+                        onClick={() => { setViewMode('account_settings'); setIsUserMenuOpen(false); }} 
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
+                      >
+                        <Settings size={16} className="text-zinc-400" /> 계정 설정
+                      </button>
+                    )}
+
+                    <button 
+                      onClick={() => {
+                        if (visitedHandle) resetToMyProfile();
+                        else setIsGuestMode(!isGuestMode);
+                        setViewMode('profile');
+                        setIsUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
+                    >
+                      {isViewingOther ? <EyeOff size={16} className="text-zinc-400" /> : <Eye size={16} className="text-zinc-400" />}
+                      {isViewingOther ? '내 프로필로 복귀' : '게스트 뷰 체험'}
+                    </button>
+
+                    <div className="h-px bg-zinc-100 my-1 mx-2"></div>
+
+                    <button 
+                      onClick={() => { handleLogout(); showToast("로그아웃 되었습니다. 👋"); setIsUserMenuOpen(false); }} 
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 transition text-left"
+                    >
+                      <LogOut size={16} className="text-rose-400" /> 로그아웃
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </>
         ) : (
           <button onClick={() => setLoginModalOpen(true)} className="w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition shadow-sm" title="로그인">
