@@ -156,6 +156,7 @@ const ProfileView = () => {
       {/* 1. 메인 프로필 명함 (Business Card) */}
       <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
         
+        {/* 우측 상단 둥근 버튼 (공유/편집) */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
           {!isProfileEmpty && (
             <button onClick={handleShare} className="w-9 h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
@@ -182,9 +183,11 @@ const ProfileView = () => {
         ) : (
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4 md:mt-0">
             
+            {/* 좌측: 주요 정보 */}
             <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
               <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
                 
+                {/* 둥근 사각형 프로필 사진 */}
                 <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                   {safeUser.profileImageUrl ? (
                       <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -195,8 +198,10 @@ const ProfileView = () => {
                   )}
                 </div>
                 
+                {/* 텍스트 정보 */}
                 <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
                   <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
+                  {/* 연보라색 아이디 뱃지 */}
                   <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                   
                   <div className="space-y-1.5 md:space-y-2">
@@ -213,6 +218,7 @@ const ProfileView = () => {
                 </div>
               </div>
 
+              {/* 좌측 하단: 태그 리스트 */}
               {(safeUser.tags || []).length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                     {safeUser.tags.map(tag => (
@@ -222,8 +228,10 @@ const ProfileView = () => {
               )}
             </div>
 
+            {/* 중간 얇은 구분선 */}
             <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
+            {/* 우측: 자기소개 인용구 */}
             <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
               <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
               <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
