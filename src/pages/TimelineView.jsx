@@ -49,6 +49,17 @@ const TimelineView = () => {
     setOrderedCategories(safeTagTree);
   }, [safeTagTree]);
 
+  // 선택된 카테고리(부모 노드) 찾기 로직 추가 (모바일 태그 렌더링용)
+  const activeCategoryNode = useMemo(() => {
+    if (selectedFilter.type === 'category') {
+        return orderedCategories.find(c => String(c.id) === String(selectedFilter.id));
+    }
+    if (selectedFilter.type === 'tag') {
+        return orderedCategories.find(c => c.children?.some(t => String(t.id) === String(selectedFilter.id)));
+    }
+    return null;
+  }, [selectedFilter, orderedCategories]);
+
   const filteredRecords = useMemo(() => {
     let filtered = safeRecords;
     
@@ -243,8 +254,7 @@ const TimelineView = () => {
   return (
     <div className="flex flex-col h-full flex-1 min-h-0 animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
       
-      {/* ⭐️ 수정: 기존 텍스트 제거 및 우측 버튼 정렬 유지 */}
-      <header className="px-6 md:px-10 py-6 md:py-8 shrink-0 flex justify-end items-end border-b border-zinc-200/50">
+      <header className="px-6 md:px-10 py-4 md:py-8 shrink-0 flex justify-end items-end border-b border-zinc-200/50"> 
         {isAdmin && !isGuestMode && (
           <button 
             onClick={() => setIsEditing(!isEditing)}
@@ -255,11 +265,62 @@ const TimelineView = () => {
         )}
       </header>
 
-      {/* ⭐️ 수정: 모바일 레이아웃 최적화 (flex-col 구성, 높이 및 스크롤 제한 조정) */}
-      <div className="flex-1 px-4 sm:px-6 md:px-10 py-6 md:py-8 overflow-hidden min-h-0 flex flex-col md:flex-row gap-6 md:gap-8">
+      <div className="flex-1 px-4 sm:px-6 md:px-10 py-4 md:py-8 overflow-hidden min-h-0 flex flex-col md:flex-row gap-4 md:gap-8">
         
-        {/* 사이드바 영역 (모바일: 위쪽 제한된 높이 / PC: 좌측 꽉 찬 높이) */}
-        <div className={`w-full md:w-[320px] shrink-0 flex flex-col border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden transition-all duration-300 ${isEditing ? 'h-[60vh] md:h-full max-h-[600px] md:max-h-full' : 'max-h-[35vh] md:h-full md:max-h-full'}`}>
+        {/* ========================================================
+            ⭐️ 모바일 전용 가로형 필터 (편집 모드가 아닐 때만 보임)
+            ======================================================== */}
+        {!isEditing && (
+          <div className="md:hidden flex flex-col gap-2 shrink-0 mb-2 w-full">
+            {/* 1열: 카테고리 알약 버튼들 */}
+            <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
+              <button 
+                onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
+                className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-colors shadow-sm ${selectedFilter.type === 'all' ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'}`}
+              >
+                <Network size={14}/> 전체보기
+              </button>
+              
+              {orderedCategories.map(cat => {
+                const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
+                const isSelected = selectedFilter.type === 'category' && String(selectedFilter.id) === String(cat.id) || (activeCategoryNode?.id === cat.id);
+                
+                return (
+                  <button 
+                    key={cat.id}
+                    onClick={() => setSelectedFilter({ type: 'category', value: cat.name, id: cat.id })}
+                    className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-colors shadow-sm ${isSelected ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'}`}
+                  >
+                    <span>{catType === 'MUSIC' ? '🎵' : catType === 'URL' ? '🔗' : '📁'}</span> {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 2열: 선택된 카테고리의 하위 태그들 (존재할 때만 표시) */}
+            {activeCategoryNode && activeCategoryNode.children?.length > 0 && (
+              <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
+                 {(activeCategoryNode.children || []).map(tag => {
+                    const isTagSelected = selectedFilter.type === 'tag' && String(selectedFilter.id) === String(tag.id);
+                    return (
+                      <button 
+                        key={tag.id}
+                        onClick={() => setSelectedFilter({ type: 'tag', value: tag.name, id: tag.id, parentId: activeCategoryNode.id })}
+                        className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black transition-colors border ${isTagSelected ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-zinc-100/80 text-zinc-500 border-transparent hover:bg-zinc-200/80'}`}
+                      >
+                        <Hash size={12} className="opacity-60"/> {tag.name}
+                      </button>
+                    )
+                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================
+            ⭐️ 데스크탑 전용 및 편집용 사이드바 영역
+            ======================================================== */}
+        <div className={`w-full md:w-[320px] shrink-0 flex-col border border-zinc-200/80 bg-white rounded-[2rem] shadow-sm overflow-hidden transition-all duration-300 ${!isEditing ? 'hidden md:flex md:h-full md:max-h-full' : 'flex h-[60vh] max-h-[500px] md:h-full md:max-h-full mb-4 md:mb-0'}`}>
           
           <div className={`p-4 border-b flex items-center justify-between shrink-0 ${isEditing ? 'bg-rose-50/30 border-rose-100' : 'bg-zinc-50/50 border-zinc-100'}`}>
             <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-zinc-600">
@@ -271,7 +332,7 @@ const TimelineView = () => {
           
           {/* 편집 모드 관리자 뷰 */}
           {isEditing ? (
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/50 min-h-0 scrollbar-hide">
               {orderedCategories.map((cat, index) => {
                 const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
                 const isSystemCat = catType === 'MUSIC' || catType === 'URL';
@@ -326,7 +387,6 @@ const TimelineView = () => {
                       )}
                     </div>
 
-                    {/* 카테고리별 태그 목록 */}
                     <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-100 ml-6">
                       {(cat.children || []).map(tag => (
                         <div key={tag.id} className="group/tag flex items-center gap-1 pl-2.5 pr-1 py-1 bg-zinc-100 text-zinc-600 rounded-lg text-xs font-bold border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 transition-colors">
@@ -335,7 +395,6 @@ const TimelineView = () => {
                         </div>
                       ))}
                       
-                      {/* 개별 태그 추가 인풋 */}
                       <input 
                         type="text"
                         placeholder="+ 새 태그 추가"
@@ -350,7 +409,6 @@ const TimelineView = () => {
                 );
               })}
 
-              {/* 새로운 카테고리 추가 박스 */}
               <div className="bg-white border border-dashed border-zinc-300 rounded-2xl p-4 flex flex-col gap-3 mt-6 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
                 <div className="text-[11px] font-black text-indigo-500 flex items-center gap-1.5"><Plus size={14} strokeWidth={3}/> 카테고리 새로 만들기</div>
@@ -376,8 +434,7 @@ const TimelineView = () => {
               </div>
             </div>
           ) : (
-            // 뷰 모드 탐색용 트리 UI
-            <div className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0 scrollbar-hide">
               <button 
                 onClick={() => setSelectedFilter({ type: 'all', value: '전체', id: 'all' })}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${selectedFilter.type === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-zinc-600 hover:bg-zinc-100'}`}
@@ -430,8 +487,8 @@ const TimelineView = () => {
           )}
         </div>
 
-        {/* ⭐️ 수정: 타임라인 메인 목록 영역 (모바일에서 사이드바 아래로 부드럽게 이어지도록 설정) */}
-        <div className="flex-1 min-w-0 overflow-y-auto pr-1 md:pr-2 pl-1 md:pl-4 py-2">
+        {/* 타임라인 메인 목록 */}
+        <div className="flex-1 min-w-0 overflow-y-auto pr-1 md:pr-2 pl-1 md:pl-4 py-2 scrollbar-hide">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-16 md:py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
               <FolderOpen size={32} className="text-zinc-300" />
