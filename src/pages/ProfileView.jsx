@@ -142,7 +142,6 @@ const ProfileView = () => {
 
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
-      {/* ⭐️ bg 속성을 제거하고 px(좌우여백), pt(상단여백)을 추가하여 완벽한 반응형 래퍼 구성 */}
       
       {/* 상태 메시지 배지 */}
       {!isProfileEmpty && safeUser.status && (
@@ -249,10 +248,10 @@ const ProfileView = () => {
           {/* 2. 데이터 탐색 탭 */}
           <div className="mt-8 md:mt-12">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
+              <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">더 알아보기</h3>
               <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
             </div>
-            <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
+            <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-3">탭을 눌러 저의 다양한 이야기와 관심사를 확인해 보세요.</p>
             
             <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
               {availableTabs.map(tab => {
