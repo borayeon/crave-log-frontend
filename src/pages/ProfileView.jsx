@@ -184,11 +184,7 @@ const ProfileView = () => {
 
   return (
     <div className="max-w-5xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
-      <header className="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-black text-zinc-900 tracking-tight">Index</h1>
-          <p className="text-sm font-bold text-zinc-400 mt-1 uppercase tracking-widest">Personal Catalog</p>
-        </div>
+        <header className="mb-8 flex justify-end gap-4">
         <div className="flex flex-wrap gap-2">
            {!isProfileEmpty && (
              <button onClick={handleShare} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-sm font-bold hover:bg-zinc-50 transition shadow-sm flex items-center gap-2">

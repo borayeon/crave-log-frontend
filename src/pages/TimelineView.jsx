@@ -246,12 +246,7 @@ const TimelineView = () => {
 
   return (
     <div className="flex flex-col h-full flex-1 min-h-0 animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC]">
-      <header className="px-6 md:px-10 py-8 shrink-0 flex justify-between items-end border-b border-zinc-200/50">
-        <div>
-          <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Timeline</h2>
-          <p className="text-xs font-bold text-zinc-500 mt-2 tracking-widest uppercase">시간의 흐름에 따라 기록된 나의 취향들</p>
-        </div>
-        {isAdmin && !isGuestMode && (
+      <header className="px-6 md:px-10 py-8 shrink-0 flex justify-end items-end border-b border-zinc-200/50">  {isAdmin && !isGuestMode && (
           <button 
             onClick={() => setIsEditing(!isEditing)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
