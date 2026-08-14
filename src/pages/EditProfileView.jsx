@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus
+  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
