@@ -153,7 +153,7 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 1. 메인 프로필 명함 (Business Card) */}
+      {/* 1. 메인 프로필 명함 */}
       <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
         
         {/* 우측 상단 둥근 버튼 (공유/편집) */}
@@ -307,7 +307,7 @@ const ProfileView = () => {
                                     const stackData = safeUser.developer?.techStack?.[type];
                                     if (!stackData) return null;
                                     
-                                    // ⭐️ 문자열인지 배열인지 확인하여 .split 에러 완벽 방지
+                                    // ⭐️ 에러의 주범이었던 .split 에러를 원천 차단하는 방어 코드! ⭐️
                                     const stackArray = Array.isArray(stackData) 
                                         ? stackData 
                                         : typeof stackData === 'string' 

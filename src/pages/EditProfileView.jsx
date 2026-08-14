@@ -191,7 +191,13 @@ const EditProfileView = () => {
   };
 
   const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
-    const str = path.reduce((o, i) => (o || {})[i] || '', formData);
+    const rawValue = path.reduce((o, i) => (o || {})[i] || '', formData);
+    
+    // ⭐️ 편집 화면에서도 에러를 완벽 방지하는 방어 코드
+    const str = Array.isArray(rawValue) 
+        ? rawValue.join(',') 
+        : (rawValue ? String(rawValue) : '');
+        
     const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
     
     return (
