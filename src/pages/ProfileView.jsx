@@ -141,20 +141,21 @@ const ProfileView = () => {
   };
 
   return (
-    <div className="max-w-md md:max-w-[1000px] mx-auto w-full min-h-screen bg-[#F0F2F5] pb-24 relative animate-in fade-in duration-300 md:pt-6">
+    {/* ⭐️ bg 속성을 제거하고 px(좌우여백), pt(상단여백)을 추가하여 완벽한 반응형 래퍼 구성 */}
+    <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
       {/* 상태 메시지 배지 */}
       {!isProfileEmpty && safeUser.status && (
-        <div className="mx-4 md:mx-0 mt-4 mb-2 flex relative z-10">
-            <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-3 md:px-4 py-1.5 rounded-2xl shadow-sm">
+        <div className="mb-4 flex relative z-10">
+            <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-4 py-2 rounded-2xl shadow-sm">
                 <Sparkles size={14} className="text-yellow-500" />
-                <span className="text-[11px] md:text-xs font-bold tracking-wider">{safeUser.status}</span>
+                <span className="text-xs font-bold tracking-wider">{safeUser.status}</span>
             </div>
         </div>
       )}
 
-      {/* 1. 메인 프로필 명함 (데스크탑 레이아웃 복구 및 타이포그래피 통일) */}
-      <div className={`mx-4 md:mx-0 bg-white rounded-3xl p-6 md:p-8 shadow-sm relative z-20 border border-zinc-100 ${!safeUser.status ? 'mt-4 md:mt-0' : ''}`}>
+      {/* 1. 메인 프로필 명함 (Business Card) */}
+      <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
         
         {/* 우측 상단 둥근 버튼 (공유/편집) */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
@@ -181,14 +182,14 @@ const ProfileView = () => {
             <p className="text-xs md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-2 md:mt-0">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4 md:mt-0">
             
             {/* 좌측: 주요 정보 */}
-            <div className="flex-1 flex flex-col min-w-0 pr-16 md:pr-0"> 
+            <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
               <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
                 
-                {/* 둥근 사각형 프로필 사진 (좌측 배치) */}
-                <div className="w-24 h-24 md:w-28 md:h-28 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
+                {/* 둥근 사각형 프로필 사진 */}
+                <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                   {safeUser.profileImageUrl ? (
                       <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -228,13 +229,13 @@ const ProfileView = () => {
               )}
             </div>
 
-            {/* 중간 얇은 구분선 (PC 전용) */}
-            <div className="hidden md:block w-px bg-zinc-100 my-2"></div>
+            {/* 중간 얇은 구분선 */}
+            <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
             {/* 우측: 자기소개 인용구 */}
-            <div className="flex-1 flex flex-col justify-center md:pl-4 mt-2 md:mt-0">
-              <Quote size={20} className="text-violet-300 mb-2.5 md:mb-4"/>
-              <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-2 whitespace-pre-line">
+            <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
+              <Quote size={24} className="text-violet-200 mb-3 md:mb-4"/>
+              <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
                 "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
               </p>
             </div>
@@ -246,14 +247,15 @@ const ProfileView = () => {
       {!isProfileEmpty && (
         <>
           {/* 2. 데이터 탐색 탭 */}
-          <div className="mt-8 md:mt-10 px-4 md:px-0">
-            <div className="flex items-center justify-between mb-0.5 md:mb-1">
-              <h3 className="text-sm md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
-              <ChevronRight size={16} className="text-zinc-400 md:hidden"/>
+          <div className="mt-8 md:mt-12">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
+              <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
             </div>
-            <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
+            <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
             
-            <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+            {/* ⭐️ 모바일에서는 좌우 여백까지 스크롤, PC에서는 스크롤 없애고 간격 정리 */}
+            <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
               {availableTabs.map(tab => {
                   const isActive = activeTab === tab.id;
                   const isPrivate = isTabPrivate(tab.id);
@@ -264,15 +266,15 @@ const ProfileView = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex flex-col items-center gap-1.5 md:gap-2 shrink-0 group outline-none`}
                     >
-                      <div className={`w-14 h-14 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
-                        {React.cloneElement(tab.icon, { className: 'w-5 h-5 md:w-7 md:h-7 transition-colors' })}
+                      <div className={`w-16 h-16 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
+                        {React.cloneElement(tab.icon, { className: 'w-6 h-6 md:w-7 md:h-7 transition-colors' })}
                         {isPrivate && (
-                          <div className="absolute -top-1.5 -right-1.5 bg-white border border-zinc-200 p-1 md:p-1.5 rounded-full shadow-sm z-10">
-                            <Lock size={8} className="text-zinc-400 md:w-[10px] md:h-[10px]"/>
+                          <div className="absolute -top-2 -right-2 bg-white border border-zinc-200 p-1 md:p-1.5 rounded-full shadow-sm z-10">
+                            <Lock size={10} className="text-zinc-400"/>
                           </div>
                         )}
                       </div>
-                      <span className={`text-[9px] md:text-[11px] font-black transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 group-hover:text-zinc-600'}`}>{tab.label}</span>
+                      <span className={`text-[10px] md:text-[11px] font-black transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 group-hover:text-zinc-600'}`}>{tab.label}</span>
                     </button>
                   );
               })}
@@ -281,37 +283,37 @@ const ProfileView = () => {
 
           {/* 3. 활성화된 탭 컨텐츠 영역 */}
           {availableTabs.length === 0 && isGuest ? (
-              <div className="mx-4 md:mx-0 mt-3 md:mt-4 p-8 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
-                  <div className="w-14 h-14 bg-zinc-50 flex items-center justify-center rounded-full mb-3 shadow-inner"><Lock size={20} className="text-zinc-400" /></div>
-                  <h3 className="text-sm md:text-lg font-black text-zinc-800">비공개 프로필</h3>
-                  <p className="text-[11px] md:text-sm font-medium text-zinc-500 mt-1">세부 정보가 비공개 설정되어 있습니다.</p>
+              <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
+                  <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
+                  <h3 className="text-base md:text-lg font-black text-zinc-800">비공개 프로필</h3>
+                  <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">세부 정보가 비공개 설정되어 있습니다.</p>
               </div>
           ) : (
-              <div className="mx-4 md:mx-0 mt-2 md:mt-4 animate-in slide-in-from-bottom-4 duration-500 pb-10">
+              <div className="mt-4 md:mt-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
                   
                   {/* Developer Tab */}
                   {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-                        <div className="md:col-span-1 flex flex-col gap-3 md:gap-5">
-                          <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100">
-                            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><User size={14}/> About Me</h4>
-                            <p className="text-xs md:text-sm text-zinc-700 leading-relaxed font-medium whitespace-pre-line">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                        <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><User size={14}/> About Me</h4>
+                            <p className="text-sm text-zinc-700 leading-relaxed font-medium whitespace-pre-line">
                               {safeUser.developer?.about || '입력된 자기소개가 없습니다.'}
                             </p>
                           </div>
                           
-                          <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100 flex-1">
-                            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
-                            <div className="space-y-4 md:space-y-5">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
+                            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
+                            <div className="space-y-5">
                                 {['backend', 'db', 'frontend', 'tools'].map(type => {
                                     const stackString = safeUser.developer?.techStack?.[type];
                                     if (!stackString) return null;
                                     return (
                                         <div key={type}>
-                                            <span className="block text-[9px] md:text-[10px] font-black text-zinc-300 uppercase mb-1.5 md:mb-2">{type}</span>
-                                            <div className="flex flex-wrap gap-1.5 md:gap-2">
+                                            <span className="block text-[10px] font-black text-zinc-300 uppercase mb-2">{type}</span>
+                                            <div className="flex flex-wrap gap-2">
                                                 {stackString.split(',').map((tech, i) => (
-                                                    <span key={i} className="px-2.5 py-1 md:px-3 md:py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg md:rounded-xl text-[10px] md:text-[11px] font-bold cursor-default">{tech.trim()}</span>
+                                                    <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold cursor-default">{tech.trim()}</span>
                                                 ))}
                                             </div>
                                         </div>
@@ -322,22 +324,22 @@ const ProfileView = () => {
                         </div>
 
                         <div className="md:col-span-2">
-                          <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100 h-full">
-                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-1.5"><Rocket size={14}/> Post & Portfolio</h4>
-                             <div className="grid grid-cols-1 gap-3 md:gap-4">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Rocket size={14}/> Post & Portfolio</h4>
+                             <div className="grid grid-cols-1 gap-4">
                                 {(safeUser.developer?.projects || []).map((proj, idx) => (
-                                    <div key={idx} className="p-4 md:p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100 hover:shadow-md hover:border-zinc-200 hover:-translate-y-0.5 transition-all duration-300">
+                                    <div key={idx} className="p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100 hover:shadow-md hover:border-zinc-200 hover:-translate-y-0.5 transition-all duration-300">
                                         <div className="flex justify-between items-start mb-2">
-                                            <h5 className="text-sm md:text-lg font-black text-zinc-900">{proj.name}</h5>
+                                            <h5 className="text-base md:text-lg font-black text-zinc-900">{proj.name}</h5>
                                             <div className="flex gap-1.5 text-zinc-400">
-                                                {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-zinc-900 hover:bg-zinc-50 transition"><Terminal size={12} className="md:w-3.5 md:h-3.5" /></a>}
-                                                {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-indigo-600 hover:bg-indigo-50 transition"><ExternalLink size={12} className="md:w-3.5 md:h-3.5" /></a>}
+                                                {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-zinc-900 hover:bg-zinc-50 transition"><Terminal size={14} /></a>}
+                                                {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-indigo-600 hover:bg-indigo-50 transition"><ExternalLink size={14} /></a>}
                                             </div>
                                         </div>
-                                        <p className="text-[11px] md:text-sm text-zinc-500 font-medium leading-relaxed">{proj.desc}</p>
+                                        <p className="text-xs md:text-sm text-zinc-500 font-medium leading-relaxed">{proj.desc}</p>
                                     </div>
                                 ))}
-                                {(!safeUser.developer?.projects || safeUser.developer.projects.length === 0) && <p className="text-xs md:text-sm text-zinc-400 font-medium text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">등록된 프로젝트가 없습니다.</p>}
+                                {(!safeUser.developer?.projects || safeUser.developer.projects.length === 0) && <p className="text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">등록된 프로젝트가 없습니다.</p>}
                              </div>
                           </div>
                         </div>
@@ -346,41 +348,41 @@ const ProfileView = () => {
 
                   {/* Career Tab */}
                   {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-                        <div className="md:col-span-1 flex flex-col gap-3 md:gap-5">
-                          <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100">
-                            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-1.5"><Target size={14}/> Target Job</h4>
-                            <p className="text-lg md:text-2xl font-black text-blue-600">{safeUser.career?.targetJob || '미입력'}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                        <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Target size={14}/> Target Job</h4>
+                            <p className="text-xl md:text-2xl font-black text-blue-600">{safeUser.career?.targetJob || '미입력'}</p>
                           </div>
-                          <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100 flex-1">
-                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 md:mb-4 flex items-center gap-1.5"><MapPin size={14}/> Career Goals</h4>
-                             <div className="flex flex-col gap-2.5 md:gap-3">
-                               <div className="p-3.5 md:p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                                  <h5 className="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">단기 목표</h5>
-                                  <p className="text-[11px] md:text-xs font-bold text-zinc-800 leading-relaxed">{safeUser.career?.careerGoals?.short || '-'}</p>
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
+                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MapPin size={14}/> Career Goals</h4>
+                             <div className="flex flex-col gap-3">
+                               <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                                  <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">단기 목표</h5>
+                                  <p className="text-xs font-bold text-zinc-800 leading-relaxed">{safeUser.career?.careerGoals?.short || '-'}</p>
                                </div>
-                               <div className="p-3.5 md:p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                                  <h5 className="text-[9px] md:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">중장기 목표</h5>
-                                  <p className="text-[11px] md:text-xs font-bold text-zinc-800 leading-relaxed">{safeUser.career?.careerGoals?.long || '-'}</p>
+                               <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                                  <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">중장기 목표</h5>
+                                  <p className="text-xs font-bold text-zinc-800 leading-relaxed">{safeUser.career?.careerGoals?.long || '-'}</p>
                                </div>
                              </div>
                           </div>
                         </div>
 
                         <div className="md:col-span-2">
-                          <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100 h-full">
-                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-1.5"><Briefcase size={14}/> 이력 및 강점</h4>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Briefcase size={14}/> 이력 및 강점</h4>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {(safeUser.career?.strengths || []).map((str, idx) => (
-                                    <div key={idx} className="p-4 md:p-5 bg-zinc-50/80 rounded-2xl border border-zinc-100 hover:bg-white hover:shadow-md hover:border-blue-100 transition-all duration-300">
-                                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[10px] md:text-xs mb-2 md:mb-3 shadow-sm">{idx+1}</div>
-                                        <h5 className="text-xs md:text-sm font-black text-zinc-900 mb-1.5">{str.title}</h5>
-                                        <p className="text-[10px] md:text-xs text-zinc-500 font-medium leading-relaxed">{str.desc}</p>
+                                    <div key={idx} className="p-5 bg-zinc-50/80 rounded-2xl border border-zinc-100 hover:bg-white hover:shadow-md hover:border-blue-100 transition-all duration-300">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs mb-3 shadow-sm">{idx+1}</div>
+                                        <h5 className="text-sm md:text-base font-black text-zinc-900 mb-2">{str.title}</h5>
+                                        <p className="text-xs text-zinc-500 font-medium leading-relaxed">{str.desc}</p>
                                     </div>
                                 ))}
                                 {(!safeUser.career?.strengths || safeUser.career.strengths.length === 0) && (
-                                    <div className="sm:col-span-2 text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                                        <p className="text-xs md:text-sm text-zinc-400 font-medium">등록된 이력 및 강점이 없습니다.</p>
+                                    <div className="sm:col-span-2 text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
+                                        <p className="text-sm text-zinc-400 font-medium">등록된 이력 및 강점이 없습니다.</p>
                                     </div>
                                 )}
                              </div>
@@ -391,35 +393,35 @@ const ProfileView = () => {
 
                   {/* Idol Tab */}
                   {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-                        <div className="md:col-span-1 bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100 h-full">
-                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-1.5"><Sparkles size={14}/> Profile Info</h4>
-                          <div className="space-y-2.5 md:space-y-3">
-                              <div className="flex justify-between items-center bg-rose-50/50 p-2.5 md:p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] md:text-[11px] font-bold text-rose-400">Nickname</span><span className="text-[11px] md:text-xs font-black text-zinc-800">{safeUser.idol?.nickname || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-2.5 md:p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] md:text-[11px] font-bold text-rose-400">Birthday</span><span className="text-[11px] md:text-xs font-black text-zinc-800">{safeUser.idol?.birthday || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-2.5 md:p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] md:text-[11px] font-bold text-rose-400">Age</span><span className="text-[11px] md:text-xs font-black text-zinc-800">{safeUser.idol?.age || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-2.5 md:p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] md:text-[11px] font-bold text-rose-400">Specialty</span><span className="text-[11px] md:text-xs font-black text-zinc-800">{safeUser.idol?.specialty || '-'}</span></div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                        <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Sparkles size={14}/> Profile Info</h4>
+                          <div className="space-y-3">
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Nickname</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.nickname || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Birthday</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.birthday || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Age</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.age || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Specialty</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.specialty || '-'}</span></div>
                           </div>
                         </div>
 
-                        <div className="md:col-span-2 bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-8 shadow-sm border border-zinc-100 h-full">
-                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-1.5"><Heart size={14}/> Favorites</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                              <div className="p-3.5 md:p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
-                                <span className="block text-[9px] md:text-[10px] font-black text-zinc-400 uppercase mb-2">Colors</span>
-                                <div className="flex flex-wrap gap-1.5 md:gap-2">{(safeUser.idol?.favorites?.colors || []).map(c=><span key={c} className="px-2 md:px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[10px] md:text-[11px] font-bold text-zinc-700 shadow-sm">{c}</span>)}</div>
+                        <div className="md:col-span-2 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> Favorites</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
+                                <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">Colors</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.colors || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700 shadow-sm">{c}</span>)}</div>
                               </div>
-                              <div className="p-3.5 md:p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                                <span className="block text-[9px] md:text-[10px] font-black text-orange-400 uppercase mb-2">Foods</span>
-                                <div className="flex flex-wrap gap-1.5 md:gap-2">{(safeUser.idol?.favorites?.foods || []).map(c=><span key={c} className="px-2 md:px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[10px] md:text-[11px] font-bold text-orange-700 shadow-sm">{c}</span>)}</div>
+                              <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                                <span className="block text-[10px] font-black text-orange-400 uppercase mb-2">Foods</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm">{c}</span>)}</div>
                               </div>
-                              <div className="p-3.5 md:p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                                <span className="block text-[9px] md:text-[10px] font-black text-indigo-400 uppercase mb-2">Games</span>
-                                <div className="flex flex-wrap gap-1.5 md:gap-2">{(safeUser.idol?.favorites?.games || []).map(c=><span key={c} className="px-2 md:px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[10px] md:text-[11px] font-bold text-indigo-700 shadow-sm">{c}</span>)}</div>
+                              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                <span className="block text-[10px] font-black text-indigo-400 uppercase mb-2">Games</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.games || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 shadow-sm">{c}</span>)}</div>
                               </div>
-                              <div className="p-3.5 md:p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                                <span className="block text-[9px] md:text-[10px] font-black text-emerald-400 uppercase mb-2">Music</span>
-                                <div className="flex flex-wrap gap-1.5 md:gap-2">{(safeUser.idol?.favorites?.music || []).map(c=><span key={c} className="px-2 md:px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[10px] md:text-[11px] font-bold text-emerald-700 shadow-sm">{c}</span>)}</div>
+                              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                                <span className="block text-[10px] font-black text-emerald-400 uppercase mb-2">Music</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.music || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 shadow-sm">{c}</span>)}</div>
                               </div>
                           </div>
                         </div>
@@ -428,36 +430,36 @@ const ProfileView = () => {
 
                   {/* QnA Tab */}
                   {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && (
-                      <div className="bg-white rounded-[1.5rem] md:rounded-3xl p-5 md:p-10 shadow-sm border border-zinc-100">
-                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 md:mb-6 flex items-center gap-1.5"><MessageSquare size={14}/> 100문 100답</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                      <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100">
+                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-1.5"><MessageSquare size={14}/> 100문 100답</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {((safeUser.qna) || []).map((item, idx) => (
-                                  <div key={idx} className="p-4 md:p-5 bg-violet-50/50 rounded-2xl border border-violet-100/50 relative overflow-hidden hover:bg-violet-50 hover:shadow-sm transition-all duration-300">
-                                      <div className="absolute top-1 right-2 md:right-3 text-3xl md:text-4xl font-black text-violet-200/50 pointer-events-none">Q</div>
-                                      <p className="text-xs md:text-sm font-black text-violet-900 mb-1.5 relative z-10 pr-6">{item.q}</p>
-                                      <p className="text-[11px] md:text-xs font-medium text-zinc-600 relative z-10 leading-relaxed">{item.a}</p>
+                                  <div key={idx} className="p-5 bg-violet-50/50 rounded-2xl border border-violet-100/50 relative overflow-hidden hover:bg-violet-50 hover:shadow-sm transition-all duration-300">
+                                      <div className="absolute top-2 right-3 md:right-4 text-4xl md:text-5xl font-black text-violet-200/50 pointer-events-none">Q</div>
+                                      <p className="text-sm font-black text-violet-900 mb-2 relative z-10 pr-8">{item.q}</p>
+                                      <p className="text-xs font-medium text-zinc-600 relative z-10 leading-relaxed">{item.a}</p>
                                   </div>
                               ))}
-                              {(!safeUser.qna || safeUser.qna.length === 0) && <p className="md:col-span-2 text-xs md:text-sm text-zinc-400 font-medium text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">등록된 Q&A가 없습니다.</p>}
+                              {(!safeUser.qna || safeUser.qna.length === 0) && <p className="md:col-span-2 text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">등록된 Q&A가 없습니다.</p>}
                           </div>
                       </div>
                   )}
 
                   {/* Hobby Tab */}
                   {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && (
-                      <div className="bg-white rounded-[1.5rem] md:rounded-3xl shadow-sm border border-zinc-100 overflow-hidden flex flex-col md:flex-row group">
-                          <div className="h-48 md:h-auto md:w-1/2 relative bg-zinc-100 overflow-hidden">
+                      <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden flex flex-col md:flex-row group">
+                          <div className="h-56 md:h-auto md:w-1/2 relative bg-zinc-100 overflow-hidden">
                               <img src={safeUser.hobby?.image || 'https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81?q=80&w=1000'} alt="Hobby" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90"></div>
-                              <h3 className="absolute bottom-5 left-5 md:bottom-8 md:left-8 text-xl md:text-3xl font-black text-white drop-shadow-md">{safeUser.hobby?.title || '취미 생활'}</h3>
+                              <h3 className="absolute bottom-6 left-6 md:left-8 text-2xl md:text-3xl font-black text-white drop-shadow-md">{safeUser.hobby?.title || '취미 생활'}</h3>
                           </div>
-                          <div className="p-5 md:p-10 md:w-1/2 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/10">
-                              <Quote size={24} className="text-amber-200 mb-3 md:mb-4 transform rotate-180" />
-                              <p className="text-xs md:text-sm text-zinc-700 leading-relaxed font-medium mb-5 md:mb-6">
+                          <div className="p-6 md:p-12 md:w-1/2 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/10">
+                              <Quote size={32} className="text-amber-200 mb-4 transform rotate-180" />
+                              <p className="text-sm text-zinc-700 leading-relaxed font-medium mb-6">
                                   {safeUser.hobby?.description || '설명이 없습니다.'}
                               </p>
-                              <div className="flex flex-wrap gap-1.5 md:gap-2 mt-auto">
-                                  {(safeUser.hobby?.keywords || []).map(kw => <span key={kw} className="px-2.5 py-1 md:px-3 md:py-1.5 bg-white text-amber-600 text-[9px] md:text-[10px] font-black rounded-lg border border-amber-100 shadow-sm">#{kw}</span>)}
+                              <div className="flex flex-wrap gap-2 mt-auto">
+                                  {(safeUser.hobby?.keywords || []).map(kw => <span key={kw} className="px-3 md:px-4 py-1.5 md:py-2 bg-white text-amber-600 text-[10px] md:text-xs font-black rounded-xl border border-amber-100 shadow-sm">#{kw}</span>)}
                               </div>
                           </div>
                       </div>
@@ -468,17 +470,17 @@ const ProfileView = () => {
 
                   {/* Quotes Tab */}
                   {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           {(safeUser.quotes || []).map((q, idx) => (
-                              <div key={idx} className="bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-zinc-100 relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-                                  <Quote size={20} className="text-slate-100 absolute top-4 right-5" />
-                                  <p className="text-xs md:text-sm font-bold text-slate-800 leading-relaxed pr-5 mb-3 md:mb-4">"{q.text}"</p>
-                                  <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">- {q.author}</p>
+                              <div key={idx} className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                                  <Quote size={24} className="text-slate-100 absolute top-5 right-6" />
+                                  <p className="text-sm md:text-base font-bold text-slate-800 leading-relaxed pr-6 mb-4">"{q.text}"</p>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">- {q.author}</p>
                               </div>
                           ))}
                           {(!safeUser.quotes || safeUser.quotes.length === 0) && (
-                            <div className="sm:col-span-2 md:col-span-3 bg-zinc-50 p-10 rounded-2xl md:rounded-3xl border border-dashed border-zinc-200 text-center">
-                              <p className="text-xs md:text-sm text-zinc-400 font-medium">등록된 명언이 없습니다.</p>
+                            <div className="sm:col-span-2 md:col-span-3 bg-zinc-50 p-12 rounded-3xl border border-dashed border-zinc-200 text-center">
+                              <p className="text-sm text-zinc-400 font-medium">등록된 명언이 없습니다.</p>
                             </div>
                           )}
                       </div>
