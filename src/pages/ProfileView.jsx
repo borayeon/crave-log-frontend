@@ -89,7 +89,6 @@ const ProfileView = () => {
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
   const renderVisionPreview = () => {
-    // 만다라트 렌더링 로직 (생략 없이 동일 유지)
     const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
     const v = {
         core: safeUser.vision?.core || defaultVision.core,
@@ -146,7 +145,7 @@ const ProfileView = () => {
       
       {/* 상태 메시지 배지 */}
       {!isProfileEmpty && safeUser.status && (
-        <div className="mx-4 md:mx-10 mt-4 mb-2 flex relative z-10">
+        <div className="mx-4 md:mx-0 mt-4 mb-2 flex relative z-10">
             <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-3 md:px-4 py-1.5 rounded-2xl shadow-sm">
                 <Sparkles size={14} className="text-yellow-500" />
                 <span className="text-[11px] md:text-xs font-bold tracking-wider">{safeUser.status}</span>
@@ -154,84 +153,90 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 1. 메인 프로필 명함 (공간 낭비 제거 및 액션 버튼 통합) */}
-      <div className={`mx-4 md:mx-10 bg-white rounded-3xl p-5 md:p-8 shadow-sm relative z-20 border border-zinc-100 ${!safeUser.status ? 'mt-4 md:mt-0' : ''}`}>
+      {/* 1. 메인 프로필 명함 (데스크탑 레이아웃 복구 및 타이포그래피 통일) */}
+      <div className={`mx-4 md:mx-0 bg-white rounded-3xl p-6 md:p-8 shadow-sm relative z-20 border border-zinc-100 ${!safeUser.status ? 'mt-4 md:mt-0' : ''}`}>
         
-        {/* ⭐️ 공유/설정 버튼을 카드 안쪽 우측 상단으로 이동하여 공간 절약 */}
-        <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-1.5 z-10">
+        {/* 우측 상단 둥근 버튼 (공유/편집) */}
+        <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
           {!isProfileEmpty && (
-            <button onClick={handleShare} className="w-8 h-8 md:w-9 md:h-9 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
-                <Share2 size={14} />
+            <button onClick={handleShare} className="w-9 h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
+                <Share2 size={15} />
             </button>
           )}
           {isAdmin && !isGuestMode ? (
-            <button onClick={() => setViewMode('edit_profile')} className="w-8 h-8 md:w-9 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
-              <Edit2 size={14} />
+            <button onClick={() => setViewMode('edit_profile')} className="w-9 h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
+              <Edit2 size={15} />
             </button>
           ) : !isAdmin ? (
-             <button onClick={() => setLoginModalOpen(true)} className="px-3 h-8 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-[11px] md:text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-              <Rocket size={12} /> 시작하기
+             <button onClick={() => setLoginModalOpen(true)} className="px-4 h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+              <Rocket size={14} /> 시작하기
             </button>
           ) : null}
         </div>
 
         {isProfileEmpty && !isAdmin ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-14 h-14 md:w-20 md:h-20 bg-zinc-50 text-zinc-300 rounded-full flex items-center justify-center mb-3 shadow-inner"><User size={28}/></div>
-            <h3 className="text-base md:text-xl font-black text-zinc-900 mb-1">설정된 프로필이 없습니다</h3>
-            <p className="text-[11px] md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-zinc-50 text-zinc-300 rounded-full flex items-center justify-center mb-4 shadow-inner"><User size={32}/></div>
+            <h3 className="text-lg md:text-xl font-black text-zinc-900 mb-2">설정된 프로필이 없습니다</h3>
+            <p className="text-xs md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row gap-4 md:gap-10 items-stretch mt-1 md:mt-0">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-2 md:mt-0">
             
             {/* 좌측: 주요 정보 */}
-            <div className="flex-1 flex flex-col min-w-0 pr-16 md:pr-0"> {/* 버튼과 안 겹치게 모바일에서 pr-16 부여 */}
-              <div className="flex flex-row md:flex-row gap-4 md:gap-5 items-center md:items-start">
-                {/* ⭐️ 모바일 프로필 사진 크기 축소 (w-24 -> w-20) */}
-                <div className="w-20 h-20 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
+            <div className="flex-1 flex flex-col min-w-0 pr-16 md:pr-0"> 
+              <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
+                
+                {/* 둥근 사각형 프로필 사진 (좌측 배치) */}
+                <div className="w-24 h-24 md:w-28 md:h-28 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                   {safeUser.profileImageUrl ? (
                       <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-300">
+                      <div className="w-full h-full flex items-center justify-center text-4xl font-black text-zinc-300">
                         {safeUser.name ? safeUser.name.charAt(0) : '?'}
                       </div>
                   )}
                 </div>
                 
-                <div className="flex-1 flex flex-col justify-center min-w-0">
-                  <h2 className="text-xl md:text-3xl font-black text-zinc-900 mb-0.5 md:mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                  <p className="text-[10px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-md inline-block w-max mb-2 shadow-sm">@{safeUser.handle || 'handle'}</p>
+                {/* 텍스트 정보 */}
+                <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
+                  <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
+                  {/* 연보라색 아이디 뱃지 */}
+                  <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                   
-                  {/* ⭐️ 정보 줄 간격 축소 */}
-                  <div className="space-y-1 md:space-y-2">
-                    <div className="flex items-center gap-1.5 text-[11px] md:text-sm font-medium text-zinc-600 truncate">
-                      <Briefcase size={12} className="text-zinc-400 shrink-0"/> {safeUser.role || '소속/직무 미입력'}
+                  <div className="space-y-1.5 md:space-y-2">
+                    <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
+                      <Briefcase size={14} className="text-zinc-400 shrink-0"/> {safeUser.role || '소속/직무 미입력'}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] md:text-sm font-medium text-zinc-600 truncate">
-                      <GraduationCap size={12} className="text-zinc-400 shrink-0"/> {safeUser.major || '전공 미입력'}
+                    <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
+                      <GraduationCap size={14} className="text-zinc-400 shrink-0"/> {safeUser.major || '전공 미입력'}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] md:text-sm font-medium text-zinc-600 truncate">
-                      <MapPin size={12} className="text-zinc-400 shrink-0"/> {safeUser.location || '지역 미입력'}
+                    <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
+                      <MapPin size={14} className="text-zinc-400 shrink-0"/> {safeUser.location || '지역 미입력'}
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* 좌측 하단: 태그 리스트 */}
+              {(safeUser.tags || []).length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                    {safeUser.tags.map(tag => (
+                      <span key={tag} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[10px] md:text-xs font-bold rounded-lg cursor-default shadow-sm hover:border-zinc-300 transition-colors">#{tag}</span>
+                    ))}
+                </div>
+              )}
             </div>
 
-            {/* 중간 구분선 */}
+            {/* 중간 얇은 구분선 (PC 전용) */}
             <div className="hidden md:block w-px bg-zinc-100 my-2"></div>
 
-            {/* 우측: 자기소개 인용구 및 태그 */}
-            <div className="flex-1 flex flex-col justify-center md:pl-2 mt-2 md:mt-0">
-              <Quote size={16} className="text-violet-300 mb-1.5 md:mb-3"/>
-              <p className="text-xs md:text-base text-zinc-800 font-bold leading-relaxed mb-3 md:mb-6">
+            {/* 우측: 자기소개 인용구 */}
+            <div className="flex-1 flex flex-col justify-center md:pl-4 mt-2 md:mt-0">
+              <Quote size={20} className="text-violet-300 mb-2.5 md:mb-4"/>
+              <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-2 whitespace-pre-line">
                 "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
               </p>
-              <div className="flex flex-wrap gap-1.5 md:gap-2">
-                  {(safeUser.tags || []).map(tag => (
-                    <span key={tag} className="px-2.5 py-1 md:px-3 md:py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[9px] md:text-xs font-bold rounded-lg cursor-default transition-colors hover:border-zinc-300">#{tag}</span>
-                  ))}
-              </div>
             </div>
 
           </div>
@@ -240,16 +245,15 @@ const ProfileView = () => {
 
       {!isProfileEmpty && (
         <>
-          {/* 2. 데이터 탐색 (AI 추천 탭 스타일) */}
-          <div className="mt-6 md:mt-8 px-4 md:px-10">
+          {/* 2. 데이터 탐색 탭 */}
+          <div className="mt-8 md:mt-10 px-4 md:px-0">
             <div className="flex items-center justify-between mb-0.5 md:mb-1">
               <h3 className="text-sm md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
               <ChevronRight size={16} className="text-zinc-400 md:hidden"/>
             </div>
-            <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-2 md:mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
+            <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
             
-            {/* ⭐️ 버튼 크기 압축(w-16 -> w-14) 및 여백(pt-4) 적용 */}
-            <div className="flex md:flex-wrap md:justify-start gap-2.5 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0">
               {availableTabs.map(tab => {
                   const isActive = activeTab === tab.id;
                   const isPrivate = isTabPrivate(tab.id);
@@ -260,10 +264,8 @@ const ProfileView = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex flex-col items-center gap-1.5 md:gap-2 shrink-0 group outline-none`}
                     >
-                      {/* ⭐️ 모바일 버튼 크기 축소: w-14 h-14 */}
                       <div className={`w-14 h-14 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
                         {React.cloneElement(tab.icon, { className: 'w-5 h-5 md:w-7 md:h-7 transition-colors' })}
-                        {/* 자물쇠 아이콘 잘림 방지 위치 */}
                         {isPrivate && (
                           <div className="absolute -top-1.5 -right-1.5 bg-white border border-zinc-200 p-1 md:p-1.5 rounded-full shadow-sm z-10">
                             <Lock size={8} className="text-zinc-400 md:w-[10px] md:h-[10px]"/>
@@ -279,13 +281,13 @@ const ProfileView = () => {
 
           {/* 3. 활성화된 탭 컨텐츠 영역 */}
           {availableTabs.length === 0 && isGuest ? (
-              <div className="mx-4 md:mx-10 mt-3 md:mt-4 p-8 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
+              <div className="mx-4 md:mx-0 mt-3 md:mt-4 p-8 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                   <div className="w-14 h-14 bg-zinc-50 flex items-center justify-center rounded-full mb-3 shadow-inner"><Lock size={20} className="text-zinc-400" /></div>
                   <h3 className="text-sm md:text-lg font-black text-zinc-800">비공개 프로필</h3>
                   <p className="text-[11px] md:text-sm font-medium text-zinc-500 mt-1">세부 정보가 비공개 설정되어 있습니다.</p>
               </div>
           ) : (
-              <div className="mx-4 md:mx-10 mt-2 md:mt-4 animate-in slide-in-from-bottom-4 duration-500 pb-10">
+              <div className="mx-4 md:mx-0 mt-2 md:mt-4 animate-in slide-in-from-bottom-4 duration-500 pb-10">
                   
                   {/* Developer Tab */}
                   {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
