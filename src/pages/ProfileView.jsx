@@ -141,8 +141,8 @@ const ProfileView = () => {
   };
 
   return (
-    {/* ⭐️ bg 속성을 제거하고 px(좌우여백), pt(상단여백)을 추가하여 완벽한 반응형 래퍼 구성 */}
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
+      {/* ⭐️ bg 속성을 제거하고 px(좌우여백), pt(상단여백)을 추가하여 완벽한 반응형 래퍼 구성 */}
       
       {/* 상태 메시지 배지 */}
       {!isProfileEmpty && safeUser.status && (
@@ -234,7 +234,7 @@ const ProfileView = () => {
 
             {/* 우측: 자기소개 인용구 */}
             <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
-              <Quote size={24} className="text-violet-200 mb-3 md:mb-4"/>
+              <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
               <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
                 "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
               </p>
@@ -254,7 +254,6 @@ const ProfileView = () => {
             </div>
             <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
             
-            {/* ⭐️ 모바일에서는 좌우 여백까지 스크롤, PC에서는 스크롤 없애고 간격 정리 */}
             <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
               {availableTabs.map(tab => {
                   const isActive = activeTab === tab.id;
