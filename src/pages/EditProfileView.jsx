@@ -95,7 +95,7 @@ const EditProfileView = () => {
    * ========================================================= */
   const uploadImageToServer = async (file, path, setUploadingState) => {
     // 1. 프론트 단에서 1차 용량 컷 (예: 50MB) - 서버 부하 방지
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; 
     if (file.size > MAX_FILE_SIZE) {
         return showToast("파일 용량이 50MB를 초과할 수 없습니다.");
     }
