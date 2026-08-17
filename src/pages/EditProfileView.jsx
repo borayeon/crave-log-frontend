@@ -42,6 +42,10 @@ const EditProfileView = () => {
   const [editTab, setEditTab] = useState('developer');
   const [hobbyImageInputType, setHobbyImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // ⭐️ 이미지 전용 개별 로딩 상태 추가
+  const [isProfileImageUploading, setIsProfileImageUploading] = useState(false);
+  const [isHobbyImageUploading, setIsHobbyImageUploading] = useState(false);
 
   const [isCheckingHandle, setIsCheckingHandle] = useState(false);
   const [isHandleAvailable, setIsHandleAvailable] = useState(true);
@@ -86,8 +90,17 @@ const EditProfileView = () => {
     });
   };
 
-  const uploadImageToServer = async (file, path) => {
-    setIsLoading(true);
+  /* =========================================================
+   * ⭐️ 핵심 변경점: Nginx HTML 에러 방어 & 용량 체크 강화
+   * ========================================================= */
+  const uploadImageToServer = async (file, path, setUploadingState) => {
+    // 1. 프론트 단에서 1차 용량 컷 (예: 50MB) - 서버 부하 방지
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; 
+    if (file.size > MAX_FILE_SIZE) {
+        return showToast("파일 용량이 50MB를 초과할 수 없습니다.");
+    }
+
+    setUploadingState(true);
     const fileData = new FormData();
     fileData.append("file", file);
 
@@ -100,31 +113,54 @@ const EditProfileView = () => {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
-      const data = await res.json();
-      
-      if (res.ok) {
-        const fullImageUrl = `https://api.cravelog.me${data.imageUrl}`;
-        updateNested(path, fullImageUrl); 
-        showToast("이미지가 성공적으로 업로드되었습니다.");
+      // ⭐️ 2. 413 Payload Too Large (Nginx 등) 에러 캐치
+      if (res.status === 413) {
+          showToast("서버 업로드 용량 제한을 초과했습니다.");
+          return;
+      }
+
+      // ⭐️ 3. HTML 에러 페이지 방어 (응답이 JSON인지 먼저 확인)
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          
+          if (res.ok) {
+            const fullImageUrl = data.imageUrl?.startsWith('http') 
+                ? data.imageUrl 
+                : `https://api.cravelog.me${data.imageUrl}`;
+            updateNested(path, fullImageUrl); 
+            showToast("이미지가 성공적으로 업로드되었습니다.");
+          } else {
+            showToast(data.message || "이미지 업로드에 실패했습니다.");
+          }
       } else {
-        showToast("이미지 업로드에 실패했습니다.");
+          // JSON 응답이 아닌 경우 (502, 404 등 HTML 반환 시)
+          if (!res.ok) {
+              showToast(`서버 에러가 발생했습니다. (상태 코드: ${res.status})`);
+          }
       }
     } catch (error) {
       console.error(error);
       showToast("서버와 연결할 수 없습니다.");
     } finally {
-      setIsLoading(false);
+      setUploadingState(false);
     }
   };
 
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) uploadImageToServer(file, ["profileImageUrl"]);
+    if (file) {
+        uploadImageToServer(file, ["profileImageUrl"], setIsProfileImageUploading);
+    }
+    e.target.value = null; // 같은 파일 재업로드 시 이벤트 트리거용 초기화
   };
 
   const handleHobbyImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) uploadImageToServer(file, ["hobby", "image"]);
+    if (file) {
+        uploadImageToServer(file, ["hobby", "image"], setIsHobbyImageUploading);
+    }
+    e.target.value = null; 
   };
 
   const handleCheckDuplicateHandle = async () => {
@@ -193,7 +229,6 @@ const EditProfileView = () => {
   const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const rawValue = path.reduce((o, i) => (o || {})[i] || '', formData);
     
-    // ⭐️ 편집 화면에서도 에러를 완벽 방지하는 방어 코드
     const str = Array.isArray(rawValue) 
         ? rawValue.join(',') 
         : (rawValue ? String(rawValue) : '');
@@ -393,7 +428,6 @@ const EditProfileView = () => {
   };
 
   const renderVisionPreview = () => {
-    // 미리보기에서도 만다라트는 동일한 컴포넌트 형태 유지 (입력만 불가하게)
     return (
         <div className="opacity-80 pointer-events-none">
             {renderMandalartEditor()}
@@ -419,10 +453,10 @@ const EditProfileView = () => {
             </button>
             <button 
               onClick={handleSave} 
-              disabled={isLoading}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${isLoading ? 'bg-violet-400 text-white/80 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
+              disabled={isLoading || isProfileImageUploading || isHobbyImageUploading}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${isLoading || isProfileImageUploading || isHobbyImageUploading ? 'bg-violet-400 text-white/80 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
             >
-              {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
+              {(isLoading || isProfileImageUploading || isHobbyImageUploading) ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
               {isLoading ? '저장 중...' : '저장 완료'}
             </button>
           </div>
@@ -432,9 +466,15 @@ const EditProfileView = () => {
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
-            {/* 프로필 이미지 변경 (스레드 스타일 원형) */}
+            {/* 프로필 이미지 변경 영역 */}
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
+                    {/* ⭐️ 이미지 로딩 중 상태 추가 */}
+                    {isProfileImageUploading && (
+                        <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
+                            <Loader2 size={24} className="text-violet-500 animate-spin mb-1" />
+                        </div>
+                    )}
                     {formData.profileImageUrl ? (
                         <img src={formData.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -446,7 +486,7 @@ const EditProfileView = () => {
                     <label className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex-col gap-1 backdrop-blur-[2px]">
                          <Upload size={20} />
                          <span className="text-[9px] font-bold">이미지 변경</span>
-                         <input type="file" accept="image/*" onChange={handleProfileImageUpload} className="hidden" />
+                         <input type="file" accept="image/*" onChange={handleProfileImageUpload} className="hidden" disabled={isProfileImageUploading} />
                     </label>
                 </div>
                 
@@ -520,7 +560,6 @@ const EditProfileView = () => {
                     className="w-full text-sm text-zinc-700 font-bold bg-zinc-50 border border-zinc-200 focus:border-violet-400 focus:bg-white rounded-xl p-3 outline-none resize-none transition-colors"
                 />
                 
-                {/* ⭐️ 스레드 스타일의 키워드 입력 공간 */}
                 <div>
                    {renderArrayInput("나의 키워드", ["tags"], "키워드 입력 후 Enter")}
                 </div>
@@ -794,7 +833,7 @@ const EditProfileView = () => {
                       </div>
                   </div>
 
-                  <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100">
+                  <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                       <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> Favorites</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">{renderArrayInput("Colors", ["idol", "favorites", "colors"])}</div>
@@ -848,11 +887,18 @@ const EditProfileView = () => {
                   
                   <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-amber-100">
                       <div className="w-24 h-24 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200 relative group shadow-inner">
+                          {/* ⭐️ 하비 이미지 로딩 상태 추가 */}
+                          {isHobbyImageUploading && (
+                              <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
+                                  <Loader2 size={16} className="text-amber-500 animate-spin mb-1" />
+                              </div>
+                          )}
                           {formData.hobby?.image ? <img src={formData.hobby.image} alt="Hobby" className="w-full h-full object-cover"/> : <ImageIcon className="text-zinc-300" size={24}/>}
+                          
                           <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
                               <Upload size={16} className="mb-1" />
                               <span className="text-[8px] font-bold">업로드</span>
-                              <input type="file" accept="image/*" onChange={handleHobbyImageUpload} className="hidden" />
+                              <input type="file" accept="image/*" onChange={handleHobbyImageUpload} className="hidden" disabled={isHobbyImageUploading} />
                           </label>
                       </div>
                       <div className="flex-1 w-full space-y-2">
@@ -949,7 +995,7 @@ const EditProfileView = () => {
                 </div>
               </div>
 
-              {/* ⭐️ 미리보기 화면 (새로운 프로필 뷰 디자인 반영) */}
+              {/* 미리보기 화면 (새로운 프로필 뷰 디자인 반영) */}
               <div className="flex-1 overflow-y-auto pb-10">
                 {/* 1. 상태 메시지 배지 */}
                 {formData.status && (
