@@ -14,7 +14,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 // =========================================================================
 // ⭐️ [필수 설정] 주소창에 아무것도 없을 때 메인 화면으로 띄울 유저 아이디
 // =========================================================================
-const MAIN_HOST_HANDLE = 'taekyeong.dev'; // ⬅️ 본인이 가입할 때 만든 아이디로 반드시 수정하세요! (예: 'taeya')
+const MAIN_HOST_HANDLE = 'taeya00'; // ⬅️ 본인이 가입할 때 만든 아이디로 반드시 수정하세요! (예: 'taeya')
 
 // --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
@@ -225,9 +225,6 @@ export const AppProvider = ({ children }) => {
         fetchAllData(false, savedToken ? "" : null); 
       }
     }
-    // ⭐️ 중요: 무한 루프를 막기 위해 의존성 배열을 완전히 비웠습니다.
-    // 이 useEffect는 브라우저를 처음 켰을 때, 새로고침 했을 때 딱 1번만 실행됩니다!
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   return (
