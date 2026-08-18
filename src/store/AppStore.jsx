@@ -11,6 +11,11 @@ import {
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
+// =========================================================================
+// ⭐️ [필수 설정] 주소창에 아무것도 없을 때 메인 화면으로 띄울 유저 아이디
+// =========================================================================
+const MAIN_HOST_HANDLE = 'taekyeong.dev'; // ⬅️ 본인이 가입할 때 만든 아이디로 반드시 수정하세요! (예: 'taeya')
+
 // --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
   name: "손님", handle: "guest", role: "역할을 입력해주세요", major: "전공을 입력해주세요",
@@ -67,7 +72,6 @@ export const AppProvider = ({ children }) => {
   const fetchAllData = useCallback(async (isSilent = false, handleOverride = null) => {
     const token = localStorage.getItem('accessToken');
     let targetUrlBase = '';
-    const defaultHandle = 'taekyeong.dev'; 
     
     // 1순위: 지정된 핸들, 2순위: 현재 방문 중인 핸들
     const currentHandle = handleOverride !== null ? handleOverride : visitedHandle;
@@ -77,7 +81,9 @@ export const AppProvider = ({ children }) => {
     } else if (token) {
       targetUrlBase = `/me`; // 토큰이 있으면 무조건 내 정보 조회
     } else {
-      targetUrlBase = `/users/${defaultHandle}`; // 기본 계정 조회
+      // ⭐️ 토큰도 없고 지정된 유저도 없으면 기본 호스트의 퍼블릭 프로필을 보여줌
+      targetUrlBase = `/users/${MAIN_HOST_HANDLE}`; 
+      setIsGuestMode(true); // 기본 프로필도 남의 화면을 보는 것과 동일하게 처리하여 수정 버튼 차단
     }
 
     try {
@@ -97,7 +103,7 @@ export const AppProvider = ({ children }) => {
 
       if (profileRes.ok) {
           setUser(await profileRes.json());
-          // ⭐️ 데이터 로드 성공 시 확실하게 관리자 모드 켜기
+          // ⭐️ 데이터 로드 성공 시 확실하게 관리자 모드 켜기 (내 프로필일 때만)
           if (token && targetUrlBase === `/me`) {
               setIsAdmin(true);
           }
@@ -110,7 +116,6 @@ export const AppProvider = ({ children }) => {
                   setIsAdmin(false);
               } else {
                   console.warn("서버 에러로 프로필 데이터를 불러오지 못했습니다. (로그인 유지)");
-                  // 백엔드 에러가 나더라도 로그인 UI(로그아웃 버튼, 프로필 설정 등)는 유지
                   setIsAdmin(true); 
               }
           }
