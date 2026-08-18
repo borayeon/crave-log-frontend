@@ -95,7 +95,7 @@ const EditProfileView = () => {
    * ========================================================= */
   const uploadImageToServer = async (file, path, setUploadingState) => {
     // 1. 프론트 단에서 1차 용량 컷 (예: 50MB) - 서버 부하 방지
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; 
     if (file.size > MAX_FILE_SIZE) {
         return showToast("파일 용량이 50MB를 초과할 수 없습니다.");
     }
@@ -575,11 +575,14 @@ const EditProfileView = () => {
                                     className="w-full sm:w-32 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:border-violet-400"
                                 >
                                     <option value="github">GitHub</option>
-                                    <option value="blog">Blog/Web</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="twitch">스트리밍 (Twitch)</option>
                                     <option value="instagram">Instagram</option>
+                                    <option value="x">X (Twitter)</option>
                                     <option value="facebook">Facebook</option>
-                                    <option value="x">X</option>
-                                    <option value="steam">Steam</option>
+                                    <option value="kakao">카카오톡</option>
+                                    <option value="blog">개인 블로그</option>
+                                    <option value="web">개인 웹페이지</option>
                                     <option value="notion">Notion</option>
                                     <option value="other">기타</option>
                                 </select>

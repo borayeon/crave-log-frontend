@@ -3,7 +3,8 @@ import {
   Code, Briefcase, HeartHandshake, Link, Edit2, 
   Rocket, User, Sparkles, MapPin, Target, 
   ArrowRight, Heart, MessageSquare, Lock, 
-  ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap
+  ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
+  Github, Youtube, Instagram, Twitter, Twitch, MessageCircle, Globe, Facebook
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -43,6 +44,23 @@ const ProfileView = () => {
   }, [user]);
 
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
+
+  // ⭐️ 플랫폼에 맞는 아이콘을 렌더링하는 함수
+  const getPlatformIcon = (platform) => {
+      switch(platform) {
+          case 'github': return <Github size={16} />;
+          case 'youtube': return <Youtube size={16} />;
+          case 'instagram': return <Instagram size={16} />;
+          case 'x': return <Twitter size={16} />;
+          case 'facebook': return <Facebook size={16} />;
+          case 'twitch': return <Twitch size={16} />;
+          case 'kakao': return <MessageCircle size={16} />;
+          case 'notion': return <div className="font-black text-[12px]">N</div>;
+          case 'blog': 
+          case 'web': return <Globe size={16} />;
+          default: return <Link size={16} />;
+      }
+  };
 
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
@@ -226,6 +244,30 @@ const ProfileView = () => {
                     ))}
                 </div>
               )}
+
+              {/* ⭐️ 소셜 및 개인 링크 버튼 영역 */}
+              {(safeUser.links && safeUser.links.length > 0) && (
+                  <div className="mt-4 flex flex-wrap gap-2.5">
+                      {safeUser.links.map((link, idx) => (
+                          <a 
+                              key={idx} 
+                              href={link.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="w-9 h-9 md:w-10 md:h-10 bg-white border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 hover:text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-md transition-all group relative"
+                          >
+                              {getPlatformIcon(link.platform)}
+                              
+                              {/* 마우스 오버 시 나타나는 이름(툴팁) */}
+                              {link.name && (
+                                  <span className="absolute -bottom-8 bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
+                                      {link.name}
+                                  </span>
+                              )}
+                          </a>
+                      ))}
+                  </div>
+              )}
             </div>
 
             {/* 중간 얇은 구분선 */}
@@ -307,7 +349,6 @@ const ProfileView = () => {
                                     const stackData = safeUser.developer?.techStack?.[type];
                                     if (!stackData) return null;
                                     
-                                    // ⭐️ 에러의 주범이었던 .split 에러를 원천 차단하는 방어 코드! ⭐️
                                     const stackArray = Array.isArray(stackData) 
                                         ? stackData 
                                         : typeof stackData === 'string' 
