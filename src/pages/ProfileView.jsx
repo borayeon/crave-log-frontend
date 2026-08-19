@@ -4,7 +4,7 @@ import {
   Rocket, User, Sparkles, MapPin, Target, 
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
-  Github, Youtube, Instagram, Twitter, MessageCircle, Globe, Facebook, Tv
+  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -45,15 +45,15 @@ const ProfileView = () => {
 
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
 
-  // ⭐️ 플랫폼에 맞는 아이콘을 렌더링하는 함수 (Twitch -> Tv로 변경하여 빌드 에러 해결)
+  // ⭐️ 플랫폼에 맞는 아이콘을 렌더링하는 함수 (Lucide에서 브랜드 아이콘이 삭제되어 대체 아이콘 사용)
   const getPlatformIcon = (platform) => {
       switch(platform) {
-          case 'github': return <Github size={16} />;
-          case 'youtube': return <Youtube size={16} />;
-          case 'instagram': return <Instagram size={16} />;
-          case 'x': return <Twitter size={16} />;
-          case 'facebook': return <Facebook size={16} />;
-          case 'twitch': return <Tv size={16} />; // ⭐️ 에러를 뿜던 Twitch 대신 안전한 Tv 아이콘 사용!
+          case 'github': return <Terminal size={16} />;
+          case 'youtube': return <PlayCircle size={16} />;
+          case 'instagram': return <Camera size={16} />;
+          case 'x': return <Hash size={16} />;
+          case 'facebook': return <Users size={16} />;
+          case 'twitch': return <Tv size={16} />; 
           case 'kakao': return <MessageCircle size={16} />;
           case 'notion': return <div className="font-black text-[12px]">N</div>;
           case 'blog': 
