@@ -1,11 +1,60 @@
-import React from 'react';
-import { User, Network, History, Sparkles, Rocket } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Network, History, Sparkles, Rocket, BookOpen, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
-  // 명칭 직관적으로 변경
+  // ⭐️ 자동으로 슬라이드되는 배너 카드 데이터 (3가지 핵심 설명)
+  const bannerCards = [
+    {
+      icon: <Sparkles size={16} className="text-indigo-500" />,
+      title: "CraveLog 소개",
+      desc: <>이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600">취향과 성향</span>을 아카이빙합니다.</>,
+      bg: "from-indigo-50 to-violet-50/50",
+      border: "border-indigo-100/50"
+    },
+    {
+      icon: <BookOpen size={16} className="text-emerald-500" />,
+      title: "기록의 재발견",
+      desc: <>파편화된 지식부터 소소한 일상까지 <span className="text-emerald-600">모든 기록을 나만의 색깔로</span> 보관하세요.</>,
+      bg: "from-emerald-50 to-teal-50/50",
+      border: "border-emerald-100/50"
+    },
+    {
+      icon: <Share2 size={16} className="text-rose-500" />,
+      title: "간편한 네트워킹",
+      desc: <>복잡한 설명 없이 잘 꾸며진 <span className="text-rose-600">프로필 링크 하나로</span> 나를 완벽하게 소개해보세요.</>,
+      bg: "from-rose-50 to-pink-50/50",
+      border: "border-rose-100/50"
+    }
+  ];
+
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const timerRef = useRef(null);
+
+  // 배너 슬라이드 진행 함수
+  const nextBanner = () => setBannerIdx((prev) => (prev + 1) % bannerCards.length);
+  const prevBanner = () => setBannerIdx((prev) => (prev === 0 ? bannerCards.length - 1 : prev - 1));
+
+  // 배너 자동 슬라이드 로직 (4초 간격) - 인터랙션 시 타이머 리셋을 위해 ref 사용
+  useEffect(() => {
+    if (isAdmin || !isSidebarOpen) return;
+    
+    timerRef.current = setInterval(() => {
+      nextBanner();
+    }, 4000);
+
+    return () => clearInterval(timerRef.current);
+  }, [isAdmin, isSidebarOpen, bannerIdx]); // bannerIdx를 의존성에 추가하여 수동 조작 시 타이머 리셋
+
+  // 수동 조작 시 자동 슬라이드 타이머 재시작을 위한 핸들러
+  const handleManualSlide = (direction) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (direction === 'next') nextBanner();
+    else prevBanner();
+  };
+
   const navItems = [
     { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
     { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
@@ -66,17 +115,52 @@ const Sidebar = () => {
               )
             })}
             
-            {/* ⭐️ 파일 분리 없이 여기에 직접 삽입된 서비스 소개 배너 (비로그인 유저 전용) */}
+            {/* ⭐️ 여러 장의 카드로 서비스를 설명하는 슬라이드 배너 */}
             {!isAdmin && (
-              <div className={`px-4 mt-auto transition-all duration-500 overflow-hidden ${isSidebarOpen ? 'opacity-100 max-h-40 mb-2' : 'opacity-0 max-h-0 mb-0'}`}>
-                <div className="p-4 bg-gradient-to-br from-indigo-50 to-violet-50/50 rounded-2xl border border-indigo-100/50 shadow-sm relative overflow-hidden group/banner">
-                  <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/40 rounded-full blur-xl group-hover/banner:bg-white/60 transition-colors pointer-events-none"></div>
-                  <h3 className="text-[11px] font-black text-indigo-800 mb-2 flex items-center gap-1.5 relative z-10">
-                    <Sparkles size={14} className="text-indigo-500" /> CraveLog 소개
-                  </h3>
-                  <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed relative z-10">
-                    이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600">취향과 성향</span>을 아카이빙하는 공간입니다.
-                  </p>
+              <div className={`px-4 mt-auto transition-all duration-500 overflow-hidden relative flex flex-col justify-end group/banner ${isSidebarOpen ? 'opacity-100 h-40 mb-2' : 'opacity-0 h-0 mb-0'}`}>
+                
+                {/* ⭐️ 좌우 이동 버튼 (마우스 오버 시 나타남) */}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleManualSlide('prev'); }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-6 h-6 bg-white/80 backdrop-blur-sm border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 shadow-sm opacity-0 group-hover/banner:opacity-100 hover:bg-white hover:text-zinc-900 transition-all transform hover:scale-110"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleManualSlide('next'); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-6 h-6 bg-white/80 backdrop-blur-sm border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 shadow-sm opacity-0 group-hover/banner:opacity-100 hover:bg-white hover:text-zinc-900 transition-all transform hover:scale-110"
+                >
+                  <ChevronRight size={14} />
+                </button>
+
+                <div className="relative w-full h-32">
+                  {bannerCards.map((card, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`absolute inset-0 p-4 rounded-2xl border shadow-sm overflow-hidden transition-all duration-500 ease-in-out bg-gradient-to-br ${card.bg} ${card.border} ${idx === bannerIdx ? 'opacity-100 translate-x-0 z-10' : idx < bannerIdx ? 'opacity-0 -translate-x-full z-0' : 'opacity-0 translate-x-full z-0'}`}
+                    >
+                      <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/40 rounded-full blur-xl pointer-events-none"></div>
+                      <h3 className="text-xs font-black text-zinc-800 mb-2 flex items-center gap-1.5 relative z-10">
+                        {card.icon} {card.title}
+                      </h3>
+                      <p className="text-[11px] font-bold text-zinc-600 leading-relaxed relative z-10 break-keep pr-2">
+                        {card.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {/* 슬라이드 인디케이터(점) */}
+                <div className="flex justify-center gap-1.5 mt-3 h-2 items-center">
+                  {bannerCards.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        if (timerRef.current) clearInterval(timerRef.current);
+                        setBannerIdx(idx);
+                      }}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === bannerIdx ? 'w-4 bg-indigo-500' : 'w-1.5 bg-zinc-300 hover:bg-zinc-400'}`}
+                    />
+                  ))}
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles, Fingerprint, BookOpen, Quote } from 'lucide-react';
-import { useAppStore } from '../../store/AppStore.jsx'; // Added .jsx extension
+import { useAppStore } from '../../store/AppStore'; // Added .jsx extension
 
 const ServiceInfoBanner = () => {
   // 전역 상태에서 로그인 여부(isAdmin)를 가져옵니다.
