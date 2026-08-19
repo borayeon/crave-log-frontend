@@ -1,12 +1,11 @@
 import React from 'react';
 import { User, Network, History, Sparkles, Rocket } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
-import ServiceInfoBanner from '../features/ServiceInfoBanner'; 
 
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
-  // ⭐️ 1. 명칭 직관적으로 변경
+  // 명칭 직관적으로 변경
   const navItems = [
     { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
     { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
@@ -24,7 +23,7 @@ const Sidebar = () => {
       >
         <div className="w-72 flex flex-col h-full">
           
-          {/* ⭐️ 2. 로고 영역을 버튼처럼 클릭 가능하게 변경 (홈으로 이동) */}
+          {/* 로고 영역 (홈으로 이동) */}
           <div 
             onClick={() => {
               if (visitedHandle) resetToMyProfile();
@@ -42,7 +41,7 @@ const Sidebar = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-2">
+          <nav className="flex-1 px-3 py-4 space-y-2 flex flex-col">
             <p className={`px-3 text-[10px] font-black uppercase tracking-widest mb-4 text-zinc-400 transition-opacity duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               Navigation
             </p>
@@ -66,6 +65,21 @@ const Sidebar = () => {
                 </button>
               )
             })}
+            
+            {/* ⭐️ 파일 분리 없이 여기에 직접 삽입된 서비스 소개 배너 (비로그인 유저 전용) */}
+            {!isAdmin && (
+              <div className={`px-4 mt-auto transition-all duration-500 overflow-hidden ${isSidebarOpen ? 'opacity-100 max-h-40 mb-2' : 'opacity-0 max-h-0 mb-0'}`}>
+                <div className="p-4 bg-gradient-to-br from-indigo-50 to-violet-50/50 rounded-2xl border border-indigo-100/50 shadow-sm relative overflow-hidden group/banner">
+                  <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/40 rounded-full blur-xl group-hover/banner:bg-white/60 transition-colors pointer-events-none"></div>
+                  <h3 className="text-[11px] font-black text-indigo-800 mb-2 flex items-center gap-1.5 relative z-10">
+                    <Sparkles size={14} className="text-indigo-500" /> CraveLog 소개
+                  </h3>
+                  <p className="text-[10px] font-bold text-indigo-900/60 leading-relaxed relative z-10">
+                    이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600">취향과 성향</span>을 아카이빙하는 공간입니다.
+                  </p>
+                </div>
+              </div>
+            )}
           </nav>
           
           {/* Bottom Profile / Login Area */}
@@ -95,7 +109,7 @@ const Sidebar = () => {
                   <p className="text-[11px] font-bold text-zinc-500 leading-relaxed mb-2">
                     나만의 취향 공간이<br/>필요하신가요?
                   </p>
-                  <button onClick={() => setLoginModalOpen(true)} className="w-full py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition">
+                  <button onClick={() => setLoginModalOpen(true)} className="w-full py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition shadow-sm">
                     CraveLog 시작하기
                   </button>
                 </div>
