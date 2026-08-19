@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Network, History, Sparkles, Rocket } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
+import ServiceInfoBanner from '../features/ServiceInfoBanner'; 
 
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();

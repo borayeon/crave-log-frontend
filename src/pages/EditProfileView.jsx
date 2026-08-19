@@ -1,36 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
-  Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket
-} from 'lucide-react';
+  Save, Eye, Lock, Trash2, AlertTriangle, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
+  Code, Briefcase, HeartHandshake, Sparkles, GraduationCap, MapPin, Target, ArrowRight, MessageSquare, X as CloseIcon,
+  Terminal, Link as LinkIcon, Edit2, Rocket, Plus, Quote, Compass, Palette
+} from 'lucide-react'; 
 import { useAppStore } from '../store/AppStore';
 
 const EditProfileView = () => {
-  const { setViewMode, user, showToast, fetchAllData, apiFetch } = useAppStore();
+  const { setViewMode, user, showToast, setIsAdmin, fetchAllData, apiFetch } = useAppStore();
   
   const [formData, setFormData] = useState(() => {
-    const safeUser = JSON.parse(JSON.stringify(user || {}));
-    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
+    const safeUser = (user && typeof user === 'object') ? JSON.parse(JSON.stringify(user)) : {};
     
-    let parsedPrivacy = { developer: false, career: false, idol: false, qna: false, hobby: false, vision: false, quotes: false };
-    if (safeUser.privacy) {
-        if (typeof safeUser.privacy === 'string') {
-            try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
-        } else if (typeof safeUser.privacy === 'object') {
-            parsedPrivacy = { ...parsedPrivacy, ...safeUser.privacy };
-        }
-    }
-
     return {
       ...safeUser,
+      name: safeUser.name || '',
+      handle: safeUser.handle || '',
       profileImageUrl: safeUser.profileImageUrl || '',
-      privacy: parsedPrivacy,
+      privacy: safeUser.privacy || { developer: true, career: true, idol: true },
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
       idol: safeUser.idol || { nickname: "", birthday: "", age: "", specialty: "", hobbies: "", favorites: {}, qna: [] },
-      qna: qnaData,
-      hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
       vision: safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
       quotes: safeUser.quotes || [],
       tags: safeUser.tags || [],
@@ -39,11 +29,10 @@ const EditProfileView = () => {
     };
   });
 
-  const [editTab, setEditTab] = useState('developer');
+  const [editTab, setEditTab] = useState('basic');
   const [hobbyImageInputType, setHobbyImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
   
-  // ⭐️ 이미지 전용 개별 로딩 상태 추가
   const [isProfileImageUploading, setIsProfileImageUploading] = useState(false);
   const [isHobbyImageUploading, setIsHobbyImageUploading] = useState(false);
 
@@ -90,11 +79,7 @@ const EditProfileView = () => {
     });
   };
 
-  /* =========================================================
-   * ⭐️ 핵심 변경점: Nginx HTML 에러 방어 & 용량 체크 강화
-   * ========================================================= */
   const uploadImageToServer = async (file, path, setUploadingState) => {
-    // 1. 프론트 단에서 1차 용량 컷 (예: 50MB) - 서버 부하 방지
     const MAX_FILE_SIZE = 50 * 1024 * 1024; 
     if (file.size > MAX_FILE_SIZE) {
         return showToast("파일 용량이 50MB를 초과할 수 없습니다.");
@@ -113,13 +98,11 @@ const EditProfileView = () => {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
-      // ⭐️ 2. 413 Payload Too Large (Nginx 등) 에러 캐치
       if (res.status === 413) {
           showToast("서버 업로드 용량 제한을 초과했습니다.");
           return;
       }
 
-      // ⭐️ 3. HTML 에러 페이지 방어 (응답이 JSON인지 먼저 확인)
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
           const data = await res.json();
@@ -134,10 +117,7 @@ const EditProfileView = () => {
             showToast(data.message || "이미지 업로드에 실패했습니다.");
           }
       } else {
-          // JSON 응답이 아닌 경우 (502, 404 등 HTML 반환 시)
-          if (!res.ok) {
-              showToast(`서버 에러가 발생했습니다. (상태 코드: ${res.status})`);
-          }
+          if (!res.ok) showToast(`서버 에러가 발생했습니다. (상태 코드: ${res.status})`);
       }
     } catch (error) {
       console.error(error);
@@ -149,17 +129,13 @@ const EditProfileView = () => {
 
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-        uploadImageToServer(file, ["profileImageUrl"], setIsProfileImageUploading);
-    }
-    e.target.value = null; // 같은 파일 재업로드 시 이벤트 트리거용 초기화
+    if (file) uploadImageToServer(file, ["profileImageUrl"], setIsProfileImageUploading);
+    e.target.value = null; 
   };
 
   const handleHobbyImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-        uploadImageToServer(file, ["hobby", "image"], setIsHobbyImageUploading);
-    }
+    if (file) uploadImageToServer(file, ["hobby", "image"], setIsHobbyImageUploading);
     e.target.value = null; 
   };
 
@@ -228,11 +204,7 @@ const EditProfileView = () => {
 
   const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const rawValue = path.reduce((o, i) => (o || {})[i] || '', formData);
-    
-    const str = Array.isArray(rawValue) 
-        ? rawValue.join(',') 
-        : (rawValue ? String(rawValue) : '');
-        
+    const str = Array.isArray(rawValue) ? rawValue.join(',') : (rawValue ? String(rawValue) : '');
     const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
     
     return (
@@ -469,7 +441,6 @@ const EditProfileView = () => {
             {/* 프로필 이미지 변경 영역 */}
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
-                    {/* ⭐️ 이미지 로딩 중 상태 추가 */}
                     {isProfileImageUploading && (
                         <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
                             <Loader2 size={24} className="text-violet-500 animate-spin mb-1" />
@@ -502,7 +473,7 @@ const EditProfileView = () => {
                 </div>
             </div>
             
-            {/* 기본 정보 입력 */}
+            {/* ⭐️ 기본 정보 입력 탭 에러 수정 부분 ⭐️ */}
             <div className="flex-1 w-full space-y-4">
                 <div className="flex flex-col md:flex-row gap-3">
                      <input 
@@ -564,6 +535,7 @@ const EditProfileView = () => {
                    {renderArrayInput("나의 키워드", ["tags"], "키워드 입력 후 Enter")}
                 </div>
 
+                {/* ⭐️ 소셜 링크 관리 영역 에러 수정 (정상 작동하도록 복구) ⭐️ */}
                 <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-200/60 mt-4">
                     <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><LinkIcon size={14}/> 소셜 링크 관리</h4>
                     <div className="space-y-2">
@@ -587,396 +559,387 @@ const EditProfileView = () => {
                                     <option value="other">기타</option>
                                 </select>
                                 <input 
-                                    value={link.name} 
+                                    value={link.name || ''} 
                                     onChange={e => { const arr=[...(formData.links||[])]; arr[idx].name=e.target.value; updateNested(["links"], arr); }} 
                                     className="w-full sm:w-1/4 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-medium outline-none focus:border-violet-400" 
                                     placeholder="이름 (예: 블로그)" 
                                 />
                                 <input 
-                                    value={link.url} 
+                                    value={link.url || ''} 
                                     onChange={e => { const arr=[...(formData.links||[])]; arr[idx].url=e.target.value; updateNested(["links"], arr); }} 
                                     className="w-full flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-medium outline-none focus:border-violet-400" 
                                     placeholder="https://..." 
                                 />
-                                <button type="button" onClick={()=>{const arr=[...(formData.links||[])]; arr.splice(idx,1); updateNested(["links"], arr);}} className="p-1.5 text-rose-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg shrink-0 transition-colors">
-                                    <Trash2 size={14}/>
+                                <button type="button" onClick={()=>{const arr=[...(formData.links||[])]; arr.splice(idx,1); updateNested(["links"], arr);}} className="p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg shrink-0 transition-colors">
+                                    <Trash2 size={16}/>
                                 </button>
                             </div>
                         ))}
                     </div>
-                    <button type="button" onClick={()=>{const arr=[...(formData.links||[]), {platform:"github", name:"", url:""}]; updateNested(["links"], arr);}} className="text-[11px] font-bold text-violet-600 bg-white border border-violet-200 px-3 py-1.5 rounded-lg hover:bg-violet-50 transition-colors w-full mt-2 shadow-sm">
-                        + 링크 추가
+                    <button type="button" onClick={()=>{const arr=[...(formData.links||[]), {platform:"github", name:"", url:""}]; updateNested(["links"], arr);}} className="text-xs font-bold text-violet-600 bg-violet-50 border border-violet-100 px-4 py-2 rounded-xl hover:bg-violet-100 transition-colors w-full md:w-auto mt-3 shadow-sm">
+                        + 새 링크 추가
                     </button>
                 </div>
             </div>
           </div>
         </div>
 
-        {/* 2. 세부 탭 편집 제어 영역 */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 p-1">
+        {/* 탭 네비게이션 */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
           {ALL_TABS.map(tab => (
-              <button 
-                key={tab.id} 
-                onClick={() => setEditTab(tab.id)} 
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black transition-all whitespace-nowrap border ${editTab === tab.id ? 'bg-zinc-900 text-white border-zinc-900 shadow-md' : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50'}`}
-              >
-                {React.cloneElement(tab.icon, { size: 14 })} {tab.label}
+              <button key={tab.id} onClick={() => setEditTab(tab.id)} className={`flex flex-col md:flex-row items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap ${editTab === tab.id ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
+                  {React.cloneElement(tab.icon, { className: editTab === tab.id ? 'text-violet-500' : '' })} {tab.label}
               </button>
           ))}
         </div>
 
-        <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
-          <div>
-            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2">
-              {!isTabPrivate(editTab) ? <Eye size={16} className="text-violet-500"/> : <Lock size={16} className="text-rose-500"/>}
-              이 탭을 방문자에게 공개하시겠습니까?
-            </h3>
-            <p className="text-[11px] font-medium text-zinc-500 mt-1">비공개 처리된 탭은 본인에게만 보이며 공유된 링크에서는 숨겨집니다.</p>
-          </div>
-          <button 
-            onClick={() => {
-                const currentlyPrivate = isTabPrivate(editTab);
-                updateNested(['privacy', editTab], currentlyPrivate ? true : false);
-            }}
-            className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!isTabPrivate(editTab) ? 'bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100' : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'}`}
-          >
-            {!isTabPrivate(editTab) ? '공개 중 (클릭하여 숨기기)' : '비공개됨 (클릭하여 공개)'}
-          </button>
-        </div>
-
-        {/* 3. 탭별 편집 컨텐츠 */}
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          
-          {/* DEVELOPER TAB */}
-          {editTab === 'developer' && (
-            <div className="space-y-4">
-                <div className="bg-[#0D1117] text-zinc-300 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-800 relative overflow-hidden">
-                    <div className="absolute top-4 left-4 flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                    </div>
-                    <div className="mt-4 mb-6">
-                       <span className="text-zinc-500 font-mono text-[11px] font-bold">{"// About Me"}</span>
-                       <textarea 
-                          value={formData.developer?.about || ''} 
-                          onChange={e => updateNested(["developer", "about"], e.target.value)} 
-                          rows={3} 
-                          placeholder="개발자로서의 자기소개를 작성해보세요."
-                          className="w-full mt-2 bg-[#161B22] border border-zinc-700 rounded-xl px-4 py-3 text-sm font-mono text-emerald-400 focus:border-emerald-500 outline-none resize-none placeholder:text-emerald-900/50 transition-colors" 
-                        />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
-                            <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
-                            <div className="space-y-4">
-                                {renderStringArrayInput("Backend", ["developer", "techStack", "backend"], "추가")}
-                                {renderStringArrayInput("Database", ["developer", "techStack", "db"], "추가")}
-                                {renderStringArrayInput("Frontend", ["developer", "techStack", "frontend"], "추가")}
-                                {renderStringArrayInput("Tools", ["developer", "techStack", "tools"], "추가")}
-                            </div>
-                        </div>
-                        <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800 flex flex-col">
-                            <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Currently Learning</h4>
-                            <div className="flex-1">
-                               {renderStringArrayInput(null, ["developer", "learning"], "학습 중인 기술 입력 후 Enter")}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
-                    <h3 className="text-base font-black text-zinc-900 mb-1 ml-1 flex items-center gap-2"><Rocket size={16} className="text-violet-500" /> Featured Projects</h3>
-                    <p className="text-[11px] text-zinc-500 font-medium ml-1 mb-5">대표 프로젝트를 등록하고 링크를 연결해 포트폴리오를 완성하세요.</p>
-                    
-                    <div className="grid grid-cols-1 gap-4">
-                        {(formData.developer?.projects || []).map((proj, idx) => (
-                            <div key={idx} className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 shadow-sm flex flex-col md:flex-row gap-4 group relative">
-                                <button 
-                                    onClick={()=>{const arr=[...(formData.developer?.projects||[])]; arr.splice(idx,1); updateNested(["developer","projects"], arr);}} 
-                                    className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white hover:bg-rose-50 border border-zinc-200 p-1.5 rounded-lg transition-colors z-10"
-                                >
-                                    <Trash2 size={14}/>
-                                </button>
-                                
-                                <div className="flex-1 flex flex-col gap-2">
-                                  <input 
-                                      value={proj.name} 
-                                      onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
-                                      className="w-full md:w-2/3 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black outline-none focus:border-violet-400 pr-10 transition-colors" 
-                                      placeholder="프로젝트명" 
-                                  />
-                                  <textarea 
-                                      value={proj.desc} 
-                                      onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
-                                      className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-medium outline-none resize-none focus:border-violet-400 transition-colors" 
-                                      placeholder="프로젝트 한 줄 설명 및 담당 역할" 
-                                      rows={2}
-                                  />
-                                </div>
-                                <div className="md:w-1/3 flex flex-col justify-end gap-2">
-                                  <div className="flex items-center gap-2">
-                                      <Terminal size={14} className="text-zinc-400 shrink-0"/>
-                                      <input 
-                                          value={proj.githubUrl || ''} 
-                                          onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
-                                          className="w-full bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-[11px] outline-none focus:border-violet-400 transition-colors" 
-                                          placeholder="GitHub URL (선택)" 
-                                      />
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                      <ExternalLink size={14} className="text-violet-400 shrink-0"/>
-                                      <input 
-                                          value={proj.liveUrl || ''} 
-                                          onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].liveUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
-                                          className="w-full bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-[11px] outline-none focus:border-violet-400 transition-colors" 
-                                          placeholder="배포(Live) URL (선택)" 
-                                      />
-                                  </div>
-                                </div>
-                            </div>
-                        ))}
-                        
-                        <button 
-                            type="button"
-                            onClick={()=>{const arr=[...(formData.developer?.projects||[]), {name:"", desc:"", githubUrl:"", liveUrl:""}]; updateNested(["developer","projects"], arr);}} 
-                            className="py-6 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-zinc-200 rounded-2xl text-zinc-400 hover:text-violet-600 hover:border-violet-300 hover:bg-violet-50 transition-colors"
-                        >
-                            <Plus size={24} />
-                            <span className="font-bold text-xs">새 프로젝트 추가</span>
-                        </button>
-                    </div>
-                </div>
+        {/* 공개/비공개 토글 */}
+        {formData.privacy && (
+          <div className="mb-6 p-5 bg-violet-50/50 border border-violet-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
+            <div>
+              <h3 className="text-sm font-black text-violet-900 flex items-center gap-2">
+                {formData.privacy[editTab] ? <Eye size={16} className="text-violet-600"/> : <Lock size={16} className="text-rose-500"/>}
+                현재 탭 공개 여부 설정
+              </h3>
+              <p className="text-xs font-medium text-violet-700/70 mt-1">비공개 설정 시 공유된 프로필 링크에서 이 탭이 완전히 숨겨집니다.</p>
             </div>
-          )}
+            <button 
+              onClick={() => updateNested(['privacy', editTab], !formData.privacy[editTab])}
+              className={`shrink-0 px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${formData.privacy[editTab] ? 'bg-violet-600 text-white shadow-sm hover:bg-violet-700' : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50'}`}
+            >
+              {formData.privacy[editTab] ? '공개 중 (클릭하여 숨기기)' : '비공개 됨 (클릭하여 공개)'}
+            </button>
+          </div>
+        )}
 
-          {/* CAREER TAB */}
-          {editTab === 'career' && (
-            <div className="space-y-4 animate-in fade-in">
-              <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-6 md:gap-8">
-                  <div className="flex-1 space-y-5">
-                      <div>
-                          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Target Job</label>
-                          <input 
-                            type="text" 
-                            value={formData.career?.targetJob || ''} 
-                            onChange={e => updateNested(["career", "targetJob"], e.target.value)}
-                            className="w-full text-base font-black text-blue-600 bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-2.5 outline-none focus:border-blue-300 transition-colors"
-                            placeholder="예: 리드 백엔드 엔지니어"
-                          />
-                      </div>
-                      <div>
-                          {renderArrayInput("Tech Stack", ["career", "techStack"], "필요 기술 입력 후 Enter")}
-                      </div>
-                      <div>
-                          {renderArrayInput("Interests (관심 분야)", ["career", "interests"], "관심 분야 입력 후 Enter")}
-                      </div>
+        {/* DEVELOPER TAB */}
+        {editTab === 'developer' && (
+          <div className="space-y-4">
+              <div className="bg-[#0D1117] text-zinc-300 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-800 relative overflow-hidden">
+                  <div className="absolute top-4 left-4 flex gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                  </div>
+                  <div className="mt-4 mb-6">
+                     <span className="text-zinc-500 font-mono text-[11px] font-bold">{"// About Me"}</span>
+                     <textarea 
+                        value={formData.developer?.about || ''} 
+                        onChange={e => updateNested(["developer", "about"], e.target.value)} 
+                        rows={3} 
+                        placeholder="개발자로서의 자기소개를 작성해보세요."
+                        className="w-full mt-2 bg-[#161B22] border border-zinc-700 rounded-xl px-4 py-3 text-sm font-mono text-emerald-400 focus:border-emerald-500 outline-none resize-none placeholder:text-emerald-900/50 transition-colors" 
+                      />
                   </div>
                   
-                  <div className="w-full md:w-1/3 space-y-3">
-                      <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
-                          <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1.5 block">Short Term Goal</label>
-                          <textarea value={formData.career?.careerGoals?.short || ''} onChange={e => updateNested(["career", "careerGoals", "short"], e.target.value)} rows={2} className="w-full bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs font-bold text-blue-900 outline-none focus:border-blue-300 resize-none transition-colors" placeholder="단기 목표" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
+                          <div className="space-y-4">
+                              {renderStringArrayInput("Backend", ["developer", "techStack", "backend"], "추가")}
+                              {renderStringArrayInput("Database", ["developer", "techStack", "db"], "추가")}
+                              {renderStringArrayInput("Frontend", ["developer", "techStack", "frontend"], "추가")}
+                              {renderStringArrayInput("Tools", ["developer", "techStack", "tools"], "추가")}
+                          </div>
                       </div>
-                      <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
-                          <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1.5 block">Mid Term Goal</label>
-                          <textarea value={formData.career?.careerGoals?.mid || ''} onChange={e => updateNested(["career", "careerGoals", "mid"], e.target.value)} rows={2} className="w-full bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs font-bold text-blue-900 outline-none focus:border-blue-300 resize-none transition-colors" placeholder="중기 목표" />
-                      </div>
-                      <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
-                          <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1.5 block">Long Term Goal</label>
-                          <textarea value={formData.career?.careerGoals?.long || ''} onChange={e => updateNested(["career", "careerGoals", "long"], e.target.value)} rows={2} className="w-full bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs font-bold text-blue-900 outline-none focus:border-blue-300 resize-none transition-colors" placeholder="장기 목표" />
+                      <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800 flex flex-col">
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Currently Learning</h4>
+                          <div className="flex-1">
+                             {renderStringArrayInput(null, ["developer", "learning"], "학습 중인 기술 입력 후 Enter")}
+                          </div>
                       </div>
                   </div>
               </div>
 
               <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
-                <h3 className="text-base font-black text-zinc-900 mb-4 ml-1 flex items-center gap-2"><Briefcase size={16} className="text-blue-500" /> Strengths (강점)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(formData.career?.strengths || []).map((str, idx) => (
-                        <div key={idx} className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200/80 shadow-sm relative flex gap-3">
-                            <button type="button" onClick={()=>{const arr=[...(formData.career?.strengths||[])]; arr.splice(idx,1); updateNested(["career","strengths"], arr);}} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white border border-zinc-200 p-1 rounded-lg transition-colors"><Trash2 size={12}/></button>
-                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs shrink-0">{idx+1}</div>
-                            <div className="flex-1 pr-6 flex flex-col gap-2">
-                                <input value={str.title} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black text-zinc-900 outline-none focus:border-blue-300 transition-colors" placeholder="핵심 역량" />
-                                <textarea value={str.desc} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-[11px] font-medium text-zinc-600 outline-none resize-none focus:border-blue-300 transition-colors" placeholder="상세 설명" rows={3} />
-                            </div>
-                        </div>
-                    ))}
-                    <button type="button" onClick={()=>{const arr=[...(formData.career?.strengths||[]), {title:"", desc:""}]; updateNested(["career","strengths"], arr);}} className="min-h-[140px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-zinc-200 rounded-2xl text-zinc-400 hover:text-blue-500 hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                        <Plus size={24} />
-                        <span className="font-bold text-xs">강점 추가</span>
-                    </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* IDOL TAB */}
-          {editTab === 'idol' && (
-            <div className="space-y-4 animate-in fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
-                      <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><Sparkles size={16} className="text-rose-400"/> Profile Info</h3>
-                      <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Nickname</label>
-                        <input type="text" value={formData.idol?.nickname || ''} onChange={e => updateNested(["idol", "nickname"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="별명" />
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Birthday</label>
-                        <input type="text" value={formData.idol?.birthday || ''} onChange={e => updateNested(["idol", "birthday"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="생일" />
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Age</label>
-                        <input type="text" value={formData.idol?.age || ''} onChange={e => updateNested(["idol", "age"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="나이" />
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Specialty</label>
-                        <input type="text" value={formData.idol?.specialty || ''} onChange={e => updateNested(["idol", "specialty"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="특기" />
-                      </div>
-                  </div>
-
-                  <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
-                      <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> Favorites</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">{renderArrayInput("Colors", ["idol", "favorites", "colors"])}</div>
-                          <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">{renderArrayInput("Foods", ["idol", "favorites", "foods"])}</div>
-                          <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">{renderArrayInput("Games", ["idol", "favorites", "games"])}</div>
-                          <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">{renderArrayInput("Music", ["idol", "favorites", "music"])}</div>
-                      </div>
-                  </div>
-              </div>
-            </div>
-          )}
-
-          {/* Q&A TAB */}
-          {editTab === 'qna' && (
-            <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
-                <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-violet-500"/> 100문 100답 작성</h3>
-                <p className="text-[11px] text-zinc-500 font-medium mb-5">나만의 엉뚱하고 재미있는 질문과 답변을 추가해보세요.</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(formData.qna || []).map((item, idx) => (
-                      <div key={idx} className="flex flex-col gap-2.5 bg-violet-50/30 p-5 rounded-2xl border border-violet-100/50 relative group transition-colors hover:bg-violet-50">
-                          <button type="button" onClick={()=>{const arr=[...(formData.qna||[])]; arr.splice(idx,1); updateNested(["qna"], arr);}} className="absolute top-4 right-4 text-violet-300 hover:text-rose-500 bg-white border border-violet-100 p-1.5 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
-                          
-                          <div>
-                            <label className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1 block">Question</label>
-                            <input value={item.q} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].q=e.target.value; updateNested(["qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-900 outline-none focus:border-violet-400 pr-10 transition-colors" placeholder="예: 무인도에 가져갈 3가지는?" />
-                          </div>
-                          <div>
-                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">Answer</label>
-                            <textarea value={item.a} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].a=e.target.value; updateNested(["qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-[11px] font-medium text-zinc-800 outline-none focus:border-violet-400 resize-none transition-colors" placeholder="답변을 작성하세요" rows={2} />
-                          </div>
-                      </div>
-                  ))}
+                  <h3 className="text-base font-black text-zinc-900 mb-1 ml-1 flex items-center gap-2"><Rocket size={16} className="text-violet-500" /> Featured Projects</h3>
+                  <p className="text-[11px] text-zinc-500 font-medium ml-1 mb-5">대표 프로젝트를 등록하고 링크를 연결해 포트폴리오를 완성하세요.</p>
                   
-                  <button type="button" onClick={()=>{const arr=[...(formData.qna||[]), {q:"", a:""}]; updateNested(["qna"], arr);}} className="min-h-[140px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-violet-200 rounded-2xl text-violet-400 hover:text-violet-600 hover:border-violet-400 hover:bg-violet-50 transition-colors">
-                      <Plus size={24} />
-                      <span className="font-bold text-xs">새로운 Q&A 추가</span>
-                  </button>
-                </div>
-            </div>
-          )}
-
-          {/* HOBBY TAB */}
-          {editTab === 'hobby' && (
-            <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-zinc-100">
-                <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Target size={16} className="text-amber-500"/> 취미 소개 섹션</h3>
-                <p className="text-[11px] text-zinc-500 font-medium mb-5">나를 가장 잘 나타내는 취미 하나를 깊게 소개해보세요.</p>
-                
-                <div className="bg-amber-50/30 p-5 rounded-2xl border border-amber-100/50 space-y-5">
-                  {renderInput("취미 제목 (Headline)", ["hobby", "title"], "예: 필름 카메라와 골목길 산책")}
-                  
-                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-amber-100">
-                      <div className="w-24 h-24 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200 relative group shadow-inner">
-                          {/* ⭐️ 하비 이미지 로딩 상태 추가 */}
-                          {isHobbyImageUploading && (
-                              <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
-                                  <Loader2 size={16} className="text-amber-500 animate-spin mb-1" />
+                  <div className="grid grid-cols-1 gap-4">
+                      {(formData.developer?.projects || []).map((proj, idx) => (
+                          <div key={idx} className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 shadow-sm flex flex-col md:flex-row gap-4 group relative">
+                              <button 
+                                  onClick={()=>{const arr=[...(formData.developer?.projects||[])]; arr.splice(idx,1); updateNested(["developer","projects"], arr);}} 
+                                  className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white hover:bg-rose-50 border border-zinc-200 p-1.5 rounded-lg transition-colors z-10"
+                              >
+                                  <Trash2 size={14}/>
+                              </button>
+                              
+                              <div className="flex-1 flex flex-col gap-2">
+                                <input 
+                                    value={proj.name} 
+                                    onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                    className="w-full md:w-2/3 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black outline-none focus:border-violet-400 pr-10 transition-colors" 
+                                    placeholder="프로젝트명" 
+                                />
+                                <textarea 
+                                    value={proj.desc} 
+                                    onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                    className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-medium outline-none resize-none focus:border-violet-400 transition-colors" 
+                                    placeholder="프로젝트 한 줄 설명 및 담당 역할" 
+                                    rows={2}
+                                />
                               </div>
-                          )}
-                          {formData.hobby?.image ? <img src={formData.hobby.image} alt="Hobby" className="w-full h-full object-cover"/> : <ImageIcon className="text-zinc-300" size={24}/>}
-                          
-                          <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
-                              <Upload size={16} className="mb-1" />
-                              <span className="text-[8px] font-bold">업로드</span>
-                              <input type="file" accept="image/*" onChange={handleHobbyImageUpload} className="hidden" disabled={isHobbyImageUploading} />
-                          </label>
-                      </div>
-                      <div className="flex-1 w-full space-y-2">
-                          <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block">배경 이미지 소스</label>
-                          <div className="flex bg-amber-100/50 p-0.5 rounded-lg w-max mb-1">
-                              <button type="button" onClick={() => setHobbyImageInputType('file')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${hobbyImageInputType === 'file' ? 'bg-white shadow-sm text-amber-700' : 'text-amber-600 hover:bg-amber-200/50'}`}>파일 업로드</button>
-                              <button type="button" onClick={() => setHobbyImageInputType('url')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${hobbyImageInputType === 'url' ? 'bg-white shadow-sm text-amber-700' : 'text-amber-600 hover:bg-amber-200/50'}`}>웹 URL</button>
+                              <div className="md:w-1/3 flex flex-col justify-end gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Terminal size={14} className="text-zinc-400 shrink-0"/>
+                                    <input 
+                                        value={proj.githubUrl || ''} 
+                                        onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                        className="w-full bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-[11px] outline-none focus:border-violet-400 transition-colors" 
+                                        placeholder="GitHub URL (선택)" 
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <ExternalLink size={14} className="text-violet-400 shrink-0"/>
+                                    <input 
+                                        value={proj.liveUrl || ''} 
+                                        onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].liveUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
+                                        className="w-full bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-[11px] outline-none focus:border-violet-400 transition-colors" 
+                                        placeholder="배포(Live) URL (선택)" 
+                                    />
+                                </div>
+                              </div>
                           </div>
-                          {hobbyImageInputType === 'file' ? (
-                              <p className="text-[10px] font-medium text-zinc-500 bg-zinc-50 p-2 rounded-lg border border-zinc-100">좌측 이미지를 클릭하여 PC의 파일을 업로드하세요.</p>
-                          ) : (
-                              <input type="text" placeholder="https://..." value={formData.hobby?.image || ''} onChange={e => updateNested(["hobby", "image"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-amber-400 transition-colors" />
-                          )}
-                      </div>
+                      ))}
+                      
+                      <button 
+                          type="button"
+                          onClick={()=>{const arr=[...(formData.developer?.projects||[]), {name:"", desc:"", githubUrl:"", liveUrl:""}]; updateNested(["developer","projects"], arr);}} 
+                          className="py-6 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-zinc-200 rounded-2xl text-zinc-400 hover:text-violet-600 hover:border-violet-300 hover:bg-violet-50 transition-colors"
+                      >
+                          <Plus size={24} />
+                          <span className="font-bold text-xs">새 프로젝트 추가</span>
+                      </button>
                   </div>
-                  
-                  <div>
-                      <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-1.5">상세 설명 (Description)</label>
-                      <textarea value={formData.hobby?.description || ''} onChange={e => updateNested(["hobby", "description"], e.target.value)} rows={3} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2.5 text-xs font-medium outline-none focus:border-amber-400 resize-none transition-colors" placeholder="이 취미를 왜 좋아하는지, 어떤 매력이 있는지 적어주세요." />
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-xl border border-amber-100">
-                    {renderArrayInput("관련 키워드 (Tags)", ["hobby", "keywords"], "키워드 입력 후 Enter")}
-                  </div>
+              </div>
+          </div>
+        )}
+
+        {/* CAREER TAB */}
+        {editTab === 'career' && (
+          <div className="space-y-4 animate-in fade-in">
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-6 md:gap-8">
+                <div className="flex-1 space-y-5">
+                    <div>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">Target Job</label>
+                        <input 
+                          type="text" 
+                          value={formData.career?.targetJob || ''} 
+                          onChange={e => updateNested(["career", "targetJob"], e.target.value)}
+                          className="w-full text-base font-black text-blue-600 bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-2.5 outline-none focus:border-blue-300 transition-colors"
+                          placeholder="예: 리드 백엔드 엔지니어"
+                        />
+                    </div>
+                    <div>
+                        {renderArrayInput("Tech Stack", ["career", "techStack"], "필요 기술 입력 후 Enter")}
+                    </div>
+                    <div>
+                        {renderArrayInput("Interests (관심 분야)", ["career", "interests"], "관심 분야 입력 후 Enter")}
+                    </div>
+                </div>
+                
+                <div className="w-full md:w-1/3 space-y-3">
+                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                        <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1.5 block">Short Term Goal</label>
+                        <textarea value={formData.career?.careerGoals?.short || ''} onChange={e => updateNested(["career", "careerGoals", "short"], e.target.value)} rows={2} className="w-full bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs font-bold text-blue-900 outline-none focus:border-blue-300 resize-none transition-colors" placeholder="단기 목표" />
+                    </div>
+                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                        <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1.5 block">Mid Term Goal</label>
+                        <textarea value={formData.career?.careerGoals?.mid || ''} onChange={e => updateNested(["career", "careerGoals", "mid"], e.target.value)} rows={2} className="w-full bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs font-bold text-blue-900 outline-none focus:border-blue-300 resize-none transition-colors" placeholder="중기 목표" />
+                    </div>
+                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                        <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1.5 block">Long Term Goal</label>
+                        <textarea value={formData.career?.careerGoals?.long || ''} onChange={e => updateNested(["career", "careerGoals", "long"], e.target.value)} rows={2} className="w-full bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs font-bold text-blue-900 outline-none focus:border-blue-300 resize-none transition-colors" placeholder="장기 목표" />
+                    </div>
                 </div>
             </div>
-          )}
 
-          {/* VISION TAB (Mandalart) */}
-          {editTab === 'vision' && (
-             <div className="animate-in fade-in">
-                 {renderMandalartEditor()}
-             </div>
-          )}
-
-          {/* QUOTES TAB */}
-          {editTab === 'quotes' && (
-            <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
-                <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Quote size={16} className="text-slate-400"/> 좋아하는 명언 모음</h3>
-                <p className="text-[11px] text-zinc-500 font-medium mb-5">나에게 영감을 주는 문장이나 좌우명을 기록해두세요.</p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {(formData.quotes || []).map((item, idx) => (
-                      <div key={idx} className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm relative group transition-colors hover:bg-white">
-                          <button type="button" onClick={()=>{const arr=[...(formData.quotes||[])]; arr.splice(idx,1); updateNested(["quotes"], arr);}} className="absolute top-3 right-3 text-slate-300 hover:text-rose-500 bg-white border border-slate-100 p-1 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
-                          
-                          <textarea 
-                            value={item.text} 
-                            onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].text=e.target.value; updateNested(["quotes"], arr); }} 
-                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none resize-none focus:border-slate-400 pr-8 transition-colors" 
-                            placeholder="명언 내용" 
-                            rows={3}
-                          />
-                          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:border-slate-400 transition-colors">
-                            <span className="text-[10px] font-black text-slate-300">-</span>
-                            <input 
-                              value={item.author} 
-                              onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].author=e.target.value; updateNested(["quotes"], arr); }} 
-                              className="flex-1 bg-transparent text-[11px] font-bold text-slate-600 outline-none" 
-                              placeholder="작성자 또는 출처" 
-                            />
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+              <h3 className="text-base font-black text-zinc-900 mb-4 ml-1 flex items-center gap-2"><Briefcase size={16} className="text-blue-500" /> Strengths (강점)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(formData.career?.strengths || []).map((str, idx) => (
+                      <div key={idx} className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200/80 shadow-sm relative flex gap-3">
+                          <button type="button" onClick={()=>{const arr=[...(formData.career?.strengths||[])]; arr.splice(idx,1); updateNested(["career","strengths"], arr);}} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white border border-zinc-200 p-1 rounded-lg transition-colors"><Trash2 size={12}/></button>
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs shrink-0">{idx+1}</div>
+                          <div className="flex-1 pr-6 flex flex-col gap-2">
+                              <input value={str.title} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black text-zinc-900 outline-none focus:border-blue-300 transition-colors" placeholder="핵심 역량" />
+                              <textarea value={str.desc} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-[11px] font-medium text-zinc-600 outline-none resize-none focus:border-blue-300 transition-colors" placeholder="상세 설명" rows={3} />
                           </div>
                       </div>
                   ))}
-                  
-                  <button type="button" onClick={()=>{const arr=[...(formData.quotes||[]), {text:"", author:""}]; updateNested(["quotes"], arr);}} className="min-h-[130px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                  <button type="button" onClick={()=>{const arr=[...(formData.career?.strengths||[]), {title:"", desc:""}]; updateNested(["career","strengths"], arr);}} className="min-h-[140px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-zinc-200 rounded-2xl text-zinc-400 hover:text-blue-500 hover:border-blue-300 hover:bg-blue-50 transition-colors">
                       <Plus size={24} />
-                      <span className="font-bold text-xs">새 명언 추가</span>
+                      <span className="font-bold text-xs">강점 추가</span>
                   </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* IDOL TAB */}
+        {editTab === 'idol' && (
+          <div className="space-y-4 animate-in fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
+                    <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><Sparkles size={16} className="text-rose-400"/> Profile Info</h3>
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Nickname</label>
+                      <input type="text" value={formData.idol?.nickname || ''} onChange={e => updateNested(["idol", "nickname"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="별명" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Birthday</label>
+                      <input type="text" value={formData.idol?.birthday || ''} onChange={e => updateNested(["idol", "birthday"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="생일" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Age</label>
+                      <input type="text" value={formData.idol?.age || ''} onChange={e => updateNested(["idol", "age"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="나이" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Specialty</label>
+                      <input type="text" value={formData.idol?.specialty || ''} onChange={e => updateNested(["idol", "specialty"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="특기" />
+                    </div>
+                </div>
+
+                <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+                    <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> Favorites</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">{renderArrayInput("Colors", ["idol", "favorites", "colors"])}</div>
+                        <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">{renderArrayInput("Foods", ["idol", "favorites", "foods"])}</div>
+                        <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">{renderArrayInput("Games", ["idol", "favorites", "games"])}</div>
+                        <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">{renderArrayInput("Music", ["idol", "favorites", "music"])}</div>
+                    </div>
                 </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* 미리보기 모달 */}
+        {/* Q&A TAB */}
+        {editTab === 'qna' && (
+          <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
+              <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-violet-500"/> 100문 100답 작성</h3>
+              <p className="text-[11px] text-zinc-500 font-medium mb-5">나만의 엉뚱하고 재미있는 질문과 답변을 추가해보세요.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(formData.qna || []).map((item, idx) => (
+                    <div key={idx} className="flex flex-col gap-2.5 bg-violet-50/30 p-5 rounded-2xl border border-violet-100/50 relative group transition-colors hover:bg-violet-50">
+                        <button type="button" onClick={()=>{const arr=[...(formData.qna||[])]; arr.splice(idx,1); updateNested(["qna"], arr);}} className="absolute top-4 right-4 text-violet-300 hover:text-rose-500 bg-white border border-violet-100 p-1.5 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
+                        
+                        <div>
+                          <label className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1 block">Question</label>
+                          <input value={item.q} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].q=e.target.value; updateNested(["qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-900 outline-none focus:border-violet-400 pr-10 transition-colors" placeholder="예: 무인도에 가져갈 3가지는?" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">Answer</label>
+                          <textarea value={item.a} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].a=e.target.value; updateNested(["qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-[11px] font-medium text-zinc-800 outline-none focus:border-violet-400 resize-none transition-colors" placeholder="답변을 작성하세요" rows={2} />
+                        </div>
+                    </div>
+                ))}
+                
+                <button type="button" onClick={()=>{const arr=[...(formData.qna||[]), {q:"", a:""}]; updateNested(["qna"], arr);}} className="min-h-[140px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-violet-200 rounded-2xl text-violet-400 hover:text-violet-600 hover:border-violet-400 hover:bg-violet-50 transition-colors">
+                    <Plus size={24} />
+                    <span className="font-bold text-xs">새로운 Q&A 추가</span>
+                </button>
+              </div>
+          </div>
+        )}
+
+        {/* HOBBY TAB */}
+        {editTab === 'hobby' && (
+          <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-zinc-100">
+              <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Target size={16} className="text-amber-500"/> 취미 소개 섹션</h3>
+              <p className="text-[11px] text-zinc-500 font-medium mb-5">나를 가장 잘 나타내는 취미 하나를 깊게 소개해보세요.</p>
+              
+              <div className="bg-amber-50/30 p-5 rounded-2xl border border-amber-100/50 space-y-5">
+                {renderInput("취미 제목 (Headline)", ["hobby", "title"], "예: 필름 카메라와 골목길 산책")}
+                
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-amber-100">
+                    <div className="w-24 h-24 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200 relative group shadow-inner">
+                        {isHobbyImageUploading && (
+                            <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
+                                <Loader2 size={16} className="text-amber-500 animate-spin mb-1" />
+                            </div>
+                        )}
+                        {formData.hobby?.image ? <img src={formData.hobby.image} alt="Hobby" className="w-full h-full object-cover"/> : <ImageIcon className="text-zinc-300" size={24}/>}
+                        
+                        <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
+                            <Upload size={16} className="mb-1" />
+                            <span className="text-[8px] font-bold">업로드</span>
+                            <input type="file" accept="image/*" onChange={handleHobbyImageUpload} className="hidden" disabled={isHobbyImageUploading} />
+                        </label>
+                    </div>
+                    <div className="flex-1 w-full space-y-2">
+                        <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block">배경 이미지 소스</label>
+                        <div className="flex bg-amber-100/50 p-0.5 rounded-lg w-max mb-1">
+                            <button type="button" onClick={() => setHobbyImageInputType('file')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${hobbyImageInputType === 'file' ? 'bg-white shadow-sm text-amber-700' : 'text-amber-600 hover:bg-amber-200/50'}`}>파일 업로드</button>
+                            <button type="button" onClick={() => setHobbyImageInputType('url')} className={`px-3 py-1 text-[10px] font-bold rounded-md transition ${hobbyImageInputType === 'url' ? 'bg-white shadow-sm text-amber-700' : 'text-amber-600 hover:bg-amber-200/50'}`}>웹 URL</button>
+                        </div>
+                        {hobbyImageInputType === 'file' ? (
+                            <p className="text-[10px] font-medium text-zinc-500 bg-zinc-50 p-2 rounded-lg border border-zinc-100">좌측 이미지를 클릭하여 PC의 파일을 업로드하세요.</p>
+                        ) : (
+                            <input type="text" placeholder="https://..." value={formData.hobby?.image || ''} onChange={e => updateNested(["hobby", "image"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-amber-400 transition-colors" />
+                        )}
+                    </div>
+                </div>
+                
+                <div>
+                    <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-1.5">상세 설명 (Description)</label>
+                    <textarea value={formData.hobby?.description || ''} onChange={e => updateNested(["hobby", "description"], e.target.value)} rows={3} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2.5 text-xs font-medium outline-none focus:border-amber-400 resize-none transition-colors" placeholder="이 취미를 왜 좋아하는지, 어떤 매력이 있는지 적어주세요." />
+                </div>
+                
+                <div className="bg-white p-4 rounded-xl border border-amber-100">
+                  {renderArrayInput("관련 키워드 (Tags)", ["hobby", "keywords"], "키워드 입력 후 Enter")}
+                </div>
+              </div>
+          </div>
+        )}
+
+        {/* VISION TAB (Mandalart) */}
+        {editTab === 'vision' && (
+           <div className="animate-in fade-in">
+               {renderMandalartEditor()}
+           </div>
+        )}
+
+        {/* QUOTES TAB */}
+        {editTab === 'quotes' && (
+          <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
+              <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Quote size={16} className="text-slate-400"/> 좋아하는 명언 모음</h3>
+              <p className="text-[11px] text-zinc-500 font-medium mb-5">나에게 영감을 주는 문장이나 좌우명을 기록해두세요.</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {(formData.quotes || []).map((item, idx) => (
+                    <div key={idx} className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm relative group transition-colors hover:bg-white">
+                        <button type="button" onClick={()=>{const arr=[...(formData.quotes||[])]; arr.splice(idx,1); updateNested(["quotes"], arr);}} className="absolute top-3 right-3 text-slate-300 hover:text-rose-500 bg-white border border-slate-100 p-1 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
+                        
+                        <textarea 
+                          value={item.text} 
+                          onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].text=e.target.value; updateNested(["quotes"], arr); }} 
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none resize-none focus:border-slate-400 pr-8 transition-colors" 
+                          placeholder="명언 내용" 
+                          rows={3}
+                        />
+                        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 focus-within:border-slate-400 transition-colors">
+                          <span className="text-[10px] font-black text-slate-300">-</span>
+                          <input 
+                            value={item.author} 
+                            onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].author=e.target.value; updateNested(["quotes"], arr); }} 
+                            className="flex-1 bg-transparent text-[11px] font-bold text-slate-600 outline-none" 
+                            placeholder="작성자 또는 출처" 
+                          />
+                        </div>
+                    </div>
+                ))}
+                
+                <button type="button" onClick={()=>{const arr=[...(formData.quotes||[]), {text:"", author:""}]; updateNested(["quotes"], arr);}} className="min-h-[130px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                    <Plus size={24} />
+                    <span className="font-bold text-xs">새 명언 추가</span>
+                </button>
+              </div>
+          </div>
+        )}
+
+        {}
         {showPreview && (
           <div className="fixed inset-0 bg-zinc-950/80 z-[200] overflow-y-auto p-4 md:p-8 flex flex-col items-center animate-in fade-in backdrop-blur-sm">
             <div className="w-full max-w-[1000px] bg-[#F0F2F5] rounded-3xl shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
@@ -998,9 +961,8 @@ const EditProfileView = () => {
                 </div>
               </div>
 
-              {/* 미리보기 화면 (새로운 프로필 뷰 디자인 반영) */}
+              {/* 미리보기 화면 */}
               <div className="flex-1 overflow-y-auto pb-10">
-                {/* 1. 상태 메시지 배지 */}
                 {formData.status && (
                   <div className="mx-4 md:mx-10 mt-6 mb-2 flex relative z-10">
                       <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-3 py-1.5 rounded-2xl shadow-sm">
@@ -1010,11 +972,9 @@ const EditProfileView = () => {
                   </div>
                 )}
 
-                {/* 2. 메인 프로필 명함 (미리보기) */}
                 <div className={`mx-4 md:mx-10 bg-white rounded-3xl p-5 md:p-8 shadow-sm relative z-20 border border-zinc-100 ${!formData.status ? 'mt-6' : ''}`}>
                   <div className="flex flex-col md:flex-row gap-4 md:gap-10 items-stretch">
                     
-                    {/* 좌측: 주요 정보 */}
                     <div className="flex-1 flex flex-col min-w-0 pr-4 md:pr-0">
                       <div className="flex flex-row md:flex-row gap-4 items-center md:items-start">
                         <div className="w-20 h-20 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
@@ -1048,7 +1008,6 @@ const EditProfileView = () => {
 
                     <div className="hidden md:block w-px bg-zinc-100 my-2"></div>
 
-                    {/* 우측: 자기소개 및 태그 */}
                     <div className="flex-1 flex flex-col justify-center md:pl-2 mt-2 md:mt-0">
                       <Quote size={16} className="text-violet-300 mb-1.5 md:mb-3"/>
                       <p className="text-xs md:text-base text-zinc-800 font-bold leading-relaxed mb-3 md:mb-6">
