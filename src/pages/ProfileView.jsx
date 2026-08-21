@@ -105,20 +105,6 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
-  // ⭐️ 데이터 로딩 중 빈 화면 방지 스켈레톤
-  if (isLoading && isProfileEmpty) {
-    return (
-      <div className="max-w-[1000px] mx-auto w-full p-4 md:p-10 flex flex-col items-center justify-center min-h-[70vh] animate-pulse">
-          <div className="w-24 h-24 bg-zinc-200 rounded-[2rem] mb-6 shadow-sm border border-zinc-100"></div>
-          <div className="h-8 w-64 bg-zinc-200 rounded-full mb-3"></div>
-          <div className="h-4 w-40 bg-zinc-200 rounded-full mb-8"></div>
-          <p className="text-zinc-400 font-bold flex items-center gap-2">
-             <Loader2 size={18} className="animate-spin text-indigo-400"/> 서버에서 데이터를 불러오는 중입니다...
-          </p>
-      </div>
-    );
-  }
-
   const renderVisionPreview = () => {
     const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
     const v = {
@@ -170,6 +156,20 @@ const ProfileView = () => {
         </div>
     );
   };
+
+  // ⭐️ 데이터 로딩 중 빈 화면 방지 스켈레톤 추가 (핵심 수정)
+  if (isLoading) {
+    return (
+      <div className="max-w-[1000px] mx-auto w-full p-4 md:p-10 flex flex-col items-center justify-center min-h-[70vh] animate-pulse">
+          <div className="w-24 h-24 bg-zinc-200 rounded-[2rem] mb-6 shadow-sm border border-zinc-100"></div>
+          <div className="h-8 w-64 bg-zinc-200 rounded-full mb-3"></div>
+          <div className="h-4 w-40 bg-zinc-200 rounded-full mb-8"></div>
+          <p className="text-zinc-400 font-bold flex items-center gap-2">
+             <Loader2 size={18} className="animate-spin text-indigo-400"/> 서버에서 데이터를 불러오는 중입니다...
+          </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">

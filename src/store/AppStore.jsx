@@ -14,7 +14,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 // =========================================================================
 // ⭐️ [필수 설정] 주소창에 아무것도 없을 때 메인 화면으로 띄울 유저 아이디
 // =========================================================================
-const MAIN_HOST_HANDLE = 'taeya00'; // ⬅️ 본인이 가입할 때 만든 아이디로 반드시 수정하세요! (예: 'taeya')
+const MAIN_HOST_HANDLE = 'taeya00'; // ⬅️ 본인이 가입할 때 만든 아이디로 반드시 수정하세요!
 
 // --- 초기 비어있는 데이터 상태 (Empty State) ---
 const INITIAL_USER_DATA = {
@@ -37,6 +37,8 @@ export const AppProvider = ({ children }) => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // ⭐️ 데이터 로딩 상태 (이 값이 true일 때는 섣불리 빈 화면을 띄우지 않음)
   const [isLoading, setIsLoading] = useState(true);
 
   // 데이터 상태
@@ -49,7 +51,7 @@ export const AppProvider = ({ children }) => {
   // 권한 및 뷰 모드 상태
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
-  const [visitedHandle, setVisitedHandle] = useState(null); // 다른 사람 프로필 방문 시 아이디 저장
+  const [visitedHandle, setVisitedHandle] = useState(null);
 
   // 토스트 메시지 띄우기
   const showToast = useCallback((msg) => {
@@ -57,28 +59,30 @@ export const AppProvider = ({ children }) => {
     setTimeout(() => setToastMessage(''), 3000);
   }, []);
 
-  // ⭐️ 공통 API 통신 함수
-  const apiFetch = useCallback(async (endpoint, options = {}, retries = 2) => {
+  // ⭐️ 공통 API 통신 함수 (콜드 스타트 방어: 최대 3회, 2초 간격 재시도)
+  const apiFetch = useCallback(async (endpoint, options = {}, retries = 3) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+
     try {
       const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-      // 502, 503, 504 등 서버가 아직 준비 중일 때 발생하는 에러 대응 (자동 재시도)
+      
+      // 백엔드가 아직 켜지는 중일 때 발생하는 에러(502, 503 등) 대응
       if (!res.ok && [502, 503, 504].includes(res.status) && retries > 0) {
-         console.warn(`서버 준비 중... 잠시 후 재시도 합니다. (${endpoint})`);
-         await new Promise(resolve => setTimeout(resolve, 1500));
-         return apiFetch(endpoint, options, retries - 1);
+         console.warn(`서버 깨우는 중... 잠시 후 재시도 합니다. (${retries}번 남음)`);
+         await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기
+         return apiFetch(endpoint, options, retries - 1); // 재귀 호출
       }
       return res;
     } catch (error) {
+      // fetch 자체가 실패하는 경우 (네트워크 에러, 서버 완전 다운 등)
       if (retries > 0) {
-         console.warn(`네트워크 지연... 재시도 합니다. (${endpoint})`);
-         await new Promise(resolve => setTimeout(resolve, 1500));
+         console.warn(`네트워크 연결 지연, 서버 깨우는 중... (${retries}번 남음)`);
+         await new Promise(resolve => setTimeout(resolve, 2000));
          return apiFetch(endpoint, options, retries - 1);
       }
       throw error;
@@ -100,13 +104,13 @@ export const AppProvider = ({ children }) => {
     } else {
       // ⭐️ 토큰도 없고 지정된 유저도 없으면 기본 호스트의 퍼블릭 프로필을 보여줌
       targetUrlBase = `/users/${MAIN_HOST_HANDLE}`; 
-      setIsGuestMode(true); // 기본 프로필도 남의 화면을 보는 것과 동일하게 처리하여 수정 버튼 차단
+      setIsGuestMode(true); 
     }
 
     try {
-      if (!isSilent) setIsLoading(true);
+      if (!isSilent) setIsLoading(true); // 로딩 시작
       
-      // 네트워크 에러 시 앱이 터지지 않고 상태값을 반환하도록 안전 장치 추가
+      // 네트워크 에러 시 앱이 터지지 않도록 방어
       const fetchSafe = (url) => apiFetch(url).catch(err => {
           console.error("Network Fetch Error:", err);
           return { ok: false, status: 0 }; 
@@ -120,19 +124,16 @@ export const AppProvider = ({ children }) => {
 
       if (profileRes.ok) {
           setUser(await profileRes.json());
-          // ⭐️ 데이터 로드 성공 시 확실하게 관리자 모드 켜기 (내 프로필일 때만)
           if (token && targetUrlBase === `/me`) {
               setIsAdmin(true);
           }
       } else {
-          // ⭐️ 무조건 로그아웃 시키지 않고, '인증 에러(401, 403)'일 때만 로그아웃!
+          // 인증 에러(401, 403)일 때만 로그아웃
           if (token && targetUrlBase === `/me`) {
               if (profileRes.status === 401 || profileRes.status === 403) {
-                  console.warn("인증이 만료되었습니다. 로그아웃 처리합니다.");
                   localStorage.removeItem('accessToken');
                   setIsAdmin(false);
               } else {
-                  console.warn("서버 에러로 프로필 데이터를 불러오지 못했습니다. (로그인 유지)");
                   setIsAdmin(true); 
               }
           }
@@ -149,11 +150,11 @@ export const AppProvider = ({ children }) => {
       console.error("데이터 로드 중 에러:", error);
       setUser(INITIAL_USER_DATA); setTagTree([]); setRecords([]);
     } finally {
-      if (!isSilent) setIsLoading(false);
+      if (!isSilent) setIsLoading(false); // 로딩 완전 종료
     }
   }, [apiFetch, visitedHandle]); 
 
-  // ⭐️ 특정 유저 프로필 방문
+  // 특정 유저 프로필 방문
   const visitUserProfile = useCallback(async (targetHandle) => {
     setVisitedHandle(targetHandle); 
     setIsGuestMode(true); 
@@ -165,7 +166,7 @@ export const AppProvider = ({ children }) => {
     await fetchAllData(false, targetHandle);
   }, [fetchAllData]);
 
-  // ⭐️ 내 프로필로 복귀
+  // 내 프로필로 복귀
   const resetToMyProfile = useCallback(async () => {
     setVisitedHandle(null);
     setIsGuestMode(false);
@@ -175,17 +176,16 @@ export const AppProvider = ({ children }) => {
     await fetchAllData(false, "");
   }, [fetchAllData]);
 
-  // ⭐️ 검색 수행 (빈칸 허용으로 수정 완료!)
+  // 검색 수행
   const searchUsers = useCallback(async (keyword) => {
     try {
       setIsLoading(true);
-      // 빈칸이든 아니든 무조건 백엔드로 요청하여 검색 수행 (백엔드가 빈칸이면 전체 반환함)
       const res = await apiFetch(`/users/search?keyword=${encodeURIComponent(keyword.trim())}`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);
         setSearchQuery(keyword.trim());
-        setViewMode('search'); // 검색 결과 화면으로 자동 이동
+        setViewMode('search'); 
       } else {
         setSearchResults([]);
         showToast("검색에 실패했습니다.");
@@ -199,7 +199,7 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiFetch, showToast]);
 
-  // ⭐️ 로그아웃 처리
+  // 로그아웃 처리
   const handleLogout = useCallback(() => {
     localStorage.removeItem('accessToken');
     setIsAdmin(false);
@@ -207,10 +207,10 @@ export const AppProvider = ({ children }) => {
     setIsGuestMode(false);
     setViewMode('profile');
     window.history.replaceState({}, document.title, window.location.pathname);
-    fetchAllData(false, null); // 로그아웃 후 기본 데이터 갱신
+    fetchAllData(false, null);
   }, [fetchAllData]);
 
-  // ⭐️ 앱 초기 진입 시 로직
+  // 앱 초기 진입 시 로직
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token'); 
@@ -218,19 +218,16 @@ export const AppProvider = ({ children }) => {
     const sharedHandle = params.get('u'); 
 
     if (token) {
-      // 1. 소셜 로그인 성공 시
       localStorage.setItem('accessToken', token);
       setIsAdmin(true);
       window.history.replaceState({}, document.title, window.location.pathname); 
       showToast("로그인 성공! 환영합니다. 🎉");
       fetchAllData(false, ""); 
     } else if (error) {
-      // 2. 소셜 로그인 실패 시
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("로그인 실패: " + decodeURIComponent(error));
       fetchAllData();
     } else {
-      // 3. 일반 접속 시 (새로고침 시)
       const savedToken = localStorage.getItem('accessToken');
       if (savedToken) {
           setIsAdmin(true); 
@@ -242,6 +239,7 @@ export const AppProvider = ({ children }) => {
         fetchAllData(false, savedToken ? "" : null); 
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   return (
