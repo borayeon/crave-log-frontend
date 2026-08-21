@@ -58,14 +58,31 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   // ⭐️ 공통 API 통신 함수
-  const apiFetch = useCallback(async (endpoint, options = {}) => {
+  const apiFetch = useCallback(async (endpoint, options = {}, retries = 2) => {
     const token = localStorage.getItem('accessToken');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    return fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+      // 502, 503, 504 등 서버가 아직 준비 중일 때 발생하는 에러 대응 (자동 재시도)
+      if (!res.ok && [502, 503, 504].includes(res.status) && retries > 0) {
+         console.warn(`서버 준비 중... 잠시 후 재시도 합니다. (${endpoint})`);
+         await new Promise(resolve => setTimeout(resolve, 1500));
+         return apiFetch(endpoint, options, retries - 1);
+      }
+      return res;
+    } catch (error) {
+      if (retries > 0) {
+         console.warn(`네트워크 지연... 재시도 합니다. (${endpoint})`);
+         await new Promise(resolve => setTimeout(resolve, 1500));
+         return apiFetch(endpoint, options, retries - 1);
+      }
+      throw error;
+    }
   }, []);
 
   // ⭐️ 데이터 통합 로드

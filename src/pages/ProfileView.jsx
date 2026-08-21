@@ -4,12 +4,12 @@ import {
   Rocket, User, Sparkles, MapPin, Target, 
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
-  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users
+  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2
 } from 'lucide-react';
-import { useAppStore } from '../store/AppStore';
+import { useAppStore } from '../store/AppStore.jsx';
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode } = useAppStore();
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
 
   const isGuest = !isAdmin || isGuestMode;
@@ -45,7 +45,6 @@ const ProfileView = () => {
 
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
 
-  // ⭐️ 플랫폼에 맞는 아이콘을 렌더링하는 함수 (Lucide에서 브랜드 아이콘이 삭제되어 대체 아이콘 사용)
   const getPlatformIcon = (platform) => {
       switch(platform) {
           case 'github': return <Terminal size={16} />;
@@ -106,6 +105,20 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
+  // ⭐️ 데이터 로딩 중 빈 화면 방지 스켈레톤
+  if (isLoading && isProfileEmpty) {
+    return (
+      <div className="max-w-[1000px] mx-auto w-full p-4 md:p-10 flex flex-col items-center justify-center min-h-[70vh] animate-pulse">
+          <div className="w-24 h-24 bg-zinc-200 rounded-[2rem] mb-6 shadow-sm border border-zinc-100"></div>
+          <div className="h-8 w-64 bg-zinc-200 rounded-full mb-3"></div>
+          <div className="h-4 w-40 bg-zinc-200 rounded-full mb-8"></div>
+          <p className="text-zinc-400 font-bold flex items-center gap-2">
+             <Loader2 size={18} className="animate-spin text-indigo-400"/> 서버에서 데이터를 불러오는 중입니다...
+          </p>
+      </div>
+    );
+  }
+
   const renderVisionPreview = () => {
     const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
     const v = {
@@ -161,7 +174,6 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
-      {/* 상태 메시지 배지 */}
       {!isProfileEmpty && safeUser.status && (
         <div className="mb-4 flex relative z-10">
             <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-4 py-2 rounded-2xl shadow-sm">
@@ -171,10 +183,7 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 1. 메인 프로필 명함 */}
       <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
-        
-        {/* 우측 상단 둥근 버튼 (공유/편집) */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
           {!isProfileEmpty && (
             <button onClick={handleShare} className="w-9 h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
@@ -200,12 +209,8 @@ const ProfileView = () => {
           </div>
         ) : (
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4 md:mt-0">
-            
-            {/* 좌측: 주요 정보 */}
             <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
               <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
-                
-                {/* 둥근 사각형 프로필 사진 */}
                 <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                   {safeUser.profileImageUrl ? (
                       <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -216,10 +221,8 @@ const ProfileView = () => {
                   )}
                 </div>
                 
-                {/* 텍스트 정보 */}
                 <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
                   <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                  {/* 연보라색 아이디 뱃지 */}
                   <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                   
                   <div className="space-y-1.5 md:space-y-2">
@@ -236,7 +239,6 @@ const ProfileView = () => {
                 </div>
               </div>
 
-              {/* 좌측 하단: 태그 리스트 */}
               {(safeUser.tags || []).length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                     {safeUser.tags.map(tag => (
@@ -245,7 +247,6 @@ const ProfileView = () => {
                 </div>
               )}
 
-              {/* ⭐️ 소셜 및 개인 링크 버튼 영역 */}
               {(safeUser.links && safeUser.links.length > 0) && (
                   <div className="mt-4 flex flex-wrap gap-2.5">
                       {safeUser.links.map((link, idx) => (
@@ -257,8 +258,6 @@ const ProfileView = () => {
                               className="w-9 h-9 md:w-10 md:h-10 bg-white border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 hover:text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-md transition-all group relative"
                           >
                               {getPlatformIcon(link.platform)}
-                              
-                              {/* 마우스 오버 시 나타나는 이름(툴팁) */}
                               {link.name && (
                                   <span className="absolute -bottom-8 bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
                                       {link.name}
@@ -270,24 +269,20 @@ const ProfileView = () => {
               )}
             </div>
 
-            {/* 중간 얇은 구분선 */}
             <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
-            {/* 우측: 자기소개 인용구 */}
             <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
               <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
               <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
                 "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
               </p>
             </div>
-
           </div>
         )}
       </div>
 
       {!isProfileEmpty && (
         <>
-          {/* 2. 데이터 탐색 탭 */}
           <div className="mt-8 md:mt-12">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
@@ -299,7 +294,6 @@ const ProfileView = () => {
               {availableTabs.map(tab => {
                   const isActive = activeTab === tab.id;
                   const isPrivate = isTabPrivate(tab.id);
-                  
                   return (
                     <button 
                       key={tab.id}
@@ -321,7 +315,6 @@ const ProfileView = () => {
             </div>
           </div>
 
-          {/* 3. 활성화된 탭 컨텐츠 영역 */}
           {availableTabs.length === 0 && isGuest ? (
               <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
@@ -331,7 +324,6 @@ const ProfileView = () => {
           ) : (
               <div className="mt-4 md:mt-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
                   
-                  {/* Developer Tab */}
                   {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
@@ -348,13 +340,7 @@ const ProfileView = () => {
                                 {['backend', 'db', 'frontend', 'tools'].map(type => {
                                     const stackData = safeUser.developer?.techStack?.[type];
                                     if (!stackData) return null;
-                                    
-                                    const stackArray = Array.isArray(stackData) 
-                                        ? stackData 
-                                        : typeof stackData === 'string' 
-                                            ? stackData.split(',').filter(Boolean) 
-                                            : [];
-
+                                    const stackArray = Array.isArray(stackData) ? stackData : typeof stackData === 'string' ? stackData.split(',').filter(Boolean) : [];
                                     if (stackArray.length === 0) return null;
 
                                     return (
@@ -397,7 +383,6 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* Career Tab */}
                   {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
@@ -442,7 +427,6 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* Idol Tab */}
                   {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
@@ -479,7 +463,6 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* QnA Tab */}
                   {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && (
                       <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100">
                           <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-1.5"><MessageSquare size={14}/> 100문 100답</h4>
@@ -496,7 +479,6 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* Hobby Tab */}
                   {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && (
                       <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden flex flex-col md:flex-row group">
                           <div className="h-56 md:h-auto md:w-1/2 relative bg-zinc-100 overflow-hidden">
@@ -516,10 +498,8 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* Vision Tab */}
                   {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && renderVisionPreview()}
 
-                  {/* Quotes Tab */}
                   {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           {(safeUser.quotes || []).map((q, idx) => (

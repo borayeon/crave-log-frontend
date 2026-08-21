@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, ChevronUp, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic, GripVertical, Hash } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { History, Network, ChevronDown, ChevronRight, Folder, FolderOpen, Hash, Trash2, Plus, X as CloseIcon, Edit2, Calendar, Lock, PlayCircle, Disc, Quote, ExternalLink, Link as LinkIcon, Loader2, GripVertical } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -14,12 +14,12 @@ const getYoutubeId = (url) => {
 };
 
 const getDomain = (url) => {
-  try {
-    const domain = new URL(url).hostname;
-    return domain.replace('www.', '');
-  } catch (e) {
-    return null;
-  }
+    try {
+        const domain = new URL(url).hostname;
+        return domain.replace('www.', '');
+    } catch (e) {
+        return null;
+    }
 };
 
 const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, apiFetch, fetchAllData, showToast }) => {
@@ -162,11 +162,9 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     }
   };
 
-  // 💡 [수정] 팝업창 자체적으로 데이터를 튼튼하게 분석하는 방어 로직 추가
   const recordImage = record.image || record.imageUrl || '';
   const recordCategory = record.category || record.categoryName || '';
 
-  // 1. 뷰 모드 판단 로직 (선택된 기록의 정보 기반)
   const viewCategory = tagTree.find(c => String(c.id) === String(record.categoryId) || c.name === recordCategory);
   const viewCatType = record.categoryType || viewCategory?.type || (recordCategory.includes('음악') ? 'MUSIC' : recordCategory.includes('URL') ? 'URL' : 'GENERAL');
   
@@ -177,7 +175,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const viewHasImage = recordImage && recordImage.trim() !== '' && recordImage !== DEFAULT_IMAGE;
   const isViewTextOnly = !isViewMusic && !isViewUrl && !viewHasImage;
 
-  // 2. 편집 모드 판단 로직 (선택한 카테고리 셀렉트박스 기반)
   const currentCategory = tagTree.find(c => String(c.id) === String(categoryId));
   const editCatType = currentCategory?.type || (currentCategory?.name?.includes('음악') ? 'MUSIC' : currentCategory?.name?.includes('URL') ? 'URL' : 'GENERAL');
   const isEditMusicCat = editCatType === 'MUSIC';
@@ -242,7 +239,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                          </div>
                      )}
                  </div>
-            ) : viewVideoId ? ( // 💡 여기서부터 뷰 모드 렌더링 로직 (자체 계산한 viewVideoId 등 사용)
+            ) : viewVideoId ? ( 
                 <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${viewVideoId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full border-none outline-none"></iframe>
             ) : isViewUrl ? (
                 <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-10 text-center relative overflow-hidden">
@@ -288,7 +285,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             )}
         </div>
 
-        {/* 우측 텍스트 정보 및 폼 영역 */}
         <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-white text-zinc-800 overflow-hidden relative z-10">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100 shrink-0">
                 <div className="flex items-center gap-3">
@@ -479,7 +475,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
 };
 
 const ArchiveView = () => {
-  const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery } = useAppStore();
+  const { records, tagTree, isAdmin, setLoginModalOpen, setAddRecordModalOpen, apiFetch, fetchAllData, showToast, isGuestMode, searchQuery, isLoading } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   
@@ -503,6 +499,22 @@ const ArchiveView = () => {
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
   }, [isGuestMode]);
+
+  const executeGridDelete = async () => {
+    if (!apiFetch || !confirmDeleteId) return;
+
+    try {
+      const res = await apiFetch(`/me/records/${confirmDeleteId}`, { method: 'DELETE' });
+      if (res.ok) {
+        await fetchAllData(true);
+        showToast('기록이 보관함에서 삭제되었습니다.');
+        setConfirmDeleteId(null);
+      }
+    } catch(err) {
+      console.error(err);
+      showToast('삭제 중 오류가 발생했습니다.');
+    }
+  };
 
   const categories = useMemo(() => {
     const uniqueCategories = new Set((records || []).map(r => r.category || r.categoryName).filter(Boolean));
@@ -564,7 +576,6 @@ const ArchiveView = () => {
     setCustomOrderedRecords(displayRecords);
   }, [displayRecords]);
 
-  // 💡 [수정] records의 원본이 아닌, 예쁘게 가공된 최신 displayRecords에서 데이터를 찾아 모달을 갱신합니다.
   useEffect(() => {
     if (selectedRecord && displayRecords.length > 0) {
       const latestRecord = displayRecords.find(r => r.id === selectedRecord.id);
@@ -630,6 +641,17 @@ const ArchiveView = () => {
     setCustomOrderedRecords(updated);
     showToast(`순위가 ${targetIndex + 1}위로 변경되었습니다! 🎵`);
   };
+
+  if (isLoading && (!records || records.length === 0)) {
+      return (
+          <div className="h-full bg-[#F8FAFC] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 animate-pulse">
+                  <Loader2 size={32} className="text-indigo-400 animate-spin" />
+                  <p className="text-sm font-bold text-zinc-500">보관함 데이터를 불러오는 중입니다...</p>
+              </div>
+          </div>
+      );
+  }
 
   if (!records || records.length === 0) {
       return (
@@ -920,14 +942,19 @@ const ArchiveView = () => {
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
-                      setSelectedRecord(item);
+                      // URL 보관함은 무조건 새 창으로! (모달 안 띄움)
+                      if (item.isUrlItem && item.youtubeUrl) {
+                          window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
+                      } else {
+                          setSelectedRecord(item);
+                      }
                   }} className={`group relative aspect-[3/4] w-full max-w-[300px] mx-auto rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden group/card">
                               <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
                               <div className="flex flex-col items-center w-full h-full justify-center mt-4">
                                   {item.youtubeUrl && item.domain ? (
-                                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
+                                      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110 z-10">
                                           <img 
                                             src={`https://icons.duckduckgo.com/ip3/${item.domain}.ico`} 
                                             onError={(e) => { 
@@ -938,16 +965,18 @@ const ArchiveView = () => {
                                             alt="site logo" 
                                           />
                                       </div>
-                                  ) : <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
-                                  <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
-                                  <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
+                                  ) : <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-blue-50 text-blue-300 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover/card:scale-110 z-10"><LinkIcon size={32} className="sm:w-10 sm:h-10" /></div>}
+                                  <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full z-10">{item.title}</h3>
+                                  <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%] z-10" >{item.domain || '클릭하여 열기'}</p>
                               </div>
+                              <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+                              <div className="absolute top-20 -left-20 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
                           </div>
                       ) : item.isTextOnly ? (
                           <div className="w-full h-full bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50/60 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden">
-                              <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-100/60 text-indigo-600 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm"><Quote size={12} /> {item.category}</div>
-                              <h3 className="text-base sm:text-xl md:text-2xl font-black text-zinc-800 mb-2 sm:mb-3 mt-4 sm:mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-2">{item.title}</h3>
-                              {item.content && <p className="text-[10px] sm:text-sm md:text-base font-medium text-zinc-500 line-clamp-3 sm:line-clamp-4 leading-relaxed px-3">"{item.content}"</p>}
+                              <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-indigo-100/60 text-indigo-600 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><Quote size={12} /> {item.category}</div>
+                              <h3 className="text-base sm:text-xl md:text-2xl font-black text-zinc-800 mb-2 sm:mb-3 mt-4 sm:mt-6 leading-snug group-hover:text-indigo-600 transition-colors line-clamp-2 px-2 z-10">{item.title}</h3>
+                              {item.content && <p className="text-[10px] sm:text-sm md:text-base font-medium text-zinc-500 line-clamp-3 sm:line-clamp-4 leading-relaxed px-3 z-10">"{item.content}"</p>}
                           </div>
                       ) : (
                           <>
