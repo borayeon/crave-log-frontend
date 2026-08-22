@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, ChevronUp, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic, GripVertical, Hash } from 'lucide-react';
+import { Sparkles, FolderOpen, Edit2, X as CloseIcon, Trash2, Calendar, Save, Plus, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, MapPin, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Globe, Lock, Disc, PlayCircle, Quote, Image as ImageIcon, Loader2, Link as LinkIcon, ExternalLink, AlertTriangle, LayoutGrid, ListMusic, GripVertical, Hash } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import EmptyState from '../components/common/EmptyState';
 
@@ -22,15 +22,114 @@ const getDomain = (url) => {
   }
 };
 
+// ⭐️ 에어비앤비/항공권 스타일 커스텀 달력 컴포넌트
+const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
+  const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+
+  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  const handleDayClick = (day) => {
+    const clickedDate = new Date(year, month, day);
+    const formatted = `${clickedDate.getFullYear()}-${String(clickedDate.getMonth() + 1).padStart(2, '0')}-${String(clickedDate.getDate()).padStart(2, '0')}`;
+
+    if (!startDate || (startDate && endDate)) {
+      onChange(formatted, '');
+    } else {
+      const start = new Date(startDate);
+      if (clickedDate < start) {
+        onChange(formatted, '');
+      } else if (formatted === startDate) {
+        onChange(startDate, '');
+      } else {
+        onChange(startDate, formatted);
+      }
+    }
+  };
+
+  const isSelected = (day) => {
+    const d = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return d === startDate || d === endDate;
+  };
+
+  const isInRange = (day) => {
+    if (!startDate || !endDate) return false;
+    const d = new Date(year, month, day);
+    return d > new Date(startDate) && d < new Date(endDate);
+  };
+
+  return (
+    <div className="bg-white border border-zinc-200 p-4 rounded-2xl shadow-xl w-[280px] absolute z-[300] mt-2 left-0" onClick={e => e.stopPropagation()}>
+      <div className="flex justify-between items-center mb-4">
+        <button type="button" onClick={handlePrevMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"><ChevronLeft size={16}/></button>
+        <span className="font-black text-sm text-zinc-800">{year}년 {month + 1}월</span>
+        <button type="button" onClick={handleNextMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"><ChevronRight size={16}/></button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-2 text-zinc-400 font-bold uppercase">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div className="grid grid-cols-7 gap-y-1 text-sm">
+        {blanks.map(b => <div key={`blank-${b}`} className="p-2"/>)}
+        {days.map(day => {
+          const selected = isSelected(day);
+          const inRange = isInRange(day);
+          const isStart = startDate === `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const isEnd = endDate === `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          
+          let bgClass = "hover:bg-zinc-100";
+          let textClass = "text-zinc-700 font-medium";
+          let roundedClass = "rounded-lg";
+
+          if (selected) {
+            bgClass = "bg-indigo-500 shadow-sm";
+            textClass = "text-white font-black";
+            if (isStart && endDate) roundedClass = "rounded-l-lg rounded-r-none";
+            if (isEnd) roundedClass = "rounded-r-lg rounded-l-none";
+            if (isStart && !endDate) roundedClass = "rounded-lg";
+          } else if (inRange) {
+            bgClass = "bg-indigo-50";
+            textClass = "text-indigo-700 font-bold";
+            roundedClass = "rounded-none";
+          }
+
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => handleDayClick(day)}
+              className={`py-1.5 w-full flex items-center justify-center transition-colors ${bgClass} ${textClass} ${roundedClass}`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 flex justify-between items-center border-t border-zinc-100 pt-3">
+        <span className="text-[10px] font-bold text-zinc-400">{startDate && endDate ? '기간 설정됨' : '날짜 선택'}</span>
+        <button type="button" onClick={onClose} className="text-xs font-black text-white bg-zinc-900 px-4 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">적용</button>
+      </div>
+    </div>
+  );
+};
+
 const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, apiFetch, fetchAllData, showToast }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   
-  // ⭐️ 날짜 상태를 시작일과 종료일로 분리
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState(null); 
@@ -65,7 +164,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
     if (record && isEditMode) {
       setTitle(record.title);
       
-      // ⭐️ 기간 형태의 날짜(~)를 파싱하여 분리
       const recordDate = record.date || '';
       if (recordDate.includes('~')) {
         const [start, end] = recordDate.split('~').map(d => d.trim().replace(/\./g, '-'));
@@ -129,7 +227,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         });
       }
 
-      // ⭐️ 시작일과 종료일이 있으면 ~ 로 이어붙여서 포맷팅
       let formattedDate = startDate.replace(/-/g, '.');
       if (endDate && startDate !== endDate) {
         formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
@@ -335,7 +432,8 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" />
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* ⭐️ 카테고리와 날짜를 세로(1열)로 넓게 배치하여 찌그러짐 방지 */}
+                        <div className="flex flex-col gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">카테고리 <span className="text-rose-500">*</span></label>
                                 <select 
@@ -351,25 +449,25 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                     {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                                 </select>
                             </div>
-                            {/* ⭐️ 기간 선택 가능하도록 2개의 인풋 배치 */}
-                            <div>
-                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜 (기간 설정)</label>
-                                <div className="flex items-center gap-1.5">
-                                    <input 
-                                        type="date" 
-                                        value={startDate} 
-                                        onChange={e=>setStartDate(e.target.value)} 
-                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2.5 text-xs text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" 
-                                    />
-                                    <span className="text-zinc-400 font-black">~</span>
-                                    <input 
-                                        type="date" 
-                                        value={endDate} 
-                                        onChange={e=>setEndDate(e.target.value)} 
-                                        min={startDate} 
-                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2.5 text-xs text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" 
-                                    />
-                                </div>
+                            
+                            {/* ⭐️ 에어비앤비 스타일 달력 렌더링 */}
+                            <div className="relative">
+                              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜 설정</label>
+                              <div 
+                                onClick={() => setShowDatePicker(!showDatePicker)}
+                                className="w-full h-[46px] bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-xs font-bold text-zinc-900 cursor-pointer flex items-center gap-2 shadow-sm hover:bg-white hover:border-indigo-400 transition-colors"
+                              >
+                                <Calendar size={14} className="text-indigo-500" />
+                                {startDate} {endDate && startDate !== endDate ? ` ~ ${endDate}` : ''}
+                              </div>
+                              {showDatePicker && (
+                                <CustomDateRangePicker 
+                                  startDate={startDate} 
+                                  endDate={endDate} 
+                                  onChange={(s, e) => { setStartDate(s); setEndDate(e); }} 
+                                  onClose={() => setShowDatePicker(false)} 
+                                />
+                              )}
                             </div>
                         </div>
                         
@@ -528,7 +626,6 @@ const ArchiveView = () => {
   const [editingRankId, setEditingRankId] = useState(null);
   const [rankInputValue, setRankInputValue] = useState('');
 
-  // ⭐️ 데이터 로딩 중 스피너 표시
   if (isLoading && (!records || records.length === 0)) {
     return (
       <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
@@ -689,27 +786,12 @@ const ArchiveView = () => {
     showToast(`순위가 ${targetIndex + 1}위로 변경되었습니다! 🎵`);
   };
 
-  if (!records || records.length === 0) {
-      return (
-          <div className="h-full bg-[#F8FAFC]">
-            <EmptyState 
-                title="텅 빈 보관함입니다" 
-                icon={<FolderOpen size={32}/>} 
-                onAction={() => isAdmin && !isGuestMode ? setAddRecordModalOpen(true) : setLoginModalOpen(true)}
-                actionLabel={isAdmin && !isGuestMode ? "첫 기록 추가하기" : "로그인하고 시작하기"}
-            />
-          </div>
-      );
-  }
-
-  // ⭐️ 현재 선택된 카테고리가 '음악' 관련인지 정확히 판별
   const isCurrentCategoryMusic = useMemo(() => {
     if (activeCategory === '전체') return false;
     const catNode = tagTree.find(c => c.name === activeCategory);
     return catNode?.type === 'MUSIC' || activeCategory.includes('음악');
   }, [activeCategory, tagTree]);
 
-  // ⭐️ 음악 카테고리가 활성화되었을 때만 리스트 뷰 적용
   const isListMode = isCurrentCategoryMusic && musicViewMode === 'list';
 
   return (
@@ -786,7 +868,6 @@ const ArchiveView = () => {
                 ))}
             </div>
 
-            {/* ⭐️ 음악 카테고리가 선택되었을 때만 스위치 버튼 렌더링 */}
             {isCurrentCategoryMusic && (
                 <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 ml-auto">
                     <button 
@@ -986,7 +1067,6 @@ const ArchiveView = () => {
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
-                      // ⭐️ URL 아이템 클릭 시 새 창 열기로 동작 통일 (QR 제거)
                       if (item.isUrlItem && item.youtubeUrl) {
                           window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
                           return;
@@ -1013,7 +1093,6 @@ const ArchiveView = () => {
                                   <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
                                   <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
-                              {/* ⭐️ QR 코드 제거 및 이동/스캔 텍스트 변경 */}
                               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
                                   <ExternalLink size={32} className="text-blue-500 mb-2" />
                                   <span className="text-[11px] font-black text-blue-600 bg-white px-3 py-1 rounded-md shadow-sm hidden sm:block">새 창으로 열기</span>
