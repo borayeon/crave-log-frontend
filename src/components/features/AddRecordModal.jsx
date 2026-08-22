@@ -8,7 +8,11 @@ const AddRecordModal = () => {
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // ⭐️ 날짜 상태를 시작일과 종료일로 분리
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState('');
+  
   const [imageUrl, setImageUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [content, setContent] = useState('');
@@ -26,7 +30,8 @@ const AddRecordModal = () => {
       setTitle('');
       setCategoryId('');
       setTagIds([]);
-      setDate(new Date().toISOString().split('T')[0]);
+      setStartDate(new Date().toISOString().split('T')[0]);
+      setEndDate('');
       setImageUrl('');
       setYoutubeUrl('');
       setContent('');
@@ -41,25 +46,21 @@ const AddRecordModal = () => {
 
   const selectedCategoryNode = categoryId ? tagTree.find(c => String(c.id) === String(categoryId)) : null;
   
-  // 카테고리 이름에 이모지(🔗, 🎵)가 포함되어 있어도 유연하게 인식하도록 includes 사용
   const isMusicCat = selectedCategoryNode?.name?.includes('음악');
   const isUrlCat = selectedCategoryNode?.name?.includes('URL');
 
   useEffect(() => {
       if (selectedCategoryNode && !isMusicCat && !isUrlCat) {
-          setYoutubeUrl(''); // 일반 카테고리일 때 URL 비우기
+          setYoutubeUrl(''); 
       } else if (selectedCategoryNode && (isMusicCat || isUrlCat)) {
-          setImageUrl(''); // 음악이나 URL 보관함일 때 이미지 비우기
+          setImageUrl(''); 
       }
   }, [categoryId, selectedCategoryNode, isMusicCat, isUrlCat]);
 
   if (!addRecordModalOpen) return null;
 
-  /* =========================================================
-   * ⭐️ 핵심 변경점: Base64 폭탄 제거 및 서버 파일 업로드 로직 적용
-   * ========================================================= */
   const uploadImageToServer = async (file) => {
-    setIsLoading(true); // 업로드 중 로딩 스피너 표시
+    setIsLoading(true); 
     const fileData = new FormData();
     fileData.append("file", file);
 
@@ -74,7 +75,6 @@ const AddRecordModal = () => {
       const data = await res.json();
       
       if (res.ok) {
-        // 성공 시 서버에서 반환한 짧고 깔끔한 이미지 주소를 상태(imageUrl)에 저장
         const fullImageUrl = `https://api.cravelog.me${data.imageUrl}`;
         setImageUrl(fullImageUrl);
         showToast("이미지가 성공적으로 업로드되었습니다.");
@@ -95,16 +95,13 @@ const AddRecordModal = () => {
       uploadImageToServer(file);
     }
   };
-  /* ========================================================= */
 
   const handleSave = async () => {
-    // 1. 필수 입력값 검증 (새 카테고리 추가인 경우 로직 포함)
     if (!title.trim() || (!categoryId && !newCatName.trim())) {
       showToast('제목과 카테고리는 필수 입력 사항입니다.');
       return;
     }
 
-    // 2. URL 보관함 또는 음악 카테고리일 때 링크 필수 입력 검증
     if ((isMusicCat || isUrlCat) && !youtubeUrl.trim()) {
         showToast(isMusicCat ? '유튜브 영상 링크를 입력해주세요.' : '보관할 웹사이트 링크(URL)를 입력해주세요.');
         return;
@@ -125,10 +122,16 @@ const AddRecordModal = () => {
         return id;
       }).filter(id => !isNaN(id));
 
+      // ⭐️ 시작일과 종료일이 있으면 ~ 로 이어붙여서 포맷팅
+      let formattedDate = startDate.replace(/-/g, '.');
+      if (endDate && startDate !== endDate) {
+        formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
+      }
+
       const payload = {
         title: title.trim(),
         categoryName: finalCatName,
-        recordDate: date.replace(/-/g, '.'),
+        recordDate: formattedDate,
         imageUrl: imageUrl.trim() || (!(isMusicCat || isUrlCat) ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop' : ''),
         youtubeUrl: (isMusicCat || isUrlCat) ? youtubeUrl.trim() : '',
         content: content.trim(),
@@ -172,69 +175,83 @@ const AddRecordModal = () => {
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-zinc-50/30">
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">제목 <span className="text-rose-500">*</span></label>
-              <input 
-                type="text" 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
-                placeholder="어떤 기록을 남길까요?" 
-                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-base font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
-              />
-            </div>
-            <div>
-              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">날짜</label>
-              <input 
-                type="date" 
-                value={date} 
-                onChange={e => setDate(e.target.value)} 
-                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
-              />
-            </div>
+          {/* ⭐️ 제목 단독 풀사이즈 배치 */}
+          <div>
+            <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">제목 <span className="text-rose-500">*</span></label>
+            <input 
+              type="text" 
+              value={title} 
+              onChange={e => setTitle(e.target.value)} 
+              placeholder="어떤 기록을 남길까요?" 
+              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-base font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
+            />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">카테고리 분류 <span className="text-rose-500">*</span></label>
-              <button 
-                type="button" 
-                onClick={() => setIsAddingNewCat(!isAddingNewCat)} 
-                className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors"
-              >
-                {isAddingNewCat ? '기존 카테고리 선택' : '+ 새 카테고리 만들기'}
-              </button>
-            </div>
-            
-            {isAddingNewCat ? (
-              <input 
-                type="text" 
-                value={newCatName} 
-                onChange={e => {
-                  setNewCatName(e.target.value);
-                  setCategoryId('');
-                }} 
-                placeholder="새로운 카테고리 이름을 입력하세요" 
-                className="w-full bg-indigo-50/50 border border-indigo-200 rounded-xl px-4 py-3 text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
-              />
-            ) : (
-              <div className="relative">
-                <Folder size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-                <select 
-                  value={categoryId} 
-                  onChange={e => {
-                    setCategoryId(e.target.value); 
-                    setTagIds([]);
-                    setIsTagExpanded(true);
-                  }} 
-                  className="w-full bg-white border border-zinc-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm"
+          {/* ⭐️ 카테고리와 날짜(기간)를 가로 1:1 배치 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">카테고리 분류 <span className="text-rose-500">*</span></label>
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddingNewCat(!isAddingNewCat)} 
+                  className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors"
                 >
-                  <option value="">보관할 폴더를 선택해주세요</option>
-                  {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                </select>
-                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                  {isAddingNewCat ? '기존 카테고리 선택' : '+ 새 카테고리 만들기'}
+                </button>
               </div>
-            )}
+              
+              {isAddingNewCat ? (
+                <input 
+                  type="text" 
+                  value={newCatName} 
+                  onChange={e => {
+                    setNewCatName(e.target.value);
+                    setCategoryId('');
+                  }} 
+                  placeholder="새로운 카테고리 이름을 입력하세요" 
+                  className="w-full bg-indigo-50/50 border border-indigo-200 rounded-xl px-4 py-3 text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
+                />
+              ) : (
+                <div className="relative">
+                  <Folder size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <select 
+                    value={categoryId} 
+                    onChange={e => {
+                      setCategoryId(e.target.value); 
+                      setTagIds([]);
+                      setIsTagExpanded(true);
+                    }} 
+                    className="w-full bg-white border border-zinc-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm"
+                  >
+                    <option value="">보관할 폴더를 선택해주세요</option>
+                    {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                </div>
+              )}
+            </div>
+
+            {/* ⭐️ 기간 설정 인풋 추가 */}
+            <div>
+              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">날짜 (기간 설정)</label>
+              <div className="flex items-center gap-1.5 h-[46px]">
+                  <input 
+                      type="date" 
+                      value={startDate} 
+                      onChange={e=>setStartDate(e.target.value)} 
+                      className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
+                  />
+                  <span className="text-zinc-400 font-black">~</span>
+                  <input 
+                      type="date" 
+                      value={endDate} 
+                      onChange={e=>setEndDate(e.target.value)} 
+                      min={startDate} 
+                      className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
+                  />
+              </div>
+            </div>
           </div>
 
           {!isAddingNewCat && selectedCategoryNode && (selectedCategoryNode.children || []).length > 0 && (
