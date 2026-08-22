@@ -496,7 +496,7 @@ const ArchiveView = () => {
   // ⭐️ 데이터 로딩 중 스피너 표시
   if (isLoading && (!records || records.length === 0)) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#F8FAFC]">
+      <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
         <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
         <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
         <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
@@ -667,8 +667,15 @@ const ArchiveView = () => {
       );
   }
 
-  const isActiveCategoryMusic = customOrderedRecords.some(r => r.type === 'MUSIC');
-  const isListMode = isActiveCategoryMusic && musicViewMode === 'list';
+  // ⭐️ 현재 선택된 카테고리가 '음악' 관련인지 정확히 판별
+  const isCurrentCategoryMusic = useMemo(() => {
+    if (activeCategory === '전체') return false;
+    const catNode = tagTree.find(c => c.name === activeCategory);
+    return catNode?.type === 'MUSIC' || activeCategory.includes('음악');
+  }, [activeCategory, tagTree]);
+
+  // ⭐️ 음악 카테고리가 활성화되었을 때만 리스트 뷰 적용
+  const isListMode = isCurrentCategoryMusic && musicViewMode === 'list';
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative w-full">
@@ -744,7 +751,8 @@ const ArchiveView = () => {
                 ))}
             </div>
 
-            {isActiveCategoryMusic && (
+            {/* ⭐️ 음악 카테고리가 선택되었을 때만 스위치 버튼 렌더링 */}
+            {isCurrentCategoryMusic && (
                 <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 ml-auto">
                     <button 
                         onClick={() => setMusicViewMode('grid')} 
@@ -943,7 +951,6 @@ const ArchiveView = () => {
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
-                      // ⭐️ URL 아이템은 무조건 새 창 열기로 통일 (QR 모달 안 띄움)
                       if (item.isUrlItem && item.youtubeUrl) {
                           window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
                           return;
@@ -970,7 +977,6 @@ const ArchiveView = () => {
                                   <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
                                   <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
-                              {/* ⭐️ QR 코드 삭제하고 새 창 열기 UI만 남김 */}
                               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
                                   <ExternalLink size={32} className="text-blue-500 mb-2" />
                                   <span className="text-[11px] font-black text-blue-600 bg-white px-3 py-1 rounded-md shadow-sm hidden sm:block">새 창으로 열기</span>
