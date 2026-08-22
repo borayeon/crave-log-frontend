@@ -9,9 +9,10 @@ const AddRecordModal = () => {
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   
-  // ⭐️ 날짜 상태를 시작일과 종료일로 분리
+  // ⭐️ 날짜 상태 및 기간 활성화 여부
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
+  const [isDateRange, setIsDateRange] = useState(false);
   
   const [imageUrl, setImageUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -32,6 +33,7 @@ const AddRecordModal = () => {
       setTagIds([]);
       setStartDate(new Date().toISOString().split('T')[0]);
       setEndDate('');
+      setIsDateRange(false); // ⭐️ 모달 열릴 때 단일 일자로 초기화
       setImageUrl('');
       setYoutubeUrl('');
       setContent('');
@@ -122,9 +124,9 @@ const AddRecordModal = () => {
         return id;
       }).filter(id => !isNaN(id));
 
-      // ⭐️ 시작일과 종료일이 있으면 ~ 로 이어붙여서 포맷팅
+      // ⭐️ 기간 범위가 활성화되어 있고 종료일이 있을 때만 이어붙임
       let formattedDate = startDate.replace(/-/g, '.');
-      if (endDate && startDate !== endDate) {
+      if (isDateRange && endDate && startDate !== endDate) {
         formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
       }
 
@@ -175,7 +177,6 @@ const AddRecordModal = () => {
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-zinc-50/30">
           
-          {/* ⭐️ 제목 단독 풀사이즈 배치 */}
           <div>
             <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">제목 <span className="text-rose-500">*</span></label>
             <input 
@@ -187,7 +188,6 @@ const AddRecordModal = () => {
             />
           </div>
 
-          {/* ⭐️ 카테고리와 날짜(기간)를 가로 1:1 배치 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -232,9 +232,21 @@ const AddRecordModal = () => {
               )}
             </div>
 
-            {/* ⭐️ 기간 설정 인풋 추가 */}
+            {/* ⭐️ 날짜 설정 (기본은 하나, 클릭 시 기간) */}
             <div>
-              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">날짜 (기간 설정)</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">날짜</label>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                      setIsDateRange(!isDateRange);
+                      if (isDateRange) setEndDate(''); // 기간 끄면 종료일 지우기
+                  }} 
+                  className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors"
+                >
+                  {isDateRange ? '단일 일자로 변경' : '+ 기간 설정'}
+                </button>
+              </div>
               <div className="flex items-center gap-1.5 h-[46px]">
                   <input 
                       type="date" 
@@ -242,14 +254,18 @@ const AddRecordModal = () => {
                       onChange={e=>setStartDate(e.target.value)} 
                       className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
                   />
-                  <span className="text-zinc-400 font-black">~</span>
-                  <input 
-                      type="date" 
-                      value={endDate} 
-                      onChange={e=>setEndDate(e.target.value)} 
-                      min={startDate} 
-                      className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
-                  />
+                  {isDateRange && (
+                    <>
+                      <span className="text-zinc-400 font-black">~</span>
+                      <input 
+                          type="date" 
+                          value={endDate} 
+                          onChange={e=>setEndDate(e.target.value)} 
+                          min={startDate} 
+                          className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm animate-in zoom-in-95 duration-200" 
+                      />
+                    </>
+                  )}
               </div>
             </div>
           </div>
