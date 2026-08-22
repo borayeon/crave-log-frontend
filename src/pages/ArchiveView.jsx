@@ -27,7 +27,10 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
-  const [date, setDate] = useState('');
+  
+  // ⭐️ 날짜 상태를 시작일과 종료일로 분리
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState(null); 
@@ -61,7 +64,17 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
   useEffect(() => {
     if (record && isEditMode) {
       setTitle(record.title);
-      setDate(record.date?.replace(/\./g, '-') || '');
+      
+      // ⭐️ 기간 형태의 날짜(~)를 파싱하여 분리
+      const recordDate = record.date || '';
+      if (recordDate.includes('~')) {
+        const [start, end] = recordDate.split('~').map(d => d.trim().replace(/\./g, '-'));
+        setStartDate(start || '');
+        setEndDate(end || '');
+      } else {
+        setStartDate(recordDate.replace(/\./g, '-'));
+        setEndDate('');
+      }
       
       const recordImage = record.image || record.imageUrl || '';
       setImageUrl(recordImage === DEFAULT_IMAGE ? '' : recordImage);
@@ -116,11 +129,17 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
         });
       }
 
+      // ⭐️ 시작일과 종료일이 있으면 ~ 로 이어붙여서 포맷팅
+      let formattedDate = startDate.replace(/-/g, '.');
+      if (endDate && startDate !== endDate) {
+        formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
+      }
+
       const payload = {
         title: title.trim(),
         categoryId: selectedCategory?.id,
         categoryName: selectedCategory?.name || '분류 없음',
-        recordDate: date.replace(/-/g, '.'),
+        recordDate: formattedDate,
         imageUrl: finalImageUrl?.trim(),
         youtubeUrl: (selectedCategory?.type === 'MUSIC' || selectedCategory?.type === 'URL' || selectedCategory?.name?.includes('음악') || selectedCategory?.name?.includes('URL')) ? youtubeUrl.trim() : '',
         content: content.trim(),
@@ -318,23 +337,39 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                         
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">카테고리 <span className="text-rose-500">*</span></label>
-                            <select 
-                                value={categoryId} 
-                                onChange={e=>{
-                                setCategoryId(e.target.value); 
-                                setTagIds([]);
-                                setIsTagExpanded(true);
-                                }} 
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none appearance-none transition-colors shadow-sm"
-                            >
-                                <option value="">선택해주세요</option>
-                                {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                            </select>
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">카테고리 <span className="text-rose-500">*</span></label>
+                                <select 
+                                    value={categoryId} 
+                                    onChange={e=>{
+                                    setCategoryId(e.target.value); 
+                                    setTagIds([]);
+                                    setIsTagExpanded(true);
+                                    }} 
+                                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none appearance-none transition-colors shadow-sm"
+                                >
+                                    <option value="">선택해주세요</option>
+                                    {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                                </select>
                             </div>
+                            {/* ⭐️ 기간 선택 가능하도록 2개의 인풋 배치 */}
                             <div>
-                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜</label>
-                            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" />
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜 (기간 설정)</label>
+                                <div className="flex items-center gap-1.5">
+                                    <input 
+                                        type="date" 
+                                        value={startDate} 
+                                        onChange={e=>setStartDate(e.target.value)} 
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2.5 text-xs text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" 
+                                    />
+                                    <span className="text-zinc-400 font-black">~</span>
+                                    <input 
+                                        type="date" 
+                                        value={endDate} 
+                                        onChange={e=>setEndDate(e.target.value)} 
+                                        min={startDate} 
+                                        className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-2.5 text-xs text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" 
+                                    />
+                                </div>
                             </div>
                         </div>
                         
@@ -951,6 +986,7 @@ const ArchiveView = () => {
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
+                      // ⭐️ URL 아이템 클릭 시 새 창 열기로 동작 통일 (QR 제거)
                       if (item.isUrlItem && item.youtubeUrl) {
                           window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
                           return;
@@ -977,6 +1013,7 @@ const ArchiveView = () => {
                                   <h3 className="text-sm sm:text-base md:text-lg font-black text-zinc-800 mb-1.5 sm:mb-2 leading-snug line-clamp-2 px-2 w-full">{item.title}</h3>
                                   <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]" >{item.domain || '클릭하여 열기'}</p>
                               </div>
+                              {/* ⭐️ QR 코드 제거 및 이동/스캔 텍스트 변경 */}
                               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
                                   <ExternalLink size={32} className="text-blue-500 mb-2" />
                                   <span className="text-[11px] font-black text-blue-600 bg-white px-3 py-1 rounded-md shadow-sm hidden sm:block">새 창으로 열기</span>
