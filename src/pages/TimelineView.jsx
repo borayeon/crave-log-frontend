@@ -23,7 +23,7 @@ const getDomain = (url) => {
 };
 
 const TimelineView = () => {
-  const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery } = useAppStore();
+  const { records, tagTree, isAdmin, setLoginModalOpen, showToast, fetchAllData, setAddRecordModalOpen, apiFetch, isGuestMode, searchQuery, isLoading } = useAppStore();
   
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState({ type: 'all', value: '전체', id: 'all' });
@@ -42,6 +42,17 @@ const TimelineView = () => {
   const [orderedCategories, setOrderedCategories] = useState([]);
   const [draggedCatIndex, setDraggedCatIndex] = useState(null);
 
+  // ⭐️ 데이터 로딩 중 스피너 표시
+  if (isLoading && (!records || records.length === 0)) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#F8FAFC]">
+        <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
+        <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
+        <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
+      </div>
+    );
+  }
+
   const safeRecords = Array.isArray(records) ? records : [];
   const safeTagTree = Array.isArray(tagTree) ? tagTree : [];
 
@@ -49,7 +60,6 @@ const TimelineView = () => {
     setOrderedCategories(safeTagTree);
   }, [safeTagTree]);
 
-  // 선택된 카테고리(부모 노드) 찾기 로직 추가 (모바일 태그 렌더링용)
   const activeCategoryNode = useMemo(() => {
     if (selectedFilter.type === 'category') {
         return orderedCategories.find(c => String(c.id) === String(selectedFilter.id));
@@ -487,7 +497,7 @@ const TimelineView = () => {
           )}
         </div>
 
-        {/* 타임라인 메인 목록 */}
+        {/* ⭐️ 타임라인 메인 목록 (세로 리스트, CD 모양 복구, 클릭 동작 통일) */}
         <div className="flex-1 min-w-0 overflow-y-auto pr-1 md:pr-2 pl-1 md:pl-4 py-2 scrollbar-hide">
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-16 md:py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
@@ -519,11 +529,24 @@ const TimelineView = () => {
                 <div key={item.id} className="relative pl-6 md:pl-8 group">
                   <div className="absolute w-3 h-3 bg-white border-[3px] border-indigo-400 rounded-full -left-[5px] top-6 group-hover:border-indigo-600 group-hover:scale-150 transition-all duration-300 shadow-sm z-10" />
                   
-                  <div className={`bg-white border border-zinc-200/80 rounded-2xl p-3.5 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1 ${isTextOnly ? 'bg-gradient-to-br from-white to-zinc-50/50' : ''}`}>
+                  <div 
+                    onClick={() => { 
+                      if (isEditing) return;
+                      // ⭐️ URL 아이템 클릭 시 새 창 열기로 동작 통일
+                      if (item.isUrlItem && item.youtubeUrl) {
+                          window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
+                          return;
+                      }
+                      // 다른 아이템들은 모달창
+                      setAddRecordModalOpen(false); 
+                    }}
+                    className={`bg-white border border-zinc-200/80 rounded-2xl p-3.5 md:p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row gap-4 items-center sm:items-start group-hover:-translate-y-1 cursor-pointer ${isTextOnly ? 'bg-gradient-to-br from-white to-zinc-50/50' : ''}`}
+                  >
                     
                     {/* 타입별 썸네일 영역 */}
                     {isMusic ? (
-                      <div className="w-full h-32 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-xl sm:rounded-full sm:border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700">
+                      // ⭐️ CD 찌그러짐 현상 완벽 방어 (shrink-0, 고정 w/h)
+                      <div className="w-24 h-24 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 overflow-hidden bg-zinc-100 relative shadow-inner rounded-full border-4 border-zinc-900 group-hover:rotate-12 transition-transform duration-700 mx-auto sm:mx-0">
                         <img 
                           src={videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE} 
                           onError={(e) => { e.target.src = MUSIC_DEFAULT_IMAGE; }} 
@@ -536,16 +559,11 @@ const TimelineView = () => {
                         </div>
                       </div>
                     ) : isUrlItem ? (
-                      <a 
-                          href={item.youtubeUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="w-full h-24 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 bg-white border-2 border-zinc-100 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center relative shadow-sm hover:shadow-md transition-all duration-300 group/link overflow-hidden"
-                      >
-                          <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 group-hover/link:opacity-0 bg-white">
+                      <div className="w-full h-24 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 bg-white border-2 border-zinc-100 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center relative shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group/link">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 bg-white group-hover/link:opacity-0">
                               {item.youtubeUrl && getDomain(item.youtubeUrl) ? (
                                   <img 
-                                    src={`https://www.google.com/s2/favicons?domain=${getDomain(item.youtubeUrl)}&sz=128`} 
+                                    src={`https://icons.duckduckgo.com/ip3/${getDomain(item.youtubeUrl)}.ico`} 
                                     onError={(e) => {
                                         e.target.onerror = null;
                                         e.target.src = `https://ui-avatars.com/api/?name=${getDomain(item.youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`;
@@ -558,14 +576,13 @@ const TimelineView = () => {
                               )}
                               <span className="text-[9px] md:text-[10px] font-bold text-zinc-400 max-w-[80%] truncate">{getDomain(item.youtubeUrl)}</span>
                           </div>
-                          
+                          {/* ⭐️ QR 없이 새 창 텍스트만 렌더링 */}
                           <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
-                              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(item.youtubeUrl || '')}`} alt="QR Code" className="w-12 h-12 sm:w-14 sm:h-14 mix-blend-multiply mb-1" />
-                              <span className="text-[9px] font-black text-blue-600 bg-white px-2 py-0.5 rounded-md shadow-sm hidden sm:block">이동/스캔</span>
+                              <ExternalLink size={32} className="text-blue-500 mb-2" />
+                              <span className="text-[11px] font-black text-blue-600 bg-white px-3 py-1 rounded-md shadow-sm hidden sm:block">새 창으로 열기</span>
                           </div>
-                          
                           <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-blue-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50 z-10">{item.category}</div>
-                      </a>
+                      </div>
                     ) : isTextOnly ? (
                       <div className="w-full h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 shrink-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100/50 rounded-xl flex items-center justify-center relative shadow-inner group-hover:shadow-md transition-shadow duration-300">
                          <Quote size={28} className="text-indigo-200 group-hover:text-indigo-300 transition-colors transform sm:-translate-y-2" />
