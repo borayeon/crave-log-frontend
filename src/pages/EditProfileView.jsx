@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus
+  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -28,8 +28,9 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
-      // ⭐️ Add Profile 전용 데이터 구조로 완벽 업그레이드
       addProfile: safeUser.addProfile || { 
+          updatedAt: new Date().toISOString().split('T')[0],
+          history: [],
           extraImage: "", mbti: "", bloodType: "", height: "", religion: "", relationship: "", languages: "",
           motto: "", recentHobby: "", workingStyle: "", activeHours: "", contact: "중간",
           tastes: { hobbies: [], culture: [], foods: [], lifestyle: [] }, 
@@ -51,15 +52,16 @@ const EditProfileView = () => {
   
   const [isProfileImageUploading, setIsProfileImageUploading] = useState(false);
   const [isHobbyImageUploading, setIsHobbyImageUploading] = useState(false);
-  const [isExtraImageUploading, setIsExtraImageUploading] = useState(false); // ⭐️ 추가 프로필 업로드 상태
+  const [isExtraImageUploading, setIsExtraImageUploading] = useState(false); 
 
   const [isCheckingHandle, setIsCheckingHandle] = useState(false);
   const [isHandleAvailable, setIsHandleAvailable] = useState(true);
 
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
+  
+  const [viewHistoryItem, setViewHistoryItem] = useState(null); // ⭐️ 과거 기록 조회용 모달 상태
 
-  // ⭐️ 탭 이름 및 아이콘 변경 (Idol -> Add Profile)
   const ALL_TABS = [
     { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
@@ -97,6 +99,23 @@ const EditProfileView = () => {
     });
   };
 
+  const handleCommitProfile = () => {
+      const currentData = { ...formData.addProfile };
+      delete currentData.history;
+      
+      const commit = {
+          id: Date.now().toString(),
+          date: formData.addProfile.updatedAt || new Date().toISOString().split('T')[0],
+          snapshot: currentData
+      };
+
+      const currentHistory = formData.addProfile.history || [];
+      const newHistory = [commit, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      updateNested(['addProfile', 'history'], newHistory);
+      showToast(`${commit.date} 기준으로 현재 기록이 고정되었습니다! 📸`);
+  };
+
   const uploadImageToServer = async (file, path, setUploadingState) => {
     const MAX_FILE_SIZE = 50 * 1024 * 1024; 
     if (file.size > MAX_FILE_SIZE) {
@@ -111,7 +130,6 @@ const EditProfileView = () => {
 
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-      
       const res = await fetch('https://api.cravelog.me/api/v1/files/upload', {
         method: 'POST',
         body: fileData,
@@ -126,20 +144,15 @@ const EditProfileView = () => {
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
           const data = await res.json();
-          
           if (res.ok) {
-            const fullImageUrl = data.imageUrl?.startsWith('http') 
-                ? data.imageUrl 
-                : `https://api.cravelog.me${data.imageUrl}`;
+            const fullImageUrl = data.imageUrl?.startsWith('http') ? data.imageUrl : `https://api.cravelog.me${data.imageUrl}`;
             updateNested(path, fullImageUrl); 
             showToast("이미지가 성공적으로 업로드되었습니다.");
           } else {
             showToast(data.message || "이미지 업로드에 실패했습니다.");
           }
       } else {
-          if (!res.ok) {
-              showToast(`서버 에러가 발생했습니다. (상태 코드: ${res.status})`);
-          }
+          if (!res.ok) showToast(`서버 에러가 발생했습니다. (상태 코드: ${res.status})`);
       }
     } catch (error) {
       console.error(error);
@@ -229,11 +242,7 @@ const EditProfileView = () => {
 
   const renderStringArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
     const rawValue = path.reduce((o, i) => (o || {})[i] || '', formData);
-    
-    const str = Array.isArray(rawValue) 
-        ? rawValue.join(',') 
-        : (rawValue ? String(rawValue) : '');
-        
+    const str = Array.isArray(rawValue) ? rawValue.join(',') : (rawValue ? String(rawValue) : '');
     const arr = str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
     
     return (
@@ -295,7 +304,6 @@ const EditProfileView = () => {
               {v} <CloseIcon size={12} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </span>
           ))}
-          {/* ⭐️ 입력창 찌그러짐 완벽 방지: min-w-[70px] flex-1 적용 */}
           <input
             type="text"
             placeholder={arr.length === 0 ? placeholder : "+"}
@@ -440,6 +448,51 @@ const EditProfileView = () => {
 
   return (
     <React.Fragment>
+      {/* ⭐️ 과거 기록 모달 */}
+      {viewHistoryItem && (
+          <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
+              <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                  <div className="p-5 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
+                      <h3 className="text-base font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500" size={18}/> {viewHistoryItem.date} 과거 기록</h3>
+                      <button onClick={() => setViewHistoryItem(null)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={18}/></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm col-span-2">
+                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Motto</span>
+                             <span className="text-sm font-black text-indigo-600">{viewHistoryItem.snapshot?.motto || '-'}</span>
+                          </div>
+                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
+                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">MBTI</span>
+                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.mbti || '-'}</span>
+                          </div>
+                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
+                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Recent Hobby</span>
+                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.recentHobby || '-'}</span>
+                          </div>
+                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
+                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Working Style</span>
+                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.workingStyle || '-'}</span>
+                          </div>
+                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
+                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Active Hours</span>
+                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.activeHours || '-'}</span>
+                          </div>
+                      </div>
+                  </div>
+                  <div className="p-5 border-t border-zinc-200 bg-white flex justify-end">
+                      <button onClick={() => {
+                          updateNested(['addProfile'], { ...formData.addProfile, ...viewHistoryItem.snapshot, history: formData.addProfile.history, updatedAt: viewHistoryItem.date });
+                          showToast(`${viewHistoryItem.date} 기록으로 폼이 복원되었습니다!`);
+                          setViewHistoryItem(null);
+                      }} className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition shadow-sm">
+                          이 기록 폼에 불러오기
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       <div className="max-w-[1000px] mx-auto w-full p-4 md:p-10 md:pt-6 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
         <header className="mb-6 flex justify-between items-center">
           <div>
@@ -465,11 +518,9 @@ const EditProfileView = () => {
           </div>
         </header>
 
-        {/* 1. 메인 프로필 설정 영역 */}
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
-            {/* 프로필 이미지 변경 영역 */}
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
                     {isProfileImageUploading && (
@@ -504,7 +555,6 @@ const EditProfileView = () => {
                 </div>
             </div>
             
-            {/* 기본 정보 입력 */}
             <div className="flex-1 w-full space-y-4">
                 <div className="flex flex-col md:flex-row gap-3">
                      <input 
@@ -566,7 +616,6 @@ const EditProfileView = () => {
                    {renderArrayInput("나의 키워드", ["tags"], "키워드 입력 후 Enter")}
                 </div>
 
-                {/* 소셜 링크 관리 영역 */}
                 <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-200/60 mt-4">
                     <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><LinkIcon size={14}/> 소셜 링크 관리</h4>
                     <div className="space-y-2">
@@ -615,7 +664,6 @@ const EditProfileView = () => {
           </div>
         </div>
 
-        {/* 탭 네비게이션 */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 p-1">
           {ALL_TABS.map(tab => (
               <button 
@@ -628,7 +676,6 @@ const EditProfileView = () => {
           ))}
         </div>
 
-        {/* 공개/비공개 토글 */}
         <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
           <div>
             <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2">
@@ -648,7 +695,6 @@ const EditProfileView = () => {
           </button>
         </div>
 
-        {/* 탭별 컨텐츠 */}
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           
           {/* DEVELOPER TAB */}
@@ -816,18 +862,60 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ ADD PROFILE TAB (완벽하게 리뉴얼된 추가 프로필 폼) */}
+          {/* ⭐️ ADD PROFILE TAB */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
+              
+              {/* 상단 히스토리 박제(고정) 버튼 영역 */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 shadow-sm">
+                 <div>
+                   <h4 className="text-sm font-black text-indigo-800 flex items-center gap-1.5"><History size={16}/> Profile Version History</h4>
+                   <p className="text-[10px] text-indigo-600/80 mt-1 font-bold">하단에 입력한 내용들을 특정 날짜를 기준으로 고정할 수 있습니다.</p>
+                 </div>
+                 <div className="flex flex-col w-full sm:w-auto gap-2">
+                     <div className="flex items-center bg-white border border-indigo-200 rounded-xl overflow-hidden shadow-sm">
+                         <div className="px-3 bg-indigo-50 text-indigo-500 border-r border-indigo-200 h-full flex items-center">
+                             <Calendar size={14}/>
+                         </div>
+                         <input 
+                            type="date" 
+                            value={formData.addProfile?.updatedAt || ''} 
+                            onChange={e => updateNested(['addProfile', 'updatedAt'], e.target.value)}
+                            className="px-3 py-2 text-xs font-bold text-zinc-800 outline-none w-full sm:w-32"
+                         />
+                     </div>
+                     <button onClick={handleCommitProfile} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-700 transition flex items-center justify-center gap-1.5">
+                        현재 기록 고정하기
+                     </button>
+                 </div>
+              </div>
+
+              {/* 히스토리 조회/삭제 리스트 */}
+              {(formData.addProfile?.history?.length > 0) && (
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide -mt-2 mb-2 px-1">
+                      {formData.addProfile.history.map((h, i) => (
+                          <div key={h.id || i} className="shrink-0 bg-white border border-zinc-200 rounded-lg py-1.5 pl-3 pr-2 flex items-center gap-2 shadow-sm group">
+                              <button type="button" onClick={() => setViewHistoryItem(h)} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 hover:underline">
+                                {h.date} 기록 확인
+                              </button>
+                              <button type="button" onClick={() => {
+                                  const arr = [...formData.addProfile.history];
+                                  arr.splice(i, 1);
+                                  updateNested(['addProfile', 'history'], arr);
+                              }} className="text-zinc-300 hover:text-rose-500 transition-colors ml-1"><CloseIcon size={12}/></button>
+                          </div>
+                      ))}
+                  </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  
-                  {/* 1. Identity & Info (기본 정보) */}
+                  {/* 1. Identity & Info */}
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
                       <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
                       
-                      {/* 추가 프로필 사진 업로드 */}
+                      {/* ⭐️ 추가 프로필 사진: 둥근 직사각형 형태로 변경 */}
                       <div className="flex flex-col items-center justify-center mb-6">
-                          <div className="w-24 h-24 rounded-full bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
+                          <div className="w-32 h-40 sm:w-36 sm:h-48 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
                               {isExtraImageUploading && (
                                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20 backdrop-blur-[1px]">
                                       <Loader2 size={16} className="text-rose-500 animate-spin" />
@@ -861,9 +949,8 @@ const EditProfileView = () => {
                       </div>
                   </div>
 
-                  {/* 2. Lifestyle & Tastes (취향 및 라이프스타일) */}
+                  {/* 2. Lifestyle & Tastes */}
                   <div className="md:col-span-2 space-y-4">
-                      
                       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Compass size={16} className="text-blue-500"/> Lifestyle & Work</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -890,7 +977,8 @@ const EditProfileView = () => {
                           </div>
                       </div>
 
-                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
+                      {/* ⭐️ h-full 속성을 제거하여 불필요한 아래 여백을 없앴습니다 */}
+                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
@@ -1039,7 +1127,7 @@ const EditProfileView = () => {
           )}
         </div>
 
-        {/* ⭐️ 미리보기 모달 부분 시작 */}
+        {/* 미리보기 모달 부분 시작 */}
         {showPreview && (
           <div className="fixed inset-0 bg-zinc-950/80 z-[200] overflow-y-auto p-4 md:p-8 flex flex-col items-center animate-in fade-in backdrop-blur-sm">
             <div className="w-full max-w-[1000px] bg-[#F0F2F5] rounded-3xl shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
@@ -1162,7 +1250,6 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      
                       {/* ⭐️ Add Profile Preview */}
                       {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 gap-4">
@@ -1173,7 +1260,6 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      
                       {previewTab === 'qna' && (
                           <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.qna?.length || 0}개)</h4>
