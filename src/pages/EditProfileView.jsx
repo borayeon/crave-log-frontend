@@ -3,7 +3,7 @@ import {
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
   Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown,
-  CreditCard, Mail, Phone, Globe
+  CreditCard, Mail, Phone
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -12,7 +12,7 @@ const EditProfileView = () => {
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
-    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
+    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.addProfile?.qna || []);
     
     let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false };
     if (safeUser.privacy) {
@@ -33,6 +33,7 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
+      
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
@@ -502,37 +503,56 @@ const EditProfileView = () => {
 
   return (
     <React.Fragment>
-      {/* 과거 기록 확인 모달창 */}
+      {/* ⭐️ 과거 기록 확인 모달창 (전체 내용 표시) */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
-              <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+              <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
                   <div className="p-5 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
-                      <h3 className="text-base font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500" size={18}/> {viewHistoryItem.date} 과거 기록</h3>
+                      <div>
+                          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500" size={18}/> {viewHistoryItem.date} 과거 기록</h3>
+                          <p className="text-[10px] text-zinc-500 font-bold mt-1">해당 날짜에 박제된 상세 프로필의 모든 내용입니다.</p>
+                      </div>
                       <button onClick={() => setViewHistoryItem(null)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={18}/></button>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
-                      <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm col-span-2">
-                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Motto</span>
-                             <span className="text-sm font-black text-indigo-600">{viewHistoryItem.snapshot?.motto || '-'}</span>
-                          </div>
-                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
-                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">MBTI</span>
-                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.mbti || '-'}</span>
-                          </div>
-                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
-                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Recent Hobby</span>
-                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.recentHobby || '-'}</span>
-                          </div>
-                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
-                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Working Style</span>
-                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.workingStyle || '-'}</span>
-                          </div>
-                          <div className="bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
-                             <span className="block text-[10px] text-zinc-400 font-bold mb-1">Active Hours</span>
-                             <span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.activeHours || '-'}</span>
+                  
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                      
+                      {/* Identity Info */}
+                      <div>
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><UserPlus size={12}/> Identity & Info</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">MBTI</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.mbti || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Blood Type</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.bloodType || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Height</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.height || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Religion</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.religion || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Relationship</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.relationship || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Languages</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.languages || '-'}</span></div>
                           </div>
                       </div>
+
+                      {/* Lifestyle */}
+                      <div>
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Compass size={12}/> Lifestyle & Work</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm col-span-2"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Motto</span><span className="text-sm font-black text-indigo-600">{viewHistoryItem.snapshot?.motto || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Recent Hobby</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.recentHobby || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Working Style</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.workingStyle || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Active Hours</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.activeHours || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Contact</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.contact || '-'}</span></div>
+                          </div>
+                      </div>
+
+                      {/* Tastes */}
+                      <div>
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Heart size={12}/> My Tastes</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Hobbies</span><span className="text-xs font-bold text-zinc-700">{(viewHistoryItem.snapshot?.tastes?.hobbies || []).join(', ') || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-orange-400 font-bold mb-1">Culture</span><span className="text-xs font-bold text-orange-700">{(viewHistoryItem.snapshot?.tastes?.culture || []).join(', ') || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-indigo-400 font-bold mb-1">Food</span><span className="text-xs font-bold text-indigo-700">{(viewHistoryItem.snapshot?.tastes?.foods || []).join(', ') || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-emerald-400 font-bold mb-1">Lifestyle</span><span className="text-xs font-bold text-emerald-700">{(viewHistoryItem.snapshot?.tastes?.lifestyle || []).join(', ') || '-'}</span></div>
+                          </div>
+                      </div>
+
                   </div>
                   <div className="p-5 border-t border-zinc-200 bg-white flex justify-end">
                       <button onClick={() => {
@@ -547,10 +567,8 @@ const EditProfileView = () => {
           </div>
       )}
 
-      {/* ⭐️ 레이아웃 조정: 부모 컨테이너에서 overflow를 제거하고 relative만 남깁니다 */}
+      {/* ⭐️ Header를 고정(Sticky)시키고 모달 뒤로 넘어가도록 z-index를 조정했습니다. */}
       <div className="max-w-[1000px] mx-auto w-full p-4 md:px-10 animate-in fade-in duration-300 pb-28 md:pb-10 relative">
-        
-        {/* ⭐️ 헤더를 Sticky하게 고정 */}
         <header className="sticky top-0 z-[100] mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F8FAFC]/95 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-zinc-200/60 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
@@ -575,6 +593,7 @@ const EditProfileView = () => {
           </div>
         </header>
 
+        {/* 1. 메인 프로필 설정 영역 */}
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
@@ -1002,8 +1021,9 @@ const EditProfileView = () => {
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
                       <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
                       
+                      {/* ⭐️ 여백 축소 및 깔끔한 사진 렌더링 */}
                       <div className="flex flex-col items-center justify-center mb-6">
-                          <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
+                          <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner flex items-center justify-center">
                               {isExtraImageUploading && (
                                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20 backdrop-blur-[1px]">
                                       <Loader2 size={24} className="text-rose-500 animate-spin" />
@@ -1012,9 +1032,7 @@ const EditProfileView = () => {
                               {formData.idol?.extraImage ? (
                                   <img src={formData.idol?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
                               ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
-                                      <ImageIcon size={32} />
-                                  </div>
+                                  <ImageIcon size={32} className="text-zinc-200" />
                               )}
                               <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
                                   <Upload size={20} className="mb-2" />
@@ -1039,9 +1057,9 @@ const EditProfileView = () => {
 
                   {/* 2. Lifestyle & Tastes */}
                   <div className="md:col-span-2 space-y-4">
-                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
-                          <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Compass size={16} className="text-blue-500"/> Lifestyle & Work</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
+                          <h3 className="text-sm font-black text-zinc-900 mb-4 flex items-center gap-2"><Compass size={14} className="text-blue-500"/> Lifestyle & Work</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {renderInput("좌우명", ["idol", "motto"], "예: 피할 수 없으면 즐겨라")}
                               {renderInput("최근 취미", ["idol", "recentHobby"], "예: 클라이밍, 베이킹")}
                               {renderInput("Working Style", ["idol", "workingStyle"], "예: 올빼미족")}
@@ -1065,19 +1083,20 @@ const EditProfileView = () => {
                           </div>
                       </div>
 
-                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
-                          <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
+                      {/* ⭐️ 여백 축소 (p-5 md:p-6, gap-3) */}
+                      <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
+                          <h3 className="text-sm font-black text-zinc-900 mb-4 flex items-center gap-2"><Heart size={14} className="text-rose-500"/> My Tastes</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="p-3 bg-zinc-50/80 rounded-2xl border border-zinc-100">
                                 {renderArrayInput("Hobbies & Interests", ["idol", "tastes", "hobbies"], "입력 후 Enter")}
                               </div>
-                              <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                              <div className="p-3 bg-orange-50/50 rounded-2xl border border-orange-100/50">
                                 {renderArrayInput("Culture (Music/Movies)", ["idol", "tastes", "culture"], "입력 후 Enter")}
                               </div>
-                              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                              <div className="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
                                 {renderArrayInput("Food & Drink", ["idol", "tastes", "foods"], "입력 후 Enter")}
                               </div>
-                              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                              <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
                                 {renderArrayInput("Lifestyle & Places", ["idol", "tastes", "lifestyle"], "입력 후 Enter")}
                               </div>
                           </div>
@@ -1379,7 +1398,7 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      {/* ⭐️ Add Profile Preview */}
+                      {/* ⭐️ Add Profile Preview (여백 및 사진 수정) */}
                       {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                               <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
@@ -1397,10 +1416,13 @@ const EditProfileView = () => {
                                       <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">MBTI</span><span className="text-xs font-black text-zinc-800">{formData.idol?.mbti || '-'}</span></div>
                                       <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Blood Type</span><span className="text-xs font-black text-zinc-800">{formData.idol?.bloodType || '-'}</span></div>
                                       <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Height</span><span className="text-xs font-black text-zinc-800">{formData.idol?.height || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Religion</span><span className="text-xs font-black text-zinc-800">{formData.idol?.religion || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Relationship</span><span className="text-xs font-black text-zinc-800">{formData.idol?.relationship || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Languages</span><span className="text-xs font-black text-zinc-800">{formData.idol?.languages || '-'}</span></div>
                                   </div>
                               </div>
                               <div className="md:col-span-2 flex flex-col gap-4 md:gap-5">
-                                  <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                                  <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
                                       <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Compass size={14}/> Lifestyle & Work</h4>
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                           <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
@@ -1414,6 +1436,42 @@ const EditProfileView = () => {
                                           <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                             <span className="text-[10px] font-bold text-zinc-400">Working Style</span>
                                             <span className="text-xs font-black text-zinc-800">{formData.idol?.workingStyle || '-'}</span>
+                                          </div>
+                                          <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                            <span className="text-[10px] font-bold text-zinc-400">Active Hours</span>
+                                            <span className="text-xs font-black text-zinc-800">{formData.idol?.activeHours || '-'}</span>
+                                          </div>
+                                          <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                            <span className="text-[10px] font-bold text-zinc-400">Contact</span>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                {['적극', '중간', '소극'].map(status => (
+                                                    <div key={status} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${formData.idol?.contact === status ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
+                                                        {status}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
+                                      <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> My Tastes</h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          <div className="p-3 bg-zinc-50/80 rounded-2xl border border-zinc-100">
+                                            <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">Hobbies & Interests</span>
+                                            <div className="flex flex-wrap gap-1.5">{(formData.idol?.tastes?.hobbies || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[10px] font-bold text-zinc-700 shadow-sm hover:border-zinc-300 transition-colors">{c}</span>)}</div>
+                                          </div>
+                                          <div className="p-3 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                                            <span className="block text-[10px] font-black text-orange-400 uppercase mb-2">Culture (Music/Movies)</span>
+                                            <div className="flex flex-wrap gap-1.5">{(formData.idol?.tastes?.culture || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[10px] font-bold text-orange-700 shadow-sm hover:border-orange-300 transition-colors">{c}</span>)}</div>
+                                          </div>
+                                          <div className="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                            <span className="block text-[10px] font-black text-indigo-400 uppercase mb-2">Food & Drink</span>
+                                            <div className="flex flex-wrap gap-1.5">{(formData.idol?.tastes?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[10px] font-bold text-indigo-700 shadow-sm hover:border-indigo-300 transition-colors">{c}</span>)}</div>
+                                          </div>
+                                          <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                                            <span className="block text-[10px] font-black text-emerald-400 uppercase mb-2">Lifestyle & Places</span>
+                                            <div className="flex flex-wrap gap-1.5">{(formData.idol?.tastes?.lifestyle || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-700 shadow-sm hover:border-emerald-300 transition-colors">{c}</span>)}</div>
                                           </div>
                                       </div>
                                   </div>

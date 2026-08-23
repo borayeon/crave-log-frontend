@@ -13,6 +13,7 @@ const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
   const [showHistoryModal, setShowHistoryModal] = useState(false); 
+  const [viewHistoryItem, setViewHistoryItem] = useState(null); // ⭐️ 뷰 모드용 상세 모달 상태 추가
 
   if (isLoading) {
     return (
@@ -214,6 +215,66 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
+      {/* ⭐️ 과거 기록 모달 창 (뷰 모드용) */}
+      {viewHistoryItem && (
+          <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
+              <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                  <div className="p-5 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
+                      <div>
+                          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500" size={18}/> {viewHistoryItem.date} 과거 기록</h3>
+                          <p className="text-[10px] text-zinc-500 font-bold mt-1">해당 날짜에 박제된 상세 프로필의 모든 내용입니다.</p>
+                      </div>
+                      <button onClick={() => setViewHistoryItem(null)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={18}/></button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                      
+                      {/* Identity Info */}
+                      <div>
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><UserPlus size={12}/> Identity & Info</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">MBTI</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.mbti || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Blood Type</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.bloodType || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Height</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.height || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Religion</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.religion || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Relationship</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.relationship || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Languages</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.languages || '-'}</span></div>
+                          </div>
+                      </div>
+
+                      {/* Lifestyle */}
+                      <div>
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Compass size={12}/> Lifestyle & Work</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm col-span-2"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Motto</span><span className="text-sm font-black text-indigo-600">{viewHistoryItem.snapshot?.motto || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Recent Hobby</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.recentHobby || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Working Style</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.workingStyle || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Active Hours</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.activeHours || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Contact</span><span className="text-xs font-black text-zinc-800">{viewHistoryItem.snapshot?.contact || '-'}</span></div>
+                          </div>
+                      </div>
+
+                      {/* Tastes */}
+                      <div>
+                          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Heart size={12}/> My Tastes</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Hobbies</span><span className="text-xs font-bold text-zinc-700">{(viewHistoryItem.snapshot?.tastes?.hobbies || []).join(', ') || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-orange-400 font-bold mb-1">Culture</span><span className="text-xs font-bold text-orange-700">{(viewHistoryItem.snapshot?.tastes?.culture || []).join(', ') || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-indigo-400 font-bold mb-1">Food</span><span className="text-xs font-bold text-indigo-700">{(viewHistoryItem.snapshot?.tastes?.foods || []).join(', ') || '-'}</span></div>
+                             <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-sm"><span className="block text-[9px] text-emerald-400 font-bold mb-1">Lifestyle</span><span className="text-xs font-bold text-emerald-700">{(viewHistoryItem.snapshot?.tastes?.lifestyle || []).join(', ') || '-'}</span></div>
+                          </div>
+                      </div>
+
+                  </div>
+                  <div className="p-5 border-t border-zinc-200 bg-white flex justify-end">
+                      <button onClick={() => setViewHistoryItem(null)} className="px-5 py-2.5 bg-zinc-800 text-white font-bold text-sm rounded-xl hover:bg-zinc-900 transition shadow-sm">
+                          닫기
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {showHistoryModal && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setShowHistoryModal(false)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -227,10 +288,11 @@ const ProfileView = () => {
                   <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
                       <div className="relative border-l-2 border-indigo-100 ml-4 space-y-8 pb-10">
                           {(safeUser.addProfile?.history || []).map((h, i) => (
-                              <div key={h.id || i} className="relative pl-8 group">
+                              <div key={h.id || i} className="relative pl-8 group cursor-pointer" onClick={() => setViewHistoryItem(h)}>
                                   <div className="absolute w-4 h-4 bg-white border-[4px] border-indigo-500 rounded-full -left-[9px] top-1 shadow-sm group-hover:scale-125 transition-transform" />
-                                  <div className="mb-3">
+                                  <div className="mb-3 flex items-center gap-2">
                                       <span className="text-[11px] font-black text-white bg-indigo-500 px-2.5 py-1 rounded-md shadow-sm tracking-widest">{h.date}</span>
+                                      <span className="text-[10px] font-bold text-indigo-400 group-hover:underline">상세 보기</span>
                                   </div>
                                   <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm transition-shadow hover:shadow-md">
                                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -509,7 +571,7 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* ⭐️ ADD PROFILE TAB */}
+                  {/* ⭐️ ADD PROFILE TAB (여백 수정) */}
                   {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         
@@ -529,7 +591,6 @@ const ProfileView = () => {
 
                         {/* 1. Identity */}
                         <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
-                          
                           <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden mb-5 relative group flex items-center justify-center">
                               {safeUser.addProfile?.extraImage ? (
                                   <img src={safeUser.addProfile.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -551,10 +612,9 @@ const ProfileView = () => {
                           </div>
                         </div>
 
-                        {/* 2. Lifestyle & Tastes */}
+                        {/* 2. Lifestyle & Tastes (여백 축소 p-5) */}
                         <div className="md:col-span-2 flex flex-col gap-4 md:gap-5">
-                          
-                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                          <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Compass size={14}/> Lifestyle & Work</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
@@ -586,24 +646,24 @@ const ProfileView = () => {
                               </div>
                           </div>
 
-                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                          <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> My Tastes</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div className="p-3 bg-zinc-50/80 rounded-2xl border border-zinc-100">
                                     <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">Hobbies & Interests</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.hobbies || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700 shadow-sm hover:border-zinc-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-1.5">{(safeUser.addProfile?.tastes?.hobbies || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[10px] font-bold text-zinc-700 shadow-sm hover:border-zinc-300 transition-colors">{c}</span>)}</div>
                                   </div>
-                                  <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                                  <div className="p-3 bg-orange-50/50 rounded-2xl border border-orange-100/50">
                                     <span className="block text-[10px] font-black text-orange-400 uppercase mb-2">Culture (Music/Movies)</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.culture || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm hover:border-orange-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-1.5">{(safeUser.addProfile?.tastes?.culture || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[10px] font-bold text-orange-700 shadow-sm hover:border-orange-300 transition-colors">{c}</span>)}</div>
                                   </div>
-                                  <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                  <div className="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
                                     <span className="block text-[10px] font-black text-indigo-400 uppercase mb-2">Food & Drink</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 shadow-sm hover:border-indigo-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-1.5">{(safeUser.addProfile?.tastes?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[10px] font-bold text-indigo-700 shadow-sm hover:border-indigo-300 transition-colors">{c}</span>)}</div>
                                   </div>
-                                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                                  <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
                                     <span className="block text-[10px] font-black text-emerald-400 uppercase mb-2">Lifestyle & Places</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.lifestyle || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 shadow-sm hover:border-emerald-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-1.5">{(safeUser.addProfile?.tastes?.lifestyle || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-700 shadow-sm hover:border-emerald-300 transition-colors">{c}</span>)}</div>
                                   </div>
                               </div>
                           </div>
@@ -612,10 +672,9 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* ⭐️ BUSINESS CARD TAB (뷰 모드 렌더링 경로 수정) */}
+                  {/* ⭐️ BUSINESS CARD TAB */}
                   {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
                       <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                          {/* 백엔드 저장 경로인 addProfile.businessCard 에서 읽어옴 */}
                           {renderBusinessCardUI(safeUser.addProfile?.businessCard, safeUser.name)}
                       </div>
                   )}
