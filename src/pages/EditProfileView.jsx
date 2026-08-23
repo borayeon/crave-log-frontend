@@ -23,7 +23,6 @@ const EditProfileView = () => {
         }
     }
 
-    // ⭐️ [에러 해결] 탭 순서를 백엔드 통과를 위해 idol 내부에 배치합니다.
     const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
@@ -34,8 +33,6 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
-      
-      // ⭐️ [에러 해결] 명함과 탭 순서 데이터를 서버가 인식할 수 있는 idol 내부로 숨겨서 저장합니다.
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
@@ -100,7 +97,6 @@ const EditProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
   
-  // ⭐️ 렌더링 시에도 idol 내부의 tabOrder 사용
   const availablePreviewTabs = (formData.idol?.tabOrder || [])
     .map(id => TABS_CONFIG[id])
     .filter(tab => tab && !isTabPrivate(tab.id));
@@ -506,6 +502,7 @@ const EditProfileView = () => {
 
   return (
     <React.Fragment>
+      {/* 과거 기록 확인 모달창 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -550,8 +547,11 @@ const EditProfileView = () => {
           </div>
       )}
 
-      <div className="max-w-[1000px] mx-auto w-full p-4 md:p-10 md:pt-6 animate-in fade-in duration-300 pb-28 md:pb-10 overflow-y-auto">
-        <header className="mb-6 flex justify-between items-center">
+      {/* ⭐️ 레이아웃 조정: 부모 컨테이너에서 overflow를 제거하고 relative만 남깁니다 */}
+      <div className="max-w-[1000px] mx-auto w-full p-4 md:px-10 animate-in fade-in duration-300 pb-28 md:pb-10 relative">
+        
+        {/* ⭐️ 헤더를 Sticky하게 고정 */}
+        <header className="sticky top-0 z-[100] mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F8FAFC]/95 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-zinc-200/60 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
                <Edit2 size={24} className="text-violet-500"/> 프로필 편집
@@ -575,7 +575,7 @@ const EditProfileView = () => {
           </div>
         </header>
 
-        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
             <div className="shrink-0 flex flex-col items-center">
@@ -721,7 +721,6 @@ const EditProfileView = () => {
           </div>
         </div>
 
-        {/* ⭐️ 에러 픽스: 탭 드래그 앤 드롭 렌더링 경로 (formData.idol.tabOrder 적용) */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 p-1">
           {(formData.idol?.tabOrder || []).map((tabId, index) => {
               const tab = TABS_CONFIG[tabId];
