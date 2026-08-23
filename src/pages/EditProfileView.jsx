@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
-// ⭐️ 위에서 만든 분리된 컴포넌트들을 불러옵니다.
 import EditHistoryModal from '../components/profile/EditHistoryModal';
 import EditPreviewModal from '../components/profile/EditPreviewModal';
 
@@ -38,9 +37,12 @@ const EditProfileView = () => {
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
       
+      // ⭐️ 핵심: 명함(businessCard)과 Q&A(qna) 데이터를 백엔드가 허용하는 idol 내부로 편입!
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
+          businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
+          qna: qnaData,
           updatedAt: safeUser.idol?.updatedAt || new Date().toISOString().split('T')[0],
           history: safeUser.idol?.history || [],
           extraImage: safeUser.idol?.extraImage || "", 
@@ -57,10 +59,6 @@ const EditProfileView = () => {
           contact: safeUser.idol?.contact || "중간",
           tastes: safeUser.idol?.tastes || { hobbies: [], culture: [], foods: [], lifestyle: [] }, 
       },
-      businessCard: safeUser.businessCard || safeUser.idol?.businessCard || { 
-          company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" 
-      },
-      qna: qnaData,
       hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
       vision: safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
       quotes: safeUser.quotes || [],
@@ -113,7 +111,7 @@ const EditProfileView = () => {
       const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
       setPreviewTab(firstTab);
     }
-  }, [showPreview]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showPreview]);
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -147,9 +145,7 @@ const EditProfileView = () => {
 
   const uploadImageToServer = async (file, path, setUploadingState) => {
     const MAX_FILE_SIZE = 50 * 1024 * 1024; 
-    if (file.size > MAX_FILE_SIZE) {
-        return showToast("파일 용량이 50MB를 초과할 수 없습니다.");
-    }
+    if (file.size > MAX_FILE_SIZE) return showToast("파일 용량이 50MB를 초과할 수 없습니다.");
 
     if (setUploadingState) setUploadingState(true);
     else setIsLoading(true);
@@ -165,10 +161,7 @@ const EditProfileView = () => {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
-      if (res.status === 413) {
-          showToast("서버 업로드 용량 제한을 초과했습니다.");
-          return;
-      }
+      if (res.status === 413) return showToast("서버 업로드 용량 제한을 초과했습니다.");
 
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -212,10 +205,7 @@ const EditProfileView = () => {
 
   const handleCheckDuplicateHandle = async () => {
     if (!formData.handle?.trim()) return showToast('아이디를 입력해주세요.');
-    if (!/^[a-z0-9._-]+$/.test(formData.handle)) {
-        return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
-    }
-
+    if (!/^[a-z0-9._-]+$/.test(formData.handle)) return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
     if (formData.handle === user.handle) {
         setIsHandleAvailable(true);
         return showToast('현재 사용 중인 내 아이디입니다. ✅');
@@ -242,7 +232,6 @@ const EditProfileView = () => {
   const handleSave = async () => {
     if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
     if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
-    
     if (!/^[a-z0-9._-]+$/.test(formData.handle)) return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
     if (!isHandleAvailable && formData.handle !== user.handle) return showToast('아이디 중복 확인을 진행해주세요.');
 
@@ -912,7 +901,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ADD PROFILE TAB */}
+          {/* ⭐️ ADD PROFILE TAB */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="flex flex-col gap-2">
@@ -1067,12 +1056,12 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* BUSINESS CARD TAB */}
+          {/* ⭐️ BUSINESS CARD TAB */}
           {editTab === 'businessCard' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Live Card Preview</p>
-                    {renderBusinessCardUI(formData.businessCard, formData.name)}
+                    {renderBusinessCardUI(formData.idol?.businessCard, formData.name)}
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1085,8 +1074,8 @@ const EditProfileView = () => {
                                 <button 
                                     key={t}
                                     type="button"
-                                    onClick={() => updateNested(["businessCard", "template"], t)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all capitalize border shadow-sm ${formData.businessCard?.template === t ? 'border-zinc-800 ring-2 ring-zinc-800 ring-offset-1 bg-zinc-800 text-white' : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50'}`}
+                                    onClick={() => updateNested(["idol", "businessCard", "template"], t)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all capitalize border shadow-sm ${formData.idol?.businessCard?.template === t ? 'border-zinc-800 ring-2 ring-zinc-800 ring-offset-1 bg-zinc-800 text-white' : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50'}`}
                                 >
                                     {t}
                                 </button>
@@ -1095,44 +1084,44 @@ const EditProfileView = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {renderInput("소속 (Company / Team)", ["businessCard", "company"], "소속명")}
-                        {renderInput("직책 (Position / Role)", ["businessCard", "position"], "직책")}
-                        {renderInput("이메일 (Email)", ["businessCard", "email"], "이메일 주소")}
-                        {renderInput("연락처 (Phone)", ["businessCard", "phone"], "전화번호")}
+                        {renderInput("소속 (Company / Team)", ["idol", "businessCard", "company"], "소속명")}
+                        {renderInput("직책 (Position / Role)", ["idol", "businessCard", "position"], "직책")}
+                        {renderInput("이메일 (Email)", ["idol", "businessCard", "email"], "이메일 주소")}
+                        {renderInput("연락처 (Phone)", ["idol", "businessCard", "phone"], "전화번호")}
                         <div className="sm:col-span-2">
-                            {renderInput("개인 웹사이트 (Website / Link)", ["businessCard", "website"], "웹사이트 링크")}
+                            {renderInput("개인 웹사이트 (Website / Link)", ["idol", "businessCard", "website"], "웹사이트 링크")}
                         </div>
                         <div className="sm:col-span-2">
-                            {renderInput("위치 (Address / Location)", ["businessCard", "address"], "사무실 주소 또는 활동 지역")}
+                            {renderInput("위치 (Address / Location)", ["idol", "businessCard", "address"], "사무실 주소 또는 활동 지역")}
                         </div>
                     </div>
                 </div>
             </div>
           )}
 
-          {/* Q&A TAB */}
+          {/* ⭐️ Q&A TAB (저장 경로 픽스: qna -> idol.qna) */}
           {editTab === 'qna' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-violet-500"/> 100문 100답 작성</h3>
                 <p className="text-[11px] text-zinc-500 font-medium mb-5">나만의 엉뚱하고 재미있는 질문과 답변을 추가해보세요.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(formData.qna || []).map((item, idx) => (
+                  {(formData.idol?.qna || []).map((item, idx) => (
                       <div key={idx} className="flex flex-col gap-2.5 bg-violet-50/30 p-5 rounded-2xl border border-violet-100/50 relative overflow-hidden hover:bg-violet-50 hover:shadow-sm transition-all duration-300">
-                          <button type="button" onClick={()=>{const arr=[...(formData.qna||[])]; arr.splice(idx,1); updateNested(["qna"], arr);}} className="absolute top-4 right-4 text-violet-300 hover:text-rose-500 bg-white border border-violet-100 p-1.5 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
+                          <button type="button" onClick={()=>{const arr=[...(formData.idol?.qna||[])]; arr.splice(idx,1); updateNested(["idol", "qna"], arr);}} className="absolute top-4 right-4 text-violet-300 hover:text-rose-500 bg-white border border-violet-100 p-1.5 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
                           
                           <div>
                             <label className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1 block">Question</label>
-                            <input value={item.q} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].q=e.target.value; updateNested(["qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-900 outline-none focus:border-violet-400 pr-10 transition-colors" placeholder="예: 무인도에 가져갈 3가지는?" />
+                            <input value={item.q} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].q=e.target.value; updateNested(["idol", "qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-900 outline-none focus:border-violet-400 pr-10 transition-colors" placeholder="예: 무인도에 가져갈 3가지는?" />
                           </div>
                           <div>
                             <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">Answer</label>
-                            <textarea value={item.a} onChange={e => { const arr=[...(formData.qna||[])]; arr[idx].a=e.target.value; updateNested(["qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-[11px] font-medium text-zinc-800 outline-none focus:border-violet-400 resize-none transition-colors" placeholder="답변을 작성하세요" rows={2} />
+                            <textarea value={item.a} onChange={e => { const arr=[...(formData.idol?.qna||[])]; arr[idx].a=e.target.value; updateNested(["idol", "qna"], arr); }} className="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-[11px] font-medium text-zinc-800 outline-none focus:border-violet-400 resize-none transition-colors" placeholder="답변을 작성하세요" rows={2} />
                           </div>
                       </div>
                   ))}
                   
-                  <button type="button" onClick={()=>{const arr=[...(formData.qna||[]), {q:"", a:""}]; updateNested(["qna"], arr);}} className="min-h-[140px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-violet-200 rounded-2xl text-violet-400 hover:text-violet-600 hover:border-violet-400 hover:bg-violet-50 transition-colors">
+                  <button type="button" onClick={()=>{const arr=[...(formData.idol?.qna||[]), {q:"", a:""}]; updateNested(["idol", "qna"], arr);}} className="min-h-[140px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-violet-200 rounded-2xl text-violet-400 hover:text-violet-600 hover:border-violet-400 hover:bg-violet-50 transition-colors">
                       <Plus size={24} />
                       <span className="font-bold text-xs">새로운 Q&A 추가</span>
                   </button>
