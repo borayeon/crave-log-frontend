@@ -3,7 +3,7 @@ import {
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
   Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown,
-  CreditCard, Mail, Phone
+  CreditCard, Mail, Phone, Globe
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -12,7 +12,8 @@ const EditProfileView = () => {
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
-    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.addProfile?.qna || []);
+    // ⭐️ 기존 idol.qna 또는 addProfile.qna에 있던 데이터를 모두 안전하게 호환
+    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || safeUser.addProfile?.qna || []);
     
     let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false };
     if (safeUser.privacy) {
@@ -37,7 +38,6 @@ const EditProfileView = () => {
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
-          businessCard: safeUser.idol?.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
           updatedAt: safeUser.idol?.updatedAt || new Date().toISOString().split('T')[0],
           history: safeUser.idol?.history || [],
           extraImage: safeUser.idol?.extraImage || "", 
@@ -53,6 +53,10 @@ const EditProfileView = () => {
           activeHours: safeUser.idol?.activeHours || "", 
           contact: safeUser.idol?.contact || "중간",
           tastes: safeUser.idol?.tastes || { hobbies: [], culture: [], foods: [], lifestyle: [] }, 
+      },
+      // ⭐️ 구조 변경으로 인해 기존 명함 데이터가 증발하지 않도록 idol.businessCard 호환성 추가
+      businessCard: safeUser.businessCard || safeUser.idol?.businessCard || { 
+          company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" 
       },
       qna: qnaData,
       hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
@@ -107,7 +111,7 @@ const EditProfileView = () => {
       const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
       setPreviewTab(firstTab);
     }
-  }, [showPreview]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showPreview]);
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -503,7 +507,7 @@ const EditProfileView = () => {
 
   return (
     <React.Fragment>
-      {/* ⭐️ 과거 기록 확인 모달창 (전체 내용 표시) */}
+      {/* ⭐️ 과거 기록 확인 모달창 (전체 데이터 표시 - 두 번째 코드의 상세 모달 반영) */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -567,8 +571,10 @@ const EditProfileView = () => {
           </div>
       )}
 
-      {/* ⭐️ Header를 고정(Sticky)시키고 모달 뒤로 넘어가도록 z-index를 조정했습니다. */}
+      {/* ⭐️ 레이아웃 조정: 부모 컨테이너에서 overflow를 제거하고 relative만 남깁니다 */}
       <div className="max-w-[1000px] mx-auto w-full p-4 md:px-10 animate-in fade-in duration-300 pb-28 md:pb-10 relative">
+        
+        {/* ⭐️ 헤더를 Sticky하게 고정 */}
         <header className="sticky top-0 z-[100] mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F8FAFC]/95 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-zinc-200/60 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
@@ -593,7 +599,6 @@ const EditProfileView = () => {
           </div>
         </header>
 
-        {/* 1. 메인 프로필 설정 영역 */}
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
@@ -1021,7 +1026,6 @@ const EditProfileView = () => {
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
                       <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
                       
-                      {/* ⭐️ 여백 축소 및 깔끔한 사진 렌더링 */}
                       <div className="flex flex-col items-center justify-center mb-6">
                           <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner flex items-center justify-center">
                               {isExtraImageUploading && (
@@ -1060,12 +1064,19 @@ const EditProfileView = () => {
                       <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-sm font-black text-zinc-900 mb-4 flex items-center gap-2"><Compass size={14} className="text-blue-500"/> Lifestyle & Work</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {renderInput("좌우명", ["idol", "motto"], "예: 피할 수 없으면 즐겨라")}
-                              {renderInput("최근 취미", ["idol", "recentHobby"], "예: 클라이밍, 베이킹")}
-                              {renderInput("Working Style", ["idol", "workingStyle"], "예: 올빼미족")}
-                              {renderInput("활동 시간대", ["idol", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
-                              
-                              <div className="sm:col-span-2">
+                              <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
+                                {renderInput("좌우명", ["idol", "motto"], "예: 피할 수 없으면 즐겨라")}
+                              </div>
+                              <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                {renderInput("최근 취미", ["idol", "recentHobby"], "예: 클라이밍, 베이킹")}
+                              </div>
+                              <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                {renderInput("Working Style", ["idol", "workingStyle"], "예: 올빼미족")}
+                              </div>
+                              <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                {renderInput("활동 시간대", ["idol", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
+                              </div>
+                              <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">연락 가능 여부</label>
                                   <div className="flex bg-zinc-50 border border-zinc-200 rounded-xl p-1 gap-1 max-w-sm">
                                       {['적극', '중간', '소극'].map(status => (
@@ -1073,7 +1084,7 @@ const EditProfileView = () => {
                                               key={status}
                                               type="button"
                                               onClick={() => updateNested(["idol", "contact"], status)}
-                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.idol?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-zinc-200/50' : 'text-zinc-500 hover:bg-zinc-100'}`}
+                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.idol?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-violet-200' : 'text-zinc-500 hover:bg-zinc-100'}`}
                                           >
                                               {status}
                                           </button>
@@ -1083,7 +1094,6 @@ const EditProfileView = () => {
                           </div>
                       </div>
 
-                      {/* ⭐️ 여백 축소 (p-5 md:p-6, gap-3) */}
                       <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-sm font-black text-zinc-900 mb-4 flex items-center gap-2"><Heart size={14} className="text-rose-500"/> My Tastes</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1111,7 +1121,7 @@ const EditProfileView = () => {
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Live Card Preview</p>
-                    {renderBusinessCardUI(formData.idol?.businessCard, formData.name)}
+                    {renderBusinessCardUI(formData.businessCard, formData.name)}
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1124,8 +1134,8 @@ const EditProfileView = () => {
                                 <button 
                                     key={t}
                                     type="button"
-                                    onClick={() => updateNested(["idol", "businessCard", "template"], t)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all capitalize border shadow-sm ${formData.idol?.businessCard?.template === t ? 'border-zinc-800 ring-2 ring-zinc-800 ring-offset-1 bg-zinc-800 text-white' : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50'}`}
+                                    onClick={() => updateNested(["businessCard", "template"], t)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all capitalize border shadow-sm ${formData.businessCard?.template === t ? 'border-zinc-800 ring-2 ring-zinc-800 ring-offset-1 bg-zinc-800 text-white' : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50'}`}
                                 >
                                     {t}
                                 </button>
@@ -1134,15 +1144,15 @@ const EditProfileView = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {renderInput("소속 (Company / Team)", ["idol", "businessCard", "company"], "소속명")}
-                        {renderInput("직책 (Position / Role)", ["idol", "businessCard", "position"], "직책")}
-                        {renderInput("이메일 (Email)", ["idol", "businessCard", "email"], "이메일 주소")}
-                        {renderInput("연락처 (Phone)", ["idol", "businessCard", "phone"], "전화번호")}
+                        {renderInput("소속 (Company / Team)", ["businessCard", "company"], "소속명")}
+                        {renderInput("직책 (Position / Role)", ["businessCard", "position"], "직책")}
+                        {renderInput("이메일 (Email)", ["businessCard", "email"], "이메일 주소")}
+                        {renderInput("연락처 (Phone)", ["businessCard", "phone"], "전화번호")}
                         <div className="sm:col-span-2">
-                            {renderInput("개인 웹사이트 (Website / Link)", ["idol", "businessCard", "website"], "웹사이트 링크")}
+                            {renderInput("개인 웹사이트 (Website / Link)", ["businessCard", "website"], "웹사이트 링크")}
                         </div>
                         <div className="sm:col-span-2">
-                            {renderInput("위치 (Address / Location)", ["idol", "businessCard", "address"], "사무실 주소 또는 활동 지역")}
+                            {renderInput("위치 (Address / Location)", ["businessCard", "address"], "사무실 주소 또는 활동 지역")}
                         </div>
                     </div>
                 </div>
@@ -1157,7 +1167,7 @@ const EditProfileView = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(formData.qna || []).map((item, idx) => (
-                      <div key={idx} className="flex flex-col gap-2.5 bg-violet-50/30 p-5 rounded-2xl border border-violet-100/50 relative group transition-colors hover:bg-violet-50">
+                      <div key={idx} className="flex flex-col gap-2.5 bg-violet-50/30 p-5 rounded-2xl border border-violet-100/50 relative overflow-hidden hover:bg-violet-50 hover:shadow-sm transition-all duration-300">
                           <button type="button" onClick={()=>{const arr=[...(formData.qna||[])]; arr.splice(idx,1); updateNested(["qna"], arr);}} className="absolute top-4 right-4 text-violet-300 hover:text-rose-500 bg-white border border-violet-100 p-1.5 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
                           
                           <div>
@@ -1297,7 +1307,6 @@ const EditProfileView = () => {
                 </div>
               </div>
 
-              {/* 미리보기 화면 */}
               <div className="flex-1 overflow-y-auto pb-10">
                 {formData.status && (
                   <div className="mx-4 md:mx-10 mt-6 mb-2 flex relative z-10">
@@ -1398,7 +1407,7 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      {/* ⭐️ Add Profile Preview (여백 및 사진 수정) */}
+                      {/* ⭐️ Add Profile Preview */}
                       {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                               <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
@@ -1442,14 +1451,14 @@ const EditProfileView = () => {
                                             <span className="text-xs font-black text-zinc-800">{formData.idol?.activeHours || '-'}</span>
                                           </div>
                                           <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
-                                            <span className="text-[10px] font-bold text-zinc-400">Contact</span>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                {['적극', '중간', '소극'].map(status => (
-                                                    <div key={status} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${formData.idol?.contact === status ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
-                                                        {status}
-                                                    </div>
-                                                ))}
-                                            </div>
+                                              <span className="text-[10px] font-bold text-zinc-400">Contact</span>
+                                              <div className="flex items-center gap-2 mt-1">
+                                                  {['적극', '중간', '소극'].map(status => (
+                                                      <div key={status} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${formData.idol?.contact === status ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
+                                                          {status}
+                                                      </div>
+                                                  ))}
+                                              </div>
                                           </div>
                                       </div>
                                   </div>
@@ -1482,7 +1491,7 @@ const EditProfileView = () => {
                       {/* ⭐️ Business Card Preview */}
                       {previewTab === 'businessCard' && (
                           <div className="py-10">
-                              {renderBusinessCardUI(formData.idol?.businessCard, formData.name)}
+                              {renderBusinessCardUI(formData.businessCard, formData.name)}
                           </div>
                       )}
 
