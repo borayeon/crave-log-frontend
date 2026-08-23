@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown
+  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown,
+  CreditCard, Mail, Phone, Globe // ⭐️ Globe 아이콘 추가 완료!
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -11,9 +12,9 @@ const EditProfileView = () => {
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
-    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
+    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.addProfile?.qna || []);
     
-    let parsedPrivacy = { developer: false, career: false, idol: false, qna: false, hobby: false, vision: false, quotes: false };
+    let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
@@ -28,13 +29,16 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
-      idol: safeUser.idol || { 
+      addProfile: safeUser.addProfile || { 
           updatedAt: new Date().toISOString().split('T')[0],
           history: [],
           extraImage: "", mbti: "", bloodType: "", height: "", religion: "", relationship: "", languages: "",
           motto: "", recentHobby: "", workingStyle: "", activeHours: "", contact: "중간",
           tastes: { hobbies: [], culture: [], foods: [], lifestyle: [] }, 
           qna: [] 
+      },
+      businessCard: safeUser.businessCard || { 
+          company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" 
       },
       qna: qnaData,
       hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
@@ -66,7 +70,8 @@ const EditProfileView = () => {
   const ALL_TABS = [
     { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
-    { id: 'idol', label: 'Add Profile', icon: <UserPlus size={16}/> },
+    { id: 'addProfile', label: 'Add Profile', icon: <UserPlus size={16}/> },
+    { id: 'businessCard', label: 'Business Card', icon: <CreditCard size={16}/> },
     { id: 'qna', label: 'Q&A', icon: <MessageSquare size={16}/> },
     { id: 'hobby', label: 'Hobby', icon: <Palette size={16}/> },
     { id: 'vision', label: 'Mandalart', icon: <Compass size={16}/> },
@@ -101,19 +106,19 @@ const EditProfileView = () => {
   };
 
   const handleCommitProfile = () => {
-      const currentData = { ...formData.idol };
+      const currentData = { ...formData.addProfile };
       delete currentData.history;
       
       const commit = {
           id: Date.now().toString(),
-          date: formData.idol.updatedAt || new Date().toISOString().split('T')[0],
+          date: formData.addProfile.updatedAt || new Date().toISOString().split('T')[0],
           snapshot: currentData
       };
 
-      const currentHistory = formData.idol.history || [];
+      const currentHistory = formData.addProfile.history || [];
       const newHistory = [commit, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      updateNested(['idol', 'history'], newHistory);
+      updateNested(['addProfile', 'history'], newHistory);
       showToast(`${commit.date} 기준으로 현재 기록이 고정되었습니다! 📸`);
   };
 
@@ -178,7 +183,7 @@ const EditProfileView = () => {
 
   const handleExtraImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) uploadImageToServer(file, ["idol", "extraImage"], setIsExtraImageUploading);
+    if (file) uploadImageToServer(file, ["addProfile", "extraImage"], setIsExtraImageUploading);
     e.target.value = null; 
   };
 
@@ -344,6 +349,39 @@ const EditProfileView = () => {
     );
   };
 
+  // ⭐️ 명함 UI 렌더링 헬퍼 함수
+  const renderBusinessCardUI = (data, userName) => {
+    const t = data?.template || 'dark';
+    let tClass = "bg-zinc-900 text-white";
+    if(t === 'light') tClass = "bg-white text-zinc-900 border border-zinc-200 shadow-sm";
+    if(t === 'gradient') tClass = "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md";
+    if(t === 'glass') tClass = "bg-zinc-50/80 backdrop-blur-md border border-zinc-200 text-zinc-800 shadow-sm";
+
+    return (
+        <div className={`w-full max-w-md mx-auto aspect-[1.58/1] rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${tClass}`}>
+            {t === 'dark' && <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>}
+            {t === 'gradient' && <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>}
+
+            <div className="flex justify-between items-start relative z-10">
+                <span className="font-black text-lg sm:text-xl tracking-tight opacity-90">{data?.company || 'Company Name'}</span>
+                <CreditCard size={20} className="opacity-50"/>
+            </div>
+
+            <div className="relative z-10 mt-4">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{userName || 'Your Name'}</h2>
+                <p className="text-xs sm:text-sm font-bold opacity-80 mt-1">{data?.position || 'Position / Role'}</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium opacity-90 mt-6 relative z-10">
+                <div className="flex items-center gap-1.5 truncate"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
+                <div className="flex items-center gap-1.5 truncate"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>
+                <div className="flex items-center gap-1.5 truncate"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data?.address || 'Seoul, Republic of Korea'}</span></div>
+                <div className="flex items-center gap-1.5 truncate"><Globe size={12} className="shrink-0"/> <span className="truncate">{data?.website || 'www.example.com'}</span></div>
+            </div>
+        </div>
+    );
+  };
+
   const renderMandalartEditor = () => {
     const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
     const v = {
@@ -449,7 +487,6 @@ const EditProfileView = () => {
 
   return (
     <React.Fragment>
-      {/* 과거 기록 확인 모달창 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -483,7 +520,7 @@ const EditProfileView = () => {
                   </div>
                   <div className="p-5 border-t border-zinc-200 bg-white flex justify-end">
                       <button onClick={() => {
-                          updateNested(['idol'], { ...formData.idol, ...viewHistoryItem.snapshot, history: formData.idol.history, updatedAt: viewHistoryItem.date });
+                          updateNested(['addProfile'], { ...formData.addProfile, ...viewHistoryItem.snapshot, history: formData.addProfile.history, updatedAt: viewHistoryItem.date });
                           showToast(`${viewHistoryItem.date} 기록으로 폼이 복원되었습니다!`);
                           setViewHistoryItem(null);
                       }} className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition shadow-sm">
@@ -519,7 +556,6 @@ const EditProfileView = () => {
           </div>
         </header>
 
-        {/* 1. 메인 프로필 설정 영역 */}
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
@@ -865,7 +901,7 @@ const EditProfileView = () => {
           )}
 
           {/* ⭐️ ADD PROFILE TAB */}
-          {editTab === 'idol' && (
+          {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="flex flex-col gap-2">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 shadow-sm">
@@ -880,8 +916,8 @@ const EditProfileView = () => {
                              </div>
                              <input 
                                 type="date" 
-                                value={formData.idol?.updatedAt || ''} 
-                                onChange={e => updateNested(['idol', 'updatedAt'], e.target.value)}
+                                value={formData.addProfile?.updatedAt || ''} 
+                                onChange={e => updateNested(['addProfile', 'updatedAt'], e.target.value)}
                                 className="px-3 py-2 text-xs font-bold text-zinc-800 outline-none w-full sm:w-32"
                              />
                          </div>
@@ -891,7 +927,7 @@ const EditProfileView = () => {
                      </div>
                   </div>
 
-                  {(formData.idol?.history?.length > 0) && (
+                  {(formData.addProfile?.history?.length > 0) && (
                       <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
                           <button 
                               type="button"
@@ -899,22 +935,22 @@ const EditProfileView = () => {
                               className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-colors outline-none"
                           >
                               <span className="text-[11px] font-black text-zinc-600 tracking-widest flex items-center gap-1.5">
-                                  <History size={14}/> 고정된 이전 기록 ({formData.idol.history.length}개)
+                                  <History size={14}/> 고정된 이전 기록 ({formData.addProfile.history.length}개)
                               </span>
                               <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isHistoryExpanded ? 'rotate-180' : ''}`} />
                           </button>
                           
                           {isHistoryExpanded && (
                               <div className="p-3 border-t border-zinc-200 flex flex-wrap gap-2 max-h-40 overflow-y-auto bg-white">
-                                  {formData.idol.history.map((h, i) => (
+                                  {formData.addProfile.history.map((h, i) => (
                                       <div key={h.id || i} className="shrink-0 bg-white border border-zinc-200 rounded-lg py-1.5 pl-3 pr-2 flex items-center gap-2 shadow-sm group">
                                           <button type="button" onClick={() => setViewHistoryItem(h)} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 hover:underline">
                                             {h.date} 기록 확인
                                           </button>
                                           <button type="button" onClick={() => {
-                                              const arr = [...formData.idol.history];
+                                              const arr = [...formData.addProfile.history];
                                               arr.splice(i, 1);
-                                              updateNested(['idol', 'history'], arr);
+                                              updateNested(['addProfile', 'history'], arr);
                                           }} className="text-zinc-300 hover:text-rose-500 transition-colors ml-1"><CloseIcon size={12}/></button>
                                       </div>
                                   ))}
@@ -936,8 +972,8 @@ const EditProfileView = () => {
                                       <Loader2 size={24} className="text-rose-500 animate-spin" />
                                   </div>
                               )}
-                              {formData.idol?.extraImage ? (
-                                  <img src={formData.idol?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
+                              {formData.addProfile?.extraImage ? (
+                                  <img src={formData.addProfile?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
                               ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
                                       <ImageIcon size={32} />
@@ -953,14 +989,14 @@ const EditProfileView = () => {
                       </div>
 
                       <div className="space-y-4">
-                          {renderInput("MBTI / Personality", ["idol", "mbti"], "예: ESTP")}
+                          {renderInput("MBTI / Personality", ["addProfile", "mbti"], "예: ESTP")}
                           <div className="grid grid-cols-2 gap-3">
-                              {renderInput("혈액형", ["idol", "bloodType"], "예: O형")}
-                              {renderInput("키", ["idol", "height"], "예: 175cm")}
+                              {renderInput("혈액형", ["addProfile", "bloodType"], "예: O형")}
+                              {renderInput("키", ["addProfile", "height"], "예: 175cm")}
                           </div>
-                          {renderInput("종교", ["idol", "religion"], "예: 무교")}
-                          {renderInput("연애 여부", ["idol", "relationship"], "예: 비혼, 연애 중")}
-                          {renderInput("사용하는 언어", ["idol", "languages"], "예: 한국어, 일본어")}
+                          {renderInput("종교", ["addProfile", "religion"], "예: 무교")}
+                          {renderInput("연애 여부", ["addProfile", "relationship"], "예: 비혼, 연애 중")}
+                          {renderInput("사용하는 언어", ["addProfile", "languages"], "예: 한국어, 일본어")}
                       </div>
                   </div>
 
@@ -969,10 +1005,10 @@ const EditProfileView = () => {
                       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Compass size={16} className="text-blue-500"/> Lifestyle & Work</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {renderInput("좌우명", ["idol", "motto"], "예: 피할 수 없으면 즐겨라")}
-                              {renderInput("최근 취미", ["idol", "recentHobby"], "예: 클라이밍, 베이킹")}
-                              {renderInput("Working Style", ["idol", "workingStyle"], "예: 올빼미족")}
-                              {renderInput("활동 시간대", ["idol", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
+                              {renderInput("좌우명", ["addProfile", "motto"], "예: 피할 수 없으면 즐겨라")}
+                              {renderInput("최근 취미", ["addProfile", "recentHobby"], "예: 클라이밍, 베이킹")}
+                              {renderInput("Working Style", ["addProfile", "workingStyle"], "예: 올빼미족")}
+                              {renderInput("활동 시간대", ["addProfile", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
                               
                               <div className="sm:col-span-2">
                                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">연락 가능 여부</label>
@@ -981,8 +1017,8 @@ const EditProfileView = () => {
                                           <button
                                               key={status}
                                               type="button"
-                                              onClick={() => updateNested(["idol", "contact"], status)}
-                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.idol?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-zinc-200/50' : 'text-zinc-500 hover:bg-zinc-100'}`}
+                                              onClick={() => updateNested(["addProfile", "contact"], status)}
+                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.addProfile?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-zinc-200/50' : 'text-zinc-500 hover:bg-zinc-100'}`}
                                           >
                                               {status}
                                           </button>
@@ -992,25 +1028,68 @@ const EditProfileView = () => {
                           </div>
                       </div>
 
-                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
+                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
-                                {renderArrayInput("Hobbies & Interests", ["idol", "tastes", "hobbies"], "입력 후 Enter")}
+                                {renderArrayInput("Hobbies & Interests", ["addProfile", "tastes", "hobbies"], "입력 후 Enter")}
                               </div>
                               <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                                {renderArrayInput("Culture (Music/Movies)", ["idol", "tastes", "culture"], "입력 후 Enter")}
+                                {renderArrayInput("Culture (Music/Movies)", ["addProfile", "tastes", "culture"], "입력 후 Enter")}
                               </div>
                               <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                                {renderArrayInput("Food & Drink", ["idol", "tastes", "foods"], "입력 후 Enter")}
+                                {renderArrayInput("Food & Drink", ["addProfile", "tastes", "foods"], "입력 후 Enter")}
                               </div>
                               <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                                {renderArrayInput("Lifestyle & Places", ["idol", "tastes", "lifestyle"], "입력 후 Enter")}
+                                {renderArrayInput("Lifestyle & Places", ["addProfile", "tastes", "lifestyle"], "입력 후 Enter")}
                               </div>
                           </div>
                       </div>
                   </div>
               </div>
+            </div>
+          )}
+
+          {/* ⭐️ BUSINESS CARD TAB */}
+          {editTab === 'businessCard' && (
+            <div className="space-y-6 animate-in fade-in">
+                <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Live Card Preview</p>
+                    {renderBusinessCardUI(formData.businessCard, formData.name)}
+                </div>
+
+                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                    <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><CreditCard size={16} className="text-emerald-500"/> 명함 정보 편집</h3>
+                    
+                    <div className="mb-6">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-2">명함 테마 스타일</label>
+                        <div className="flex gap-2">
+                            {['dark', 'light', 'gradient', 'glass'].map(t => (
+                                <button 
+                                    key={t}
+                                    type="button"
+                                    onClick={() => updateNested(["businessCard", "template"], t)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all capitalize border shadow-sm ${formData.businessCard?.template === t ? 'border-zinc-800 ring-2 ring-zinc-800 ring-offset-1 bg-zinc-800 text-white' : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50'}`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {renderInput("소속 (Company / Team)", ["businessCard", "company"], "소속명")}
+                        {renderInput("직책 (Position / Role)", ["businessCard", "position"], "직책")}
+                        {renderInput("이메일 (Email)", ["businessCard", "email"], "이메일 주소")}
+                        {renderInput("연락처 (Phone)", ["businessCard", "phone"], "전화번호")}
+                        <div className="sm:col-span-2">
+                            {renderInput("개인 웹사이트 (Website / Link)", ["businessCard", "website"], "웹사이트 링크")}
+                        </div>
+                        <div className="sm:col-span-2">
+                            {renderInput("위치 (Address / Location)", ["businessCard", "address"], "사무실 주소 또는 활동 지역")}
+                        </div>
+                    </div>
+                </div>
             </div>
           )}
 
@@ -1263,13 +1342,14 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      {/* ⭐️ Add Profile Preview (미리보기 화면 고도화) */}
-                      {previewTab === 'idol' && (
+                      
+                      {/* ⭐️ Add Profile Preview */}
+                      {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                               <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
                                   <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl overflow-hidden mb-5 border border-zinc-100 shadow-sm relative group bg-zinc-50 flex flex-col items-center justify-center">
-                                      {formData.idol?.extraImage ? (
-                                          <img src={formData.idol.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                      {formData.addProfile?.extraImage ? (
+                                          <img src={formData.addProfile.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                       ) : (
                                           <ImageIcon size={32} className="text-zinc-200" />
                                       )}
@@ -1278,9 +1358,9 @@ const EditProfileView = () => {
                                       </div>
                                   </div>
                                   <div className="space-y-2">
-                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">MBTI</span><span className="text-xs font-black text-zinc-800">{formData.idol?.mbti || '-'}</span></div>
-                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Blood Type</span><span className="text-xs font-black text-zinc-800">{formData.idol?.bloodType || '-'}</span></div>
-                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Height</span><span className="text-xs font-black text-zinc-800">{formData.idol?.height || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">MBTI</span><span className="text-xs font-black text-zinc-800">{formData.addProfile?.mbti || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Blood Type</span><span className="text-xs font-black text-zinc-800">{formData.addProfile?.bloodType || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Height</span><span className="text-xs font-black text-zinc-800">{formData.addProfile?.height || '-'}</span></div>
                                   </div>
                               </div>
                               <div className="md:col-span-2 flex flex-col gap-4 md:gap-5">
@@ -1289,21 +1369,29 @@ const EditProfileView = () => {
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                           <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
                                             <span className="text-[10px] font-bold text-blue-400">Motto (좌우명)</span>
-                                            <span className="text-sm font-black text-zinc-800">{formData.idol?.motto || '-'}</span>
+                                            <span className="text-sm font-black text-zinc-800">{formData.addProfile?.motto || '-'}</span>
                                           </div>
                                           <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                             <span className="text-[10px] font-bold text-zinc-400">Recent Hobby</span>
-                                            <span className="text-xs font-black text-zinc-800">{formData.idol?.recentHobby || '-'}</span>
+                                            <span className="text-xs font-black text-zinc-800">{formData.addProfile?.recentHobby || '-'}</span>
                                           </div>
                                           <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                             <span className="text-[10px] font-bold text-zinc-400">Working Style</span>
-                                            <span className="text-xs font-black text-zinc-800">{formData.idol?.workingStyle || '-'}</span>
+                                            <span className="text-xs font-black text-zinc-800">{formData.addProfile?.workingStyle || '-'}</span>
                                           </div>
                                       </div>
                                   </div>
                               </div>
                           </div>
                       )}
+
+                      {/* ⭐️ Business Card Preview */}
+                      {previewTab === 'businessCard' && (
+                          <div className="py-10">
+                              {renderBusinessCardUI(formData.businessCard, formData.name)}
+                          </div>
+                      )}
+                      
                       {previewTab === 'qna' && (
                           <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.qna?.length || 0}개)</h4>
