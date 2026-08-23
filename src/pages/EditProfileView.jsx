@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar
+  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -60,7 +60,8 @@ const EditProfileView = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
   
-  const [viewHistoryItem, setViewHistoryItem] = useState(null); // ⭐️ 과거 기록 조회용 모달 상태
+  const [viewHistoryItem, setViewHistoryItem] = useState(null); 
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); // ⭐️ 히스토리 토글 상태
 
   const ALL_TABS = [
     { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
@@ -862,79 +863,96 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ ADD PROFILE TAB */}
+          {/* ⭐️ ADD PROFILE TAB (히스토리 아코디언 토글 추가 & 이미지 크기 변경) */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               
-              {/* 상단 히스토리 박제(고정) 버튼 영역 */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 shadow-sm">
-                 <div>
-                   <h4 className="text-sm font-black text-indigo-800 flex items-center gap-1.5"><History size={16}/> Profile Version History</h4>
-                   <p className="text-[10px] text-indigo-600/80 mt-1 font-bold">하단에 입력한 내용들을 특정 날짜를 기준으로 고정할 수 있습니다.</p>
-                 </div>
-                 <div className="flex flex-col w-full sm:w-auto gap-2">
-                     <div className="flex items-center bg-white border border-indigo-200 rounded-xl overflow-hidden shadow-sm">
-                         <div className="px-3 bg-indigo-50 text-indigo-500 border-r border-indigo-200 h-full flex items-center">
-                             <Calendar size={14}/>
-                         </div>
-                         <input 
-                            type="date" 
-                            value={formData.addProfile?.updatedAt || ''} 
-                            onChange={e => updateNested(['addProfile', 'updatedAt'], e.target.value)}
-                            className="px-3 py-2 text-xs font-bold text-zinc-800 outline-none w-full sm:w-32"
-                         />
+              <div className="flex flex-col gap-2">
+                  {/* 상단 히스토리 박제 버튼 영역 */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 shadow-sm">
+                     <div>
+                       <h4 className="text-sm font-black text-indigo-800 flex items-center gap-1.5"><History size={16}/> Profile Version History</h4>
+                       <p className="text-[10px] text-indigo-600/80 mt-1 font-bold">하단에 입력한 내용들을 특정 날짜를 기준으로 고정할 수 있습니다.</p>
                      </div>
-                     <button onClick={handleCommitProfile} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-700 transition flex items-center justify-center gap-1.5">
-                        현재 기록 고정하기
-                     </button>
-                 </div>
+                     <div className="flex flex-col w-full sm:w-auto gap-2">
+                         <div className="flex items-center bg-white border border-indigo-200 rounded-xl overflow-hidden shadow-sm">
+                             <div className="px-3 bg-indigo-50 text-indigo-500 border-r border-indigo-200 h-full flex items-center">
+                                 <Calendar size={14}/>
+                             </div>
+                             <input 
+                                type="date" 
+                                value={formData.addProfile?.updatedAt || ''} 
+                                onChange={e => updateNested(['addProfile', 'updatedAt'], e.target.value)}
+                                className="px-3 py-2 text-xs font-bold text-zinc-800 outline-none w-full sm:w-32"
+                             />
+                         </div>
+                         <button onClick={handleCommitProfile} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-indigo-700 transition flex items-center justify-center gap-1.5">
+                            현재 기록 고정하기
+                         </button>
+                     </div>
+                  </div>
+
+                  {/* ⭐️ 히스토리 삭제/조회를 위한 아코디언 토글 리스트 */}
+                  {(formData.addProfile?.history?.length > 0) && (
+                      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+                          <button 
+                              type="button"
+                              onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                              className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-colors outline-none"
+                          >
+                              <span className="text-[11px] font-black text-zinc-600 tracking-widest flex items-center gap-1.5">
+                                  <History size={14}/> 고정된 이전 기록 ({formData.addProfile.history.length}개)
+                              </span>
+                              <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isHistoryExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                          
+                          {isHistoryExpanded && (
+                              <div className="p-3 border-t border-zinc-200 flex flex-wrap gap-2 max-h-40 overflow-y-auto bg-white">
+                                  {formData.addProfile.history.map((h, i) => (
+                                      <div key={h.id || i} className="shrink-0 bg-white border border-zinc-200 rounded-lg py-1.5 pl-3 pr-2 flex items-center gap-2 shadow-sm group">
+                                          <button type="button" onClick={() => setViewHistoryItem(h)} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 hover:underline">
+                                            {h.date} 기록 확인
+                                          </button>
+                                          <button type="button" onClick={() => {
+                                              const arr = [...formData.addProfile.history];
+                                              arr.splice(i, 1);
+                                              updateNested(['addProfile', 'history'], arr);
+                                          }} className="text-zinc-300 hover:text-rose-500 transition-colors ml-1"><CloseIcon size={12}/></button>
+                                      </div>
+                                  ))}
+                              </div>
+                          )}
+                      </div>
+                  )}
               </div>
 
-              {/* 히스토리 조회/삭제 리스트 */}
-              {(formData.addProfile?.history?.length > 0) && (
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide -mt-2 mb-2 px-1">
-                      {formData.addProfile.history.map((h, i) => (
-                          <div key={h.id || i} className="shrink-0 bg-white border border-zinc-200 rounded-lg py-1.5 pl-3 pr-2 flex items-center gap-2 shadow-sm group">
-                              <button type="button" onClick={() => setViewHistoryItem(h)} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 hover:underline">
-                                {h.date} 기록 확인
-                              </button>
-                              <button type="button" onClick={() => {
-                                  const arr = [...formData.addProfile.history];
-                                  arr.splice(i, 1);
-                                  updateNested(['addProfile', 'history'], arr);
-                              }} className="text-zinc-300 hover:text-rose-500 transition-colors ml-1"><CloseIcon size={12}/></button>
-                          </div>
-                      ))}
-                  </div>
-              )}
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 1. Identity & Info */}
+                  {/* 1. Identity & Info (기본 정보) */}
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
                       <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
                       
-                      {/* ⭐️ 추가 프로필 사진: 둥근 직사각형 형태로 변경 */}
+                      {/* ⭐️ 둥근 직사각형으로 크기 대폭 확대 (w-40 h-56) */}
                       <div className="flex flex-col items-center justify-center mb-6">
-                          <div className="w-32 h-40 sm:w-36 sm:h-48 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
+                          <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
                               {isExtraImageUploading && (
                                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20 backdrop-blur-[1px]">
-                                      <Loader2 size={16} className="text-rose-500 animate-spin" />
+                                      <Loader2 size={24} className="text-rose-500 animate-spin" />
                                   </div>
                               )}
                               {formData.addProfile?.extraImage ? (
                                   <img src={formData.addProfile?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
                               ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
-                                      <ImageIcon size={24} />
+                                      <ImageIcon size={32} />
                                   </div>
                               )}
                               <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
-                                  <Upload size={16} className="mb-1" />
-                                  <span className="text-[8px] font-bold">사진 추가</span>
+                                  <Upload size={20} className="mb-2" />
+                                  <span className="text-[10px] font-bold">사진 추가/변경</span>
                                   <input type="file" accept="image/*" onChange={handleExtraImageUpload} className="hidden" disabled={isExtraImageUploading} />
                               </label>
                           </div>
-                          <span className="text-[9px] font-bold text-zinc-400 mt-2">추가 프로필 사진</span>
+                          <span className="text-[10px] font-bold text-zinc-400 mt-3">추가 프로필 사진</span>
                       </div>
 
                       <div className="space-y-4">
@@ -949,8 +967,9 @@ const EditProfileView = () => {
                       </div>
                   </div>
 
-                  {/* 2. Lifestyle & Tastes */}
+                  {/* 2. Lifestyle & Tastes (취향 및 라이프스타일) */}
                   <div className="md:col-span-2 space-y-4">
+                      
                       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Compass size={16} className="text-blue-500"/> Lifestyle & Work</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -977,7 +996,6 @@ const EditProfileView = () => {
                           </div>
                       </div>
 
-                      {/* ⭐️ h-full 속성을 제거하여 불필요한 아래 여백을 없앴습니다 */}
                       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1250,6 +1268,7 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
+                      
                       {/* ⭐️ Add Profile Preview */}
                       {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 gap-4">
@@ -1260,6 +1279,7 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
+                      
                       {previewTab === 'qna' && (
                           <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.qna?.length || 0}개)</h4>

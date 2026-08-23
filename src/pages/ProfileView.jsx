@@ -11,7 +11,7 @@ import { useAppStore } from '../store/AppStore';
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
-  const [showHistoryModal, setShowHistoryModal] = useState(false); // ⭐️ 히스토리 모달 상태 추가
+  const [showHistoryModal, setShowHistoryModal] = useState(false); 
 
   if (isLoading) {
     return (
@@ -171,14 +171,14 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
-      {/* ⭐️ 히스토리 타임라인 모달 */}
+      {/* 히스토리 타임라인 모달 */}
       {showHistoryModal && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setShowHistoryModal(false)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
                   <div className="p-6 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
                       <div>
                         <h3 className="text-lg font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500"/> Profile Commit History</h3>
-                        <p className="text-[11px] text-zinc-500 font-bold mt-1">과거에 박제해 둔 나의 취향과 관심사 기록들입니다.</p>
+                        <p className="text-[11px] text-zinc-500 font-bold mt-1">과거에 고정해 둔 나의 취향과 관심사 기록들입니다.</p>
                       </div>
                       <button onClick={() => setShowHistoryModal(false)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={20}/></button>
                   </div>
@@ -467,7 +467,7 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* ⭐️ ADD PROFILE TAB */}
+                  {/* ⭐️ ADD PROFILE TAB (업그레이드된 이미지 규격 적용) */}
                   {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         
@@ -478,7 +478,6 @@ const ProfileView = () => {
                                     마지막 업데이트: {safeUser.addProfile?.updatedAt || '-'}
                                 </p>
                             </div>
-                            {/* ⭐️ 뷰 모드 히스토리 버튼 */}
                             {(safeUser.addProfile?.history?.length > 0) && (
                                 <button onClick={() => setShowHistoryModal(true)} className="px-3 py-1.5 md:px-4 md:py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] md:text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 shadow-sm">
                                     <History size={14}/> 과거 기록 보기
@@ -489,9 +488,9 @@ const ProfileView = () => {
                         {/* 1. Identity */}
                         <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
                           
-                          {/* ⭐️ 뷰 모드: 둥근 직사각형 렌더링 유지 */}
+                          {/* ⭐️ 사진 크기 확대 (w-40 h-56) */}
                           {safeUser.addProfile?.extraImage && (
-                              <div className="w-32 h-40 sm:w-full sm:aspect-[3/4] mx-auto rounded-3xl overflow-hidden mb-5 border border-zinc-100 shadow-sm relative group">
+                              <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl overflow-hidden mb-5 border border-zinc-100 shadow-sm relative group">
                                   <img src={safeUser.addProfile.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
                                       <span className="text-white font-black tracking-widest text-sm drop-shadow-md">IDENTITY</span>
@@ -511,6 +510,7 @@ const ProfileView = () => {
 
                         {/* 2. Lifestyle & Tastes */}
                         <div className="md:col-span-2 flex flex-col gap-4 md:gap-5">
+                          
                           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Compass size={14}/> Lifestyle & Work</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -543,7 +543,7 @@ const ProfileView = () => {
                               </div>
                           </div>
 
-                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> My Tastes</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
