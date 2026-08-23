@@ -13,7 +13,9 @@ import EditProfileView from './pages/EditProfileView';
 import ArchiveView from './pages/ArchiveView';
 import TimelineView from './pages/TimelineView';
 import SearchView from './pages/SearchView';
-import AccountSettingsView from './pages/AccountSettingsView'; // ⭐️ 계정 설정 컴포넌트 임포트
+import AccountSettingsView from './pages/AccountSettingsView';
+import Footer from './components/Footer'; 
+import NotFoundView from './pages/NotFoundView'; // ⭐️ 404 페이지 임포트 유지
 
 const AppContent = () => {
   const { viewMode, isLoading } = useAppStore();
@@ -43,13 +45,26 @@ const AppContent = () => {
 
       <main className="flex-1 relative overflow-hidden flex flex-col min-w-0">
          <TopNavBar />
-         <div className="flex-1 overflow-y-auto">
-           {viewMode === 'profile' && <ProfileView />}
-           {viewMode === 'edit_profile' && <EditProfileView />}
-           {viewMode === 'archive' && <ArchiveView />}
-           {viewMode === 'timeline' && <TimelineView />}
-           {viewMode === 'search' && <SearchView />}
-           {viewMode === 'account_settings' && <AccountSettingsView />} {/* ⭐️ 계정 설정 뷰 렌더링 연결 */}
+         
+         {/* ⭐️ 화면이 스크롤되는 영역 */}
+         <div className="flex-1 overflow-y-auto flex flex-col">
+           {/* 콘텐츠들이 렌더링되는 영역 (flex-1을 주어 콘텐츠가 짧아도 푸터를 맨 밑으로 밀어냅니다) */}
+           <div className="flex-1">
+             {viewMode === 'profile' && <ProfileView />}
+             {viewMode === 'edit_profile' && <EditProfileView />}
+             {viewMode === 'archive' && <ArchiveView />}
+             {viewMode === 'timeline' && <TimelineView />}
+             {viewMode === 'search' && <SearchView />}
+             {viewMode === 'account_settings' && <AccountSettingsView />}
+             
+             {/* ⭐️ 404 에러 페이지 로직 추가: 위에서 정의한 뷰가 아닐 때 렌더링됩니다 */}
+             {!['profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings'].includes(viewMode) && (
+               <NotFoundView />
+             )}
+           </div>
+           
+           {/* ⭐️ 모든 화면 스크롤의 맨 밑에 공통으로 나타나는 푸터 */}
+           <Footer />
          </div>
       </main>
 

@@ -37,12 +37,15 @@ const EditProfileView = () => {
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
       
-      // ⭐️ 핵심: 명함(businessCard)과 Q&A(qna) 데이터를 백엔드가 허용하는 idol 내부로 편입!
+      // ⭐️ 핵심: 모든 하위 프로필 데이터를 백엔드가 허용하는 idol 내부로 편입! (hobby, vision, quotes 추가)
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
           businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
           qna: qnaData,
+          hobby: safeUser.idol?.hobby || safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
+          vision: safeUser.idol?.vision || safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
+          quotes: safeUser.idol?.quotes || safeUser.quotes || [],
           updatedAt: safeUser.idol?.updatedAt || new Date().toISOString().split('T')[0],
           history: safeUser.idol?.history || [],
           extraImage: safeUser.idol?.extraImage || "", 
@@ -59,9 +62,6 @@ const EditProfileView = () => {
           contact: safeUser.idol?.contact || "중간",
           tastes: safeUser.idol?.tastes || { hobbies: [], culture: [], foods: [], lifestyle: [] }, 
       },
-      hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
-      vision: safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
-      quotes: safeUser.quotes || [],
       tags: safeUser.tags || [],
       goals: safeUser.goals || [],
       links: safeUser.links || []
@@ -193,7 +193,7 @@ const EditProfileView = () => {
 
   const handleHobbyImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) uploadImageToServer(file, ["hobby", "image"], setIsHobbyImageUploading);
+    if (file) uploadImageToServer(file, ["idol", "hobby", "image"], setIsHobbyImageUploading); // ⭐️ 경로 수정
     e.target.value = null; 
   };
 
@@ -396,23 +396,24 @@ const EditProfileView = () => {
   const renderMandalartEditor = () => {
     const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
     const v = {
-        core: formData.vision?.core || defaultVision.core,
-        subs: formData.vision?.subs?.length === 8 ? formData.vision.subs : defaultVision.subs,
-        details: formData.vision?.details?.length === 8 ? formData.vision.details : defaultVision.details
+        core: formData.idol?.vision?.core || defaultVision.core,
+        subs: formData.idol?.vision?.subs?.length === 8 ? formData.idol.vision.subs : defaultVision.subs,
+        details: formData.idol?.vision?.details?.length === 8 ? formData.idol.vision.details : defaultVision.details
     };
     
-    const handleCoreChange = (val) => updateNested(['vision', 'core'], val);
+    // ⭐️ 만다라트 저장 경로 수정
+    const handleCoreChange = (val) => updateNested(['idol', 'vision', 'core'], val);
     const handleSubChange = (subIdx, val) => {
       const newSubs = [...v.subs];
       newSubs[subIdx] = val;
-      updateNested(['vision', 'subs'], newSubs);
+      updateNested(['idol', 'vision', 'subs'], newSubs);
     };
     const handleDetailChange = (subIdx, detailIdx, val) => {
       const newDetails = [...v.details];
       if (!newDetails[subIdx]) newDetails[subIdx] = Array(8).fill("");
       else newDetails[subIdx] = [...newDetails[subIdx]]; 
       newDetails[subIdx][detailIdx] = val;
-      updateNested(['vision', 'details'], newDetails);
+      updateNested(['idol', 'vision', 'details'], newDetails);
     };
 
     const blocks = [];
@@ -901,7 +902,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ ADD PROFILE TAB */}
+          {/* ADD PROFILE TAB */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="flex flex-col gap-2">
@@ -966,7 +967,7 @@ const EditProfileView = () => {
                       <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
                       
                       <div className="flex flex-col items-center justify-center mb-6">
-                          <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner flex items-center justify-center">
+                          <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden mb-5 relative group flex items-center justify-center">
                               {isExtraImageUploading && (
                                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20 backdrop-blur-[1px]">
                                       <Loader2 size={24} className="text-rose-500 animate-spin" />
@@ -975,9 +976,7 @@ const EditProfileView = () => {
                               {formData.idol?.extraImage ? (
                                   <img src={formData.idol?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
                               ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
-                                      <ImageIcon size={32} />
-                                  </div>
+                                  <ImageIcon size={32} className="text-zinc-200" />
                               )}
                               <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
                                   <Upload size={20} className="mb-2" />
@@ -1056,7 +1055,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ BUSINESS CARD TAB */}
+          {/* BUSINESS CARD TAB */}
           {editTab === 'businessCard' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
@@ -1099,7 +1098,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ Q&A TAB (저장 경로 픽스: qna -> idol.qna) */}
+          {/* ⭐️ Q&A TAB (경로 수정: idol.qna) */}
           {editTab === 'qna' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-violet-500"/> 100문 100답 작성</h3>
@@ -1129,14 +1128,14 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* HOBBY TAB */}
+          {/* ⭐️ HOBBY TAB (경로 수정: idol.hobby) */}
           {editTab === 'hobby' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-zinc-100">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Target size={16} className="text-amber-500"/> 취미 소개 섹션</h3>
                 <p className="text-[11px] text-zinc-500 font-medium mb-5">나를 가장 잘 나타내는 취미 하나를 깊게 소개해보세요.</p>
                 
                 <div className="bg-amber-50/30 p-5 rounded-2xl border border-amber-100/50 space-y-5">
-                  {renderInput("취미 제목 (Headline)", ["hobby", "title"], "예: 필름 카메라와 골목길 산책")}
+                  {renderInput("취미 제목 (Headline)", ["idol", "hobby", "title"], "예: 필름 카메라와 골목길 산책")}
                   
                   <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-amber-100">
                       <div className="w-24 h-24 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200 relative group shadow-inner">
@@ -1145,7 +1144,7 @@ const EditProfileView = () => {
                                   <Loader2 size={16} className="text-amber-500 animate-spin mb-1" />
                               </div>
                           )}
-                          {formData.hobby?.image ? <img src={formData.hobby.image} alt="Hobby" className="w-full h-full object-cover"/> : <ImageIcon className="text-zinc-300" size={24}/>}
+                          {formData.idol?.hobby?.image ? <img src={formData.idol.hobby.image} alt="Hobby" className="w-full h-full object-cover"/> : <ImageIcon className="text-zinc-300" size={24}/>}
                           
                           <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
                               <Upload size={16} className="mb-1" />
@@ -1162,44 +1161,44 @@ const EditProfileView = () => {
                           {hobbyImageInputType === 'file' ? (
                               <p className="text-[10px] font-medium text-zinc-500 bg-zinc-50 p-2 rounded-lg border border-zinc-100">좌측 이미지를 클릭하여 PC의 파일을 업로드하세요.</p>
                           ) : (
-                              <input type="text" placeholder="https://..." value={formData.hobby?.image || ''} onChange={e => updateNested(["hobby", "image"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-amber-400 transition-colors" />
+                              <input type="text" placeholder="https://..." value={formData.idol?.hobby?.image || ''} onChange={e => updateNested(["idol", "hobby", "image"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-amber-400 transition-colors" />
                           )}
                       </div>
                   </div>
                   
                   <div>
                       <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-1.5">상세 설명 (Description)</label>
-                      <textarea value={formData.hobby?.description || ''} onChange={e => updateNested(["hobby", "description"], e.target.value)} rows={3} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2.5 text-xs font-medium outline-none focus:border-amber-400 resize-none transition-colors" placeholder="이 취미를 왜 좋아하는지, 어떤 매력이 있는지 적어주세요." />
+                      <textarea value={formData.idol?.hobby?.description || ''} onChange={e => updateNested(["idol", "hobby", "description"], e.target.value)} rows={3} className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2.5 text-xs font-medium outline-none focus:border-amber-400 resize-none transition-colors" placeholder="이 취미를 왜 좋아하는지, 어떤 매력이 있는지 적어주세요." />
                   </div>
                   
                   <div className="bg-white p-4 rounded-xl border border-amber-100">
-                    {renderArrayInput("관련 키워드 (Tags)", ["hobby", "keywords"], "키워드 입력 후 Enter")}
+                    {renderArrayInput("관련 키워드 (Tags)", ["idol", "hobby", "keywords"], "키워드 입력 후 Enter")}
                   </div>
                 </div>
             </div>
           )}
 
-          {/* VISION TAB (Mandalart) */}
+          {/* VISION TAB */}
           {editTab === 'vision' && (
              <div className="animate-in fade-in">
                  {renderMandalartEditor()}
              </div>
           )}
 
-          {/* QUOTES TAB */}
+          {/* ⭐️ QUOTES TAB (경로 수정: idol.quotes) */}
           {editTab === 'quotes' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Quote size={16} className="text-slate-400"/> 좋아하는 명언 모음</h3>
                 <p className="text-[11px] text-zinc-500 font-medium mb-5">나에게 영감을 주는 문장이나 좌우명을 기록해두세요.</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {(formData.quotes || []).map((item, idx) => (
+                  {(formData.idol?.quotes || []).map((item, idx) => (
                       <div key={idx} className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm relative group transition-colors hover:bg-white">
-                          <button type="button" onClick={()=>{const arr=[...(formData.quotes||[])]; arr.splice(idx,1); updateNested(["quotes"], arr);}} className="absolute top-3 right-3 text-slate-300 hover:text-rose-500 bg-white border border-slate-100 p-1 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
+                          <button type="button" onClick={()=>{const arr=[...(formData.idol?.quotes||[])]; arr.splice(idx,1); updateNested(["idol", "quotes"], arr);}} className="absolute top-3 right-3 text-slate-300 hover:text-rose-500 bg-white border border-slate-100 p-1 rounded-lg transition-colors z-10"><Trash2 size={12}/></button>
                           
                           <textarea 
                             value={item.text} 
-                            onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].text=e.target.value; updateNested(["quotes"], arr); }} 
+                            onChange={e => { const arr=[...(formData.idol?.quotes||[])]; arr[idx].text=e.target.value; updateNested(["idol", "quotes"], arr); }} 
                             className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none resize-none focus:border-slate-400 pr-8 transition-colors" 
                             placeholder="명언 내용" 
                             rows={3}
@@ -1208,7 +1207,7 @@ const EditProfileView = () => {
                             <span className="text-[10px] font-black text-slate-300">-</span>
                             <input 
                               value={item.author} 
-                              onChange={e => { const arr=[...(formData.quotes||[])]; arr[idx].author=e.target.value; updateNested(["quotes"], arr); }} 
+                              onChange={e => { const arr=[...(formData.idol?.quotes||[])]; arr[idx].author=e.target.value; updateNested(["idol", "quotes"], arr); }} 
                               className="flex-1 bg-transparent text-[11px] font-bold text-slate-600 outline-none" 
                               placeholder="작성자 또는 출처" 
                             />
@@ -1216,7 +1215,7 @@ const EditProfileView = () => {
                       </div>
                   ))}
                   
-                  <button type="button" onClick={()=>{const arr=[...(formData.quotes||[]), {text:"", author:""}]; updateNested(["quotes"], arr);}} className="min-h-[130px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                  <button type="button" onClick={()=>{const arr=[...(formData.idol?.quotes||[]), {text:"", author:""}]; updateNested(["idol", "quotes"], arr);}} className="min-h-[130px] flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors">
                       <Plus size={24} />
                       <span className="font-bold text-xs">새 명언 추가</span>
                   </button>
