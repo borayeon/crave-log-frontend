@@ -28,8 +28,13 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
-      // ⭐️ Add Profile 전용 데이터 구조로 변경
-      addProfile: safeUser.addProfile || { mbti: "", workingStyle: "", currentInterest: "", languages: "", tastes: { hobbies: [], culture: [], foods: [], lifestyle: [] }, qna: [] },
+      // ⭐️ Add Profile 전용 데이터 구조로 완벽 업그레이드
+      addProfile: safeUser.addProfile || { 
+          extraImage: "", mbti: "", bloodType: "", height: "", religion: "", relationship: "", languages: "",
+          motto: "", recentHobby: "", workingStyle: "", activeHours: "", contact: "중간",
+          tastes: { hobbies: [], culture: [], foods: [], lifestyle: [] }, 
+          qna: [] 
+      },
       qna: qnaData,
       hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
       vision: safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
@@ -46,6 +51,7 @@ const EditProfileView = () => {
   
   const [isProfileImageUploading, setIsProfileImageUploading] = useState(false);
   const [isHobbyImageUploading, setIsHobbyImageUploading] = useState(false);
+  const [isExtraImageUploading, setIsExtraImageUploading] = useState(false); // ⭐️ 추가 프로필 업로드 상태
 
   const [isCheckingHandle, setIsCheckingHandle] = useState(false);
   const [isHandleAvailable, setIsHandleAvailable] = useState(true);
@@ -146,17 +152,19 @@ const EditProfileView = () => {
 
   const handleProfileImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-        uploadImageToServer(file, ["profileImageUrl"], setIsProfileImageUploading);
-    }
+    if (file) uploadImageToServer(file, ["profileImageUrl"], setIsProfileImageUploading);
     e.target.value = null; 
   };
 
   const handleHobbyImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-        uploadImageToServer(file, ["hobby", "image"], setIsHobbyImageUploading);
-    }
+    if (file) uploadImageToServer(file, ["hobby", "image"], setIsHobbyImageUploading);
+    e.target.value = null; 
+  };
+
+  const handleExtraImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) uploadImageToServer(file, ["addProfile", "extraImage"], setIsExtraImageUploading);
     e.target.value = null; 
   };
 
@@ -193,12 +201,8 @@ const EditProfileView = () => {
     if (!formData.name?.trim()) return showToast('이름은 필수 입력 항목입니다.');
     if (!formData.handle?.trim()) return showToast('고유 아이디는 필수 입력 항목입니다.');
     
-    if (!/^[a-z0-9._-]+$/.test(formData.handle)) {
-        return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
-    }
-    if (!isHandleAvailable && formData.handle !== user.handle) {
-        return showToast('아이디 중복 확인을 진행해주세요.');
-    }
+    if (!/^[a-z0-9._-]+$/.test(formData.handle)) return showToast('아이디는 영문 소문자, 숫자, 마침표(.), 밑줄(_), 하이픈(-)만 가능합니다.');
+    if (!isHandleAvailable && formData.handle !== user.handle) return showToast('아이디 중복 확인을 진행해주세요.');
 
     setIsLoading(true);
 
@@ -291,10 +295,11 @@ const EditProfileView = () => {
               {v} <CloseIcon size={12} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </span>
           ))}
+          {/* ⭐️ 입력창 찌그러짐 완벽 방지: min-w-[70px] flex-1 적용 */}
           <input
             type="text"
             placeholder={arr.length === 0 ? placeholder : "+"}
-            className="w-10 focus:w-28 px-3 py-1.5 bg-white border border-dashed border-zinc-300 focus:border-solid focus:border-violet-400 text-xs font-bold text-zinc-700 outline-none rounded-full transition-all text-center focus:text-left placeholder:text-zinc-400 focus:placeholder:text-transparent shadow-sm"
+            className="flex-1 min-w-[70px] max-w-[130px] px-3 py-1.5 bg-white border border-dashed border-zinc-300 focus:border-solid focus:border-violet-400 text-xs font-bold text-zinc-700 outline-none rounded-full transition-all focus:text-left placeholder:text-zinc-400 focus:placeholder:text-transparent shadow-sm"
             onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ',') {
                 e.preventDefault();
@@ -317,7 +322,7 @@ const EditProfileView = () => {
   const renderInput = (label, path, placeholder = "") => {
     const val = path.reduce((o, i) => (o || {})[i], formData) || '';
     return (
-      <div className="w-full">
+      <div className="w-full flex-1">
         {label && <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">{label}</label>}
         <input
           type="text"
@@ -451,10 +456,10 @@ const EditProfileView = () => {
             </button>
             <button 
               onClick={handleSave} 
-              disabled={isLoading || isProfileImageUploading || isHobbyImageUploading}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${isLoading || isProfileImageUploading || isHobbyImageUploading ? 'bg-violet-400 text-white/80 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
+              disabled={isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${(isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading) ? 'bg-violet-400 text-white/80 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
             >
-              {(isLoading || isProfileImageUploading || isHobbyImageUploading) ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
+              {(isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading) ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
               {isLoading ? '저장 중...' : '저장 완료'}
             </button>
           </div>
@@ -467,7 +472,6 @@ const EditProfileView = () => {
             {/* 프로필 이미지 변경 영역 */}
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
-                    {/* 이미지 로딩 중 상태 */}
                     {isProfileImageUploading && (
                         <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
                             <Loader2 size={24} className="text-violet-500 animate-spin mb-1" />
@@ -562,7 +566,7 @@ const EditProfileView = () => {
                    {renderArrayInput("나의 키워드", ["tags"], "키워드 입력 후 Enter")}
                 </div>
 
-                {/* ⭐️ 소셜 링크 관리 영역 */}
+                {/* 소셜 링크 관리 영역 */}
                 <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-200/60 mt-4">
                     <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><LinkIcon size={14}/> 소셜 링크 관리</h4>
                     <div className="space-y-2">
@@ -812,42 +816,98 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ ADD PROFILE TAB (새로운 구성) */}
+          {/* ⭐️ ADD PROFILE TAB (완벽하게 리뉴얼된 추가 프로필 폼) */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  
+                  {/* 1. Identity & Info (기본 정보) */}
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
-                      <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity</h3>
-                      <div>
-                        {renderInput("MBTI / Personality", ["addProfile", "mbti"], "예: INTP, 조용한 관종")}
+                      <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
+                      
+                      {/* 추가 프로필 사진 업로드 */}
+                      <div className="flex flex-col items-center justify-center mb-6">
+                          <div className="w-24 h-24 rounded-full bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
+                              {isExtraImageUploading && (
+                                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20 backdrop-blur-[1px]">
+                                      <Loader2 size={16} className="text-rose-500 animate-spin" />
+                                  </div>
+                              )}
+                              {formData.addProfile?.extraImage ? (
+                                  <img src={formData.addProfile?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
+                              ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
+                                      <ImageIcon size={24} />
+                                  </div>
+                              )}
+                              <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
+                                  <Upload size={16} className="mb-1" />
+                                  <span className="text-[8px] font-bold">사진 추가</span>
+                                  <input type="file" accept="image/*" onChange={handleExtraImageUpload} className="hidden" disabled={isExtraImageUploading} />
+                              </label>
+                          </div>
+                          <span className="text-[9px] font-bold text-zinc-400 mt-2">추가 프로필 사진</span>
                       </div>
-                      <div>
-                        {renderInput("Working Style", ["addProfile", "workingStyle"], "예: 올빼미족, 듀얼 모니터")}
-                      </div>
-                      <div>
-                        {renderInput("Current Interest", ["addProfile", "currentInterest"], "예: 알고리즘, 스팀 게임")}
-                      </div>
-                      <div>
-                        {renderInput("Languages", ["addProfile", "languages"], "예: 한국어, 영어, 일본어")}
+
+                      <div className="space-y-4">
+                          {renderInput("MBTI / Personality", ["addProfile", "mbti"], "예: ESTP")}
+                          <div className="grid grid-cols-2 gap-3">
+                              {renderInput("혈액형", ["addProfile", "bloodType"], "예: O형")}
+                              {renderInput("키", ["addProfile", "height"], "예: 175cm")}
+                          </div>
+                          {renderInput("종교", ["addProfile", "religion"], "예: 무교")}
+                          {renderInput("연애 여부", ["addProfile", "relationship"], "예: 비혼, 연애 중")}
+                          {renderInput("사용하는 언어", ["addProfile", "languages"], "예: 한국어, 일본어")}
                       </div>
                   </div>
 
-                  <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
-                      <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
-                            {renderArrayInput("Hobbies & Interests", ["addProfile", "tastes", "hobbies"], "입력 후 Enter")}
-                          </div>
-                          <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                            {renderArrayInput("Culture (Music/Movies)", ["addProfile", "tastes", "culture"], "입력 후 Enter")}
-                          </div>
-                          <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                            {renderArrayInput("Food & Drink", ["addProfile", "tastes", "foods"], "입력 후 Enter")}
-                          </div>
-                          <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                            {renderArrayInput("Lifestyle & Places", ["addProfile", "tastes", "lifestyle"], "입력 후 Enter")}
+                  {/* 2. Lifestyle & Tastes (취향 및 라이프스타일) */}
+                  <div className="md:col-span-2 space-y-4">
+                      
+                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+                          <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Compass size={16} className="text-blue-500"/> Lifestyle & Work</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {renderInput("좌우명", ["addProfile", "motto"], "예: 피할 수 없으면 즐겨라")}
+                              {renderInput("최근 취미", ["addProfile", "recentHobby"], "예: 클라이밍, 베이킹")}
+                              {renderInput("Working Style", ["addProfile", "workingStyle"], "예: 올빼미족")}
+                              {renderInput("활동 시간대", ["addProfile", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
+                              
+                              <div className="sm:col-span-2">
+                                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">연락 가능 여부</label>
+                                  <div className="flex bg-zinc-50 border border-zinc-200 rounded-xl p-1 gap-1 max-w-sm">
+                                      {['적극', '중간', '소극'].map(status => (
+                                          <button
+                                              key={status}
+                                              type="button"
+                                              onClick={() => updateNested(["addProfile", "contact"], status)}
+                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.addProfile?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-zinc-200/50' : 'text-zinc-500 hover:bg-zinc-100'}`}
+                                          >
+                                              {status}
+                                          </button>
+                                      ))}
+                                  </div>
+                              </div>
                           </div>
                       </div>
+
+                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
+                          <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
+                                {renderArrayInput("Hobbies & Interests", ["addProfile", "tastes", "hobbies"], "입력 후 Enter")}
+                              </div>
+                              <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                                {renderArrayInput("Culture (Music/Movies)", ["addProfile", "tastes", "culture"], "입력 후 Enter")}
+                              </div>
+                              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                {renderArrayInput("Food & Drink", ["addProfile", "tastes", "foods"], "입력 후 Enter")}
+                              </div>
+                              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                                {renderArrayInput("Lifestyle & Places", ["addProfile", "tastes", "lifestyle"], "입력 후 Enter")}
+                              </div>
+                          </div>
+                      </div>
+
                   </div>
               </div>
             </div>
@@ -1102,15 +1162,18 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
+                      
                       {/* ⭐️ Add Profile Preview */}
                       {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 gap-4">
-                              <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
-                                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><UserPlus size={14}/> Identity</h4>
-                                <p className="text-xs font-bold text-zinc-700">{formData.addProfile?.mbti || '-'}</p>
+                              <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col gap-2">
+                                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><UserPlus size={14}/> Identity & Info</h4>
+                                <div className="text-xs font-bold text-zinc-700">MBTI: {formData.addProfile?.mbti || '-'}</div>
+                                <div className="text-xs font-bold text-zinc-700">Recent Hobby: {formData.addProfile?.recentHobby || '-'}</div>
                               </div>
                           </div>
                       )}
+                      
                       {previewTab === 'qna' && (
                           <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.qna?.length || 0}개)</h4>
