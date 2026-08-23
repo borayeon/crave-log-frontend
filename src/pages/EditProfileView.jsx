@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket
+  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -11,9 +11,9 @@ const EditProfileView = () => {
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
-    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
+    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.addProfile?.qna || []);
     
-    let parsedPrivacy = { developer: false, career: false, idol: false, qna: false, hobby: false, vision: false, quotes: false };
+    let parsedPrivacy = { developer: false, career: false, addProfile: false, qna: false, hobby: false, vision: false, quotes: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
@@ -28,7 +28,8 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
-      idol: safeUser.idol || { nickname: "", birthday: "", age: "", specialty: "", hobbies: "", favorites: {}, qna: [] },
+      // ⭐️ Add Profile 전용 데이터 구조로 변경
+      addProfile: safeUser.addProfile || { mbti: "", workingStyle: "", currentInterest: "", languages: "", tastes: { hobbies: [], culture: [], foods: [], lifestyle: [] }, qna: [] },
       qna: qnaData,
       hobby: safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
       vision: safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
@@ -52,10 +53,11 @@ const EditProfileView = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState('developer');
 
+  // ⭐️ 탭 이름 및 아이콘 변경 (Idol -> Add Profile)
   const ALL_TABS = [
     { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
-    { id: 'idol', label: 'Idol', icon: <HeartHandshake size={16}/> },
+    { id: 'addProfile', label: 'Add Profile', icon: <UserPlus size={16}/> },
     { id: 'qna', label: 'Q&A', icon: <MessageSquare size={16}/> },
     { id: 'hobby', label: 'Hobby', icon: <Palette size={16}/> },
     { id: 'vision', label: 'Mandalart', icon: <Compass size={16}/> },
@@ -270,7 +272,6 @@ const EditProfileView = () => {
   };
 
   const renderArrayInput = (label, path, placeholder = "엔터(Enter)로 추가") => {
-    // ⭐️ 데이터 누락 시 충돌을 방지하는 안전한 Reduce 배열 헬퍼
     let arr = path.reduce((o, i) => (o || {})[i], formData);
     if (!Array.isArray(arr)) arr = [];
     
@@ -643,7 +644,7 @@ const EditProfileView = () => {
           </button>
         </div>
 
-        {/* 탭별 컨텐츠 (간소화) */}
+        {/* 탭별 컨텐츠 */}
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           
           {/* DEVELOPER TAB */}
@@ -811,37 +812,41 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* IDOL TAB */}
-          {editTab === 'idol' && (
+          {/* ⭐️ ADD PROFILE TAB (새로운 구성) */}
+          {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
-                      <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><Sparkles size={16} className="text-rose-400"/> Profile Info</h3>
+                      <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity</h3>
                       <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Nickname</label>
-                        <input type="text" value={formData.idol?.nickname || ''} onChange={e => updateNested(["idol", "nickname"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="별명" />
+                        {renderInput("MBTI / Personality", ["addProfile", "mbti"], "예: INTP, 조용한 관종")}
                       </div>
                       <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Birthday</label>
-                        <input type="text" value={formData.idol?.birthday || ''} onChange={e => updateNested(["idol", "birthday"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="생일" />
+                        {renderInput("Working Style", ["addProfile", "workingStyle"], "예: 올빼미족, 듀얼 모니터")}
                       </div>
                       <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Age</label>
-                        <input type="text" value={formData.idol?.age || ''} onChange={e => updateNested(["idol", "age"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="나이" />
+                        {renderInput("Current Interest", ["addProfile", "currentInterest"], "예: 알고리즘, 스팀 게임")}
                       </div>
                       <div>
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1 block mb-1">Specialty</label>
-                        <input type="text" value={formData.idol?.specialty || ''} onChange={e => updateNested(["idol", "specialty"], e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-rose-300 transition-colors" placeholder="특기" />
+                        {renderInput("Languages", ["addProfile", "languages"], "예: 한국어, 영어, 일본어")}
                       </div>
                   </div>
 
-                  <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
-                      <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> Favorites</h3>
+                  <div className="md:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
+                      <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">{renderArrayInput("Colors", ["idol", "favorites", "colors"])}</div>
-                          <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">{renderArrayInput("Foods", ["idol", "favorites", "foods"])}</div>
-                          <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">{renderArrayInput("Games", ["idol", "favorites", "games"])}</div>
-                          <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">{renderArrayInput("Music", ["idol", "favorites", "music"])}</div>
+                          <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
+                            {renderArrayInput("Hobbies & Interests", ["addProfile", "tastes", "hobbies"], "입력 후 Enter")}
+                          </div>
+                          <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                            {renderArrayInput("Culture (Music/Movies)", ["addProfile", "tastes", "culture"], "입력 후 Enter")}
+                          </div>
+                          <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                            {renderArrayInput("Food & Drink", ["addProfile", "tastes", "foods"], "입력 후 Enter")}
+                          </div>
+                          <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                            {renderArrayInput("Lifestyle & Places", ["addProfile", "tastes", "lifestyle"], "입력 후 Enter")}
+                          </div>
                       </div>
                   </div>
               </div>
@@ -1097,11 +1102,12 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      {previewTab === 'idol' && (
+                      {/* ⭐️ Add Profile Preview */}
+                      {previewTab === 'addProfile' && (
                           <div className="grid grid-cols-1 gap-4">
                               <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
-                                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Sparkles size={14}/> Profile Info</h4>
-                                <p className="text-xs font-bold text-zinc-700">{formData.idol?.nickname || '-'}</p>
+                                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><UserPlus size={14}/> Identity</h4>
+                                <p className="text-xs font-bold text-zinc-700">{formData.addProfile?.mbti || '-'}</p>
                               </div>
                           </div>
                       )}

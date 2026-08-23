@@ -1222,7 +1222,6 @@ const TimelineView = () => {
                         )}
                       </div>
                     </div>
-
                   </div>
                 </div>
               );

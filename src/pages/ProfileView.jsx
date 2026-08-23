@@ -4,7 +4,7 @@ import {
   Rocket, User, Sparkles, MapPin, Target, 
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
-  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2
+  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -12,10 +12,9 @@ const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
 
-  // ⭐️ 데이터 로딩 중이면 텅 빈 화면 대신 로딩 스피너 표시
   if (isLoading) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#F8FAFC]">
+      <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
         <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
         <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
         <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
@@ -37,7 +36,8 @@ const ProfileView = () => {
   const safeUser = useMemo(() => {
     if (!user) return {};
     const parsedUser = JSON.parse(JSON.stringify(user));
-    const jsonFields = ['developer', 'career', 'idol', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
+    // ⭐️ idol 대신 addProfile을 파싱 대상으로 포함합니다.
+    const jsonFields = ['developer', 'career', 'addProfile', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
     
     jsonFields.forEach(field => {
       if (typeof parsedUser[field] === 'string') {
@@ -47,8 +47,8 @@ const ProfileView = () => {
     });
 
     if (!parsedUser.qna || parsedUser.qna.length === 0) {
-        if (parsedUser.idol?.qna?.length > 0) {
-            parsedUser.qna = parsedUser.idol.qna;
+        if (parsedUser.addProfile?.qna?.length > 0) {
+            parsedUser.qna = parsedUser.addProfile.qna;
         }
     }
     return parsedUser;
@@ -72,10 +72,11 @@ const ProfileView = () => {
       }
   };
 
+  // ⭐️ Idol 대신 Add Profile 매핑
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
-    idol: { id: 'idol', icon: <HeartHandshake strokeWidth={2}/>, label: 'Idol', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
+    addProfile: { id: 'addProfile', icon: <UserPlus strokeWidth={2}/>, label: 'Add Profile', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
     qna: { id: 'qna', icon: <MessageSquare strokeWidth={2}/>, label: 'Q&A', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
     hobby: { id: 'hobby', icon: <Palette strokeWidth={2}/>, label: 'Hobby', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
     vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
@@ -83,7 +84,7 @@ const ProfileView = () => {
   };
 
   const privacyObj = useMemo(() => {
-      let p = { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true };
+      let p = { developer: true, career: true, addProfile: true, qna: true, hobby: true, vision: true, quotes: true };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
@@ -99,7 +100,7 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  const availableTabs = ['developer', 'career', 'idol', 'qna', 'hobby', 'vision', 'quotes']
+  const availableTabs = ['developer', 'career', 'addProfile', 'qna', 'hobby', 'vision', 'quotes']
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
@@ -171,7 +172,6 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
-      {/* 상태 메시지 배지 */}
       {!isProfileEmpty && safeUser.status && (
         <div className="mb-4 flex relative z-10">
             <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-4 py-2 rounded-2xl shadow-sm">
@@ -181,10 +181,8 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 1. 메인 프로필 명함 */}
       <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
         
-        {/* 우측 상단 둥근 버튼 (공유/편집) */}
         <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
           {!isProfileEmpty && (
             <button onClick={handleShare} className="w-9 h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
@@ -211,11 +209,9 @@ const ProfileView = () => {
         ) : (
           <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4 md:mt-0">
             
-            {/* 좌측: 주요 정보 */}
             <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
               <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
                 
-                {/* 둥근 사각형 프로필 사진 */}
                 <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                   {safeUser.profileImageUrl ? (
                       <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -226,10 +222,8 @@ const ProfileView = () => {
                   )}
                 </div>
                 
-                {/* 텍스트 정보 */}
                 <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
                   <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                  {/* 연보라색 아이디 뱃지 */}
                   <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                   
                   <div className="space-y-1.5 md:space-y-2">
@@ -246,7 +240,6 @@ const ProfileView = () => {
                 </div>
               </div>
 
-              {/* 좌측 하단: 태그 리스트 */}
               {(safeUser.tags || []).length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                     {safeUser.tags.map(tag => (
@@ -255,7 +248,6 @@ const ProfileView = () => {
                 </div>
               )}
 
-              {/* ⭐️ 소셜 및 개인 링크 버튼 영역 */}
               {(safeUser.links && safeUser.links.length > 0) && (
                   <div className="mt-4 flex flex-wrap gap-2.5">
                       {safeUser.links.map((link, idx) => (
@@ -268,7 +260,6 @@ const ProfileView = () => {
                           >
                               {getPlatformIcon(link.platform)}
                               
-                              {/* 마우스 오버 시 나타나는 이름(툴팁) */}
                               {link.name && (
                                   <span className="absolute -bottom-8 bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
                                       {link.name}
@@ -280,10 +271,8 @@ const ProfileView = () => {
               )}
             </div>
 
-            {/* 중간 얇은 구분선 */}
             <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
-            {/* 우측: 자기소개 인용구 */}
             <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
               <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
               <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
@@ -297,7 +286,6 @@ const ProfileView = () => {
 
       {!isProfileEmpty && (
         <>
-          {/* 2. 데이터 탐색 탭 */}
           <div className="mt-8 md:mt-12">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
@@ -331,7 +319,6 @@ const ProfileView = () => {
             </div>
           </div>
 
-          {/* 3. 활성화된 탭 컨텐츠 영역 */}
           {availableTabs.length === 0 && isGuest ? (
               <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                   <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
@@ -452,37 +439,52 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* Idol Tab */}
-                  {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
+                  {/* ⭐️ Add Profile Tab (새로운 구성) */}
+                  {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                        
+                        {/* 1. Identity (텍스트 정보) */}
                         <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
-                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Sparkles size={14}/> Profile Info</h4>
+                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><UserPlus size={14}/> Identity</h4>
                           <div className="space-y-3">
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Nickname</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.nickname || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Birthday</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.birthday || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Age</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.age || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[11px] font-bold text-rose-400">Specialty</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.specialty || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50">
+                                <span className="text-[10px] font-bold text-rose-400">MBTI / Personality</span>
+                                <span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.mbti || '-'}</span>
+                              </div>
+                              <div className="flex flex-col bg-rose-50/50 p-3 rounded-xl border border-rose-100/50 gap-1.5">
+                                <span className="text-[10px] font-bold text-rose-400">Working Style</span>
+                                <span className="text-xs font-black text-zinc-800 text-right">{safeUser.addProfile?.workingStyle || '-'}</span>
+                              </div>
+                              <div className="flex flex-col bg-rose-50/50 p-3 rounded-xl border border-rose-100/50 gap-1.5">
+                                <span className="text-[10px] font-bold text-rose-400">Current Interest</span>
+                                <span className="text-xs font-black text-zinc-800 text-right">{safeUser.addProfile?.currentInterest || '-'}</span>
+                              </div>
+                              <div className="flex flex-col bg-rose-50/50 p-3 rounded-xl border border-rose-100/50 gap-1.5">
+                                <span className="text-[10px] font-bold text-rose-400">Languages</span>
+                                <span className="text-xs font-black text-zinc-800 text-right">{safeUser.addProfile?.languages || '-'}</span>
+                              </div>
                           </div>
                         </div>
 
+                        {/* 2. My Tastes (태그 정보) */}
                         <div className="md:col-span-2 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
-                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> Favorites</h4>
+                          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> My Tastes</h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
-                                <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">Colors</span>
-                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.colors || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700 shadow-sm">{c}</span>)}</div>
+                                <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">Hobbies & Interests</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.hobbies || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700 shadow-sm">{c}</span>)}</div>
                               </div>
                               <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                                <span className="block text-[10px] font-black text-orange-400 uppercase mb-2">Foods</span>
-                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm">{c}</span>)}</div>
+                                <span className="block text-[10px] font-black text-orange-400 uppercase mb-2">Culture (Music/Movies)</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.culture || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm">{c}</span>)}</div>
                               </div>
                               <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                                <span className="block text-[10px] font-black text-indigo-400 uppercase mb-2">Games</span>
-                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.games || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 shadow-sm">{c}</span>)}</div>
+                                <span className="block text-[10px] font-black text-indigo-400 uppercase mb-2">Food & Drink</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 shadow-sm">{c}</span>)}</div>
                               </div>
                               <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                                <span className="block text-[10px] font-black text-emerald-400 uppercase mb-2">Music</span>
-                                <div className="flex flex-wrap gap-2">{(safeUser.idol?.favorites?.music || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 shadow-sm">{c}</span>)}</div>
+                                <span className="block text-[10px] font-black text-emerald-400 uppercase mb-2">Lifestyle & Places</span>
+                                <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.lifestyle || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 shadow-sm">{c}</span>)}</div>
                               </div>
                           </div>
                         </div>
