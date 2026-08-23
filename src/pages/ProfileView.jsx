@@ -4,7 +4,7 @@ import {
   Rocket, User, Sparkles, MapPin, Target, 
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
-  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus, History
+  MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus, History, Image as ImageIcon, X as CloseIcon
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -37,7 +37,8 @@ const ProfileView = () => {
   const safeUser = useMemo(() => {
     if (!user) return {};
     const parsedUser = JSON.parse(JSON.stringify(user));
-    const jsonFields = ['developer', 'career', 'addProfile', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
+    
+    const jsonFields = ['developer', 'career', 'idol', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
     
     jsonFields.forEach(field => {
       if (typeof parsedUser[field] === 'string') {
@@ -47,8 +48,8 @@ const ProfileView = () => {
     });
 
     if (!parsedUser.qna || parsedUser.qna.length === 0) {
-        if (parsedUser.addProfile?.qna?.length > 0) {
-            parsedUser.qna = parsedUser.addProfile.qna;
+        if (parsedUser.idol?.qna?.length > 0) {
+            parsedUser.qna = parsedUser.idol.qna;
         }
     }
     return parsedUser;
@@ -75,7 +76,7 @@ const ProfileView = () => {
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
-    addProfile: { id: 'addProfile', icon: <UserPlus strokeWidth={2}/>, label: 'Add Profile', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
+    idol: { id: 'idol', icon: <UserPlus strokeWidth={2}/>, label: 'Add Profile', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
     qna: { id: 'qna', icon: <MessageSquare strokeWidth={2}/>, label: 'Q&A', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
     hobby: { id: 'hobby', icon: <Palette strokeWidth={2}/>, label: 'Hobby', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
     vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
@@ -83,7 +84,7 @@ const ProfileView = () => {
   };
 
   const privacyObj = useMemo(() => {
-      let p = { developer: true, career: true, addProfile: true, qna: true, hobby: true, vision: true, quotes: true };
+      let p = { developer: true, career: true, idol: true, qna: true, hobby: true, vision: true, quotes: true };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
@@ -99,7 +100,7 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  const availableTabs = ['developer', 'career', 'addProfile', 'qna', 'hobby', 'vision', 'quotes']
+  const availableTabs = ['developer', 'career', 'idol', 'qna', 'hobby', 'vision', 'quotes']
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
@@ -171,7 +172,6 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
-      {/* 히스토리 타임라인 모달 */}
       {showHistoryModal && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setShowHistoryModal(false)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -184,7 +184,7 @@ const ProfileView = () => {
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
                       <div className="relative border-l-2 border-indigo-100 ml-4 space-y-8 pb-10">
-                          {(safeUser.addProfile?.history || []).map((h, i) => (
+                          {(safeUser.idol?.history || []).map((h, i) => (
                               <div key={h.id || i} className="relative pl-8 group">
                                   <div className="absolute w-4 h-4 bg-white border-[4px] border-indigo-500 rounded-full -left-[9px] top-1 shadow-sm group-hover:scale-125 transition-transform" />
                                   <div className="mb-3">
@@ -200,7 +200,7 @@ const ProfileView = () => {
                                   </div>
                               </div>
                           ))}
-                          {(!safeUser.addProfile?.history || safeUser.addProfile?.history.length === 0) && (
+                          {(!safeUser.idol?.history || safeUser.idol?.history.length === 0) && (
                               <div className="text-center py-10 text-zinc-400 font-bold text-sm">
                                   아직 고정된 기록이 없습니다.
                               </div>
@@ -467,18 +467,18 @@ const ProfileView = () => {
                       </div>
                   )}
 
-                  {/* ⭐️ ADD PROFILE TAB (업그레이드된 이미지 규격 적용) */}
-                  {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && (
+                  {/* ⭐️ ADD PROFILE TAB (아이콘 크기 수정 및 사진 없을 때 Placeholder 추가) */}
+                  {activeTab === 'idol' && availableTabs.some(t => t.id === 'idol') && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         
                         <div className="md:col-span-3 flex justify-between items-end mb-1">
                             <div>
                                 <h3 className="text-sm md:text-base font-black text-zinc-800 tracking-tight flex items-center gap-2"><UserPlus size={16} className="text-rose-500"/> 나의 상세 프로필</h3>
                                 <p className="text-[10px] md:text-xs text-zinc-500 font-medium mt-1">
-                                    마지막 업데이트: {safeUser.addProfile?.updatedAt || '-'}
+                                    마지막 업데이트: {safeUser.idol?.updatedAt || '-'}
                                 </p>
                             </div>
-                            {(safeUser.addProfile?.history?.length > 0) && (
+                            {(safeUser.idol?.history?.length > 0) && (
                                 <button onClick={() => setShowHistoryModal(true)} className="px-3 py-1.5 md:px-4 md:py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] md:text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 shadow-sm">
                                     <History size={14}/> 과거 기록 보기
                                 </button>
@@ -488,23 +488,25 @@ const ProfileView = () => {
                         {/* 1. Identity */}
                         <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
                           
-                          {/* ⭐️ 사진 크기 확대 (w-40 h-56) */}
-                          {safeUser.addProfile?.extraImage && (
-                              <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl overflow-hidden mb-5 border border-zinc-100 shadow-sm relative group">
-                                  <img src={safeUser.addProfile.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                                      <span className="text-white font-black tracking-widest text-sm drop-shadow-md">IDENTITY</span>
-                                  </div>
+                          {/* ⭐️ 뷰 모드: 사진이 비어있어도 둥근 직사각형(w-40 h-56) 유지 */}
+                          <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden mb-5 relative group flex items-center justify-center">
+                              {safeUser.idol?.extraImage ? (
+                                  <img src={safeUser.idol.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                              ) : (
+                                  <ImageIcon size={32} className="text-zinc-200" />
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                  <span className="text-white font-black tracking-widest text-sm drop-shadow-md">IDENTITY</span>
                               </div>
-                          )}
+                          </div>
 
                           <div className="space-y-2">
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">MBTI</span><span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.mbti || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Blood Type</span><span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.bloodType || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Height</span><span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.height || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Religion</span><span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.religion || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Relationship</span><span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.relationship || '-'}</span></div>
-                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Languages</span><span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.languages || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">MBTI</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.mbti || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Blood Type</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.bloodType || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Height</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.height || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Religion</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.religion || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Relationship</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.relationship || '-'}</span></div>
+                              <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Languages</span><span className="text-xs font-black text-zinc-800">{safeUser.idol?.languages || '-'}</span></div>
                           </div>
                         </div>
 
@@ -516,25 +518,25 @@ const ProfileView = () => {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
                                     <span className="text-[10px] font-bold text-blue-400">Motto (좌우명)</span>
-                                    <span className="text-sm font-black text-zinc-800">{safeUser.addProfile?.motto || '-'}</span>
+                                    <span className="text-sm font-black text-zinc-800">{safeUser.idol?.motto || '-'}</span>
                                   </div>
                                   <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                     <span className="text-[10px] font-bold text-zinc-400">Recent Hobby</span>
-                                    <span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.recentHobby || '-'}</span>
+                                    <span className="text-xs font-black text-zinc-800">{safeUser.idol?.recentHobby || '-'}</span>
                                   </div>
                                   <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                     <span className="text-[10px] font-bold text-zinc-400">Working Style</span>
-                                    <span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.workingStyle || '-'}</span>
+                                    <span className="text-xs font-black text-zinc-800">{safeUser.idol?.workingStyle || '-'}</span>
                                   </div>
                                   <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                     <span className="text-[10px] font-bold text-zinc-400">Active Hours</span>
-                                    <span className="text-xs font-black text-zinc-800">{safeUser.addProfile?.activeHours || '-'}</span>
+                                    <span className="text-xs font-black text-zinc-800">{safeUser.idol?.activeHours || '-'}</span>
                                   </div>
                                   <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                     <span className="text-[10px] font-bold text-zinc-400">Contact</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         {['적극', '중간', '소극'].map(status => (
-                                            <div key={status} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${safeUser.addProfile?.contact === status ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
+                                            <div key={status} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${safeUser.idol?.contact === status ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
                                                 {status}
                                             </div>
                                         ))}
@@ -543,24 +545,24 @@ const ProfileView = () => {
                               </div>
                           </div>
 
-                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Heart size={14}/> My Tastes</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
                                     <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">Hobbies & Interests</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.hobbies || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700 shadow-sm hover:border-zinc-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-2">{(safeUser.idol?.tastes?.hobbies || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700 shadow-sm hover:border-zinc-300 transition-colors">{c}</span>)}</div>
                                   </div>
                                   <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
                                     <span className="block text-[10px] font-black text-orange-400 uppercase mb-2">Culture (Music/Movies)</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.culture || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm hover:border-orange-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-2">{(safeUser.idol?.tastes?.culture || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-orange-200 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm hover:border-orange-300 transition-colors">{c}</span>)}</div>
                                   </div>
                                   <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
                                     <span className="block text-[10px] font-black text-indigo-400 uppercase mb-2">Food & Drink</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 shadow-sm hover:border-indigo-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-2">{(safeUser.idol?.tastes?.foods || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold text-indigo-700 shadow-sm hover:border-indigo-300 transition-colors">{c}</span>)}</div>
                                   </div>
                                   <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
                                     <span className="block text-[10px] font-black text-emerald-400 uppercase mb-2">Lifestyle & Places</span>
-                                    <div className="flex flex-wrap gap-2">{(safeUser.addProfile?.tastes?.lifestyle || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 shadow-sm hover:border-emerald-300 transition-colors">{c}</span>)}</div>
+                                    <div className="flex flex-wrap gap-2">{(safeUser.idol?.tastes?.lifestyle || []).map(c=><span key={c} className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 shadow-sm hover:border-emerald-300 transition-colors">{c}</span>)}</div>
                                   </div>
                               </div>
                           </div>

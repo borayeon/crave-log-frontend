@@ -11,9 +11,9 @@ const EditProfileView = () => {
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
-    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.addProfile?.qna || []);
+    const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || []);
     
-    let parsedPrivacy = { developer: false, career: false, addProfile: false, qna: false, hobby: false, vision: false, quotes: false };
+    let parsedPrivacy = { developer: false, career: false, idol: false, qna: false, hobby: false, vision: false, quotes: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
@@ -28,7 +28,7 @@ const EditProfileView = () => {
       privacy: parsedPrivacy,
       developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
-      addProfile: safeUser.addProfile || { 
+      idol: safeUser.idol || { 
           updatedAt: new Date().toISOString().split('T')[0],
           history: [],
           extraImage: "", mbti: "", bloodType: "", height: "", religion: "", relationship: "", languages: "",
@@ -61,12 +61,12 @@ const EditProfileView = () => {
   const [previewTab, setPreviewTab] = useState('developer');
   
   const [viewHistoryItem, setViewHistoryItem] = useState(null); 
-  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); // ⭐️ 히스토리 토글 상태
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
 
   const ALL_TABS = [
     { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
-    { id: 'addProfile', label: 'Add Profile', icon: <UserPlus size={16}/> },
+    { id: 'idol', label: 'Add Profile', icon: <UserPlus size={16}/> },
     { id: 'qna', label: 'Q&A', icon: <MessageSquare size={16}/> },
     { id: 'hobby', label: 'Hobby', icon: <Palette size={16}/> },
     { id: 'vision', label: 'Mandalart', icon: <Compass size={16}/> },
@@ -101,19 +101,19 @@ const EditProfileView = () => {
   };
 
   const handleCommitProfile = () => {
-      const currentData = { ...formData.addProfile };
+      const currentData = { ...formData.idol };
       delete currentData.history;
       
       const commit = {
           id: Date.now().toString(),
-          date: formData.addProfile.updatedAt || new Date().toISOString().split('T')[0],
+          date: formData.idol.updatedAt || new Date().toISOString().split('T')[0],
           snapshot: currentData
       };
 
-      const currentHistory = formData.addProfile.history || [];
+      const currentHistory = formData.idol.history || [];
       const newHistory = [commit, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      updateNested(['addProfile', 'history'], newHistory);
+      updateNested(['idol', 'history'], newHistory);
       showToast(`${commit.date} 기준으로 현재 기록이 고정되었습니다! 📸`);
   };
 
@@ -178,7 +178,7 @@ const EditProfileView = () => {
 
   const handleExtraImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) uploadImageToServer(file, ["addProfile", "extraImage"], setIsExtraImageUploading);
+    if (file) uploadImageToServer(file, ["idol", "extraImage"], setIsExtraImageUploading);
     e.target.value = null; 
   };
 
@@ -449,7 +449,7 @@ const EditProfileView = () => {
 
   return (
     <React.Fragment>
-      {/* ⭐️ 과거 기록 모달 */}
+      {/* 과거 기록 확인 모달창 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -483,7 +483,7 @@ const EditProfileView = () => {
                   </div>
                   <div className="p-5 border-t border-zinc-200 bg-white flex justify-end">
                       <button onClick={() => {
-                          updateNested(['addProfile'], { ...formData.addProfile, ...viewHistoryItem.snapshot, history: formData.addProfile.history, updatedAt: viewHistoryItem.date });
+                          updateNested(['idol'], { ...formData.idol, ...viewHistoryItem.snapshot, history: formData.idol.history, updatedAt: viewHistoryItem.date });
                           showToast(`${viewHistoryItem.date} 기록으로 폼이 복원되었습니다!`);
                           setViewHistoryItem(null);
                       }} className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition shadow-sm">
@@ -519,6 +519,7 @@ const EditProfileView = () => {
           </div>
         </header>
 
+        {/* 1. 메인 프로필 설정 영역 */}
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6">
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             
@@ -863,12 +864,10 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ ADD PROFILE TAB (히스토리 아코디언 토글 추가 & 이미지 크기 변경) */}
-          {editTab === 'addProfile' && (
+          {/* ⭐️ ADD PROFILE TAB */}
+          {editTab === 'idol' && (
             <div className="space-y-4 animate-in fade-in">
-              
               <div className="flex flex-col gap-2">
-                  {/* 상단 히스토리 박제 버튼 영역 */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 shadow-sm">
                      <div>
                        <h4 className="text-sm font-black text-indigo-800 flex items-center gap-1.5"><History size={16}/> Profile Version History</h4>
@@ -881,8 +880,8 @@ const EditProfileView = () => {
                              </div>
                              <input 
                                 type="date" 
-                                value={formData.addProfile?.updatedAt || ''} 
-                                onChange={e => updateNested(['addProfile', 'updatedAt'], e.target.value)}
+                                value={formData.idol?.updatedAt || ''} 
+                                onChange={e => updateNested(['idol', 'updatedAt'], e.target.value)}
                                 className="px-3 py-2 text-xs font-bold text-zinc-800 outline-none w-full sm:w-32"
                              />
                          </div>
@@ -892,8 +891,7 @@ const EditProfileView = () => {
                      </div>
                   </div>
 
-                  {/* ⭐️ 히스토리 삭제/조회를 위한 아코디언 토글 리스트 */}
-                  {(formData.addProfile?.history?.length > 0) && (
+                  {(formData.idol?.history?.length > 0) && (
                       <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
                           <button 
                               type="button"
@@ -901,22 +899,22 @@ const EditProfileView = () => {
                               className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-colors outline-none"
                           >
                               <span className="text-[11px] font-black text-zinc-600 tracking-widest flex items-center gap-1.5">
-                                  <History size={14}/> 고정된 이전 기록 ({formData.addProfile.history.length}개)
+                                  <History size={14}/> 고정된 이전 기록 ({formData.idol.history.length}개)
                               </span>
                               <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isHistoryExpanded ? 'rotate-180' : ''}`} />
                           </button>
                           
                           {isHistoryExpanded && (
                               <div className="p-3 border-t border-zinc-200 flex flex-wrap gap-2 max-h-40 overflow-y-auto bg-white">
-                                  {formData.addProfile.history.map((h, i) => (
+                                  {formData.idol.history.map((h, i) => (
                                       <div key={h.id || i} className="shrink-0 bg-white border border-zinc-200 rounded-lg py-1.5 pl-3 pr-2 flex items-center gap-2 shadow-sm group">
                                           <button type="button" onClick={() => setViewHistoryItem(h)} className="text-[10px] font-black text-indigo-500 hover:text-indigo-700 hover:underline">
                                             {h.date} 기록 확인
                                           </button>
                                           <button type="button" onClick={() => {
-                                              const arr = [...formData.addProfile.history];
+                                              const arr = [...formData.idol.history];
                                               arr.splice(i, 1);
-                                              updateNested(['addProfile', 'history'], arr);
+                                              updateNested(['idol', 'history'], arr);
                                           }} className="text-zinc-300 hover:text-rose-500 transition-colors ml-1"><CloseIcon size={12}/></button>
                                       </div>
                                   ))}
@@ -927,11 +925,10 @@ const EditProfileView = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 1. Identity & Info (기본 정보) */}
+                  {/* 1. Identity & Info */}
                   <div className="md:col-span-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 space-y-4">
                       <h3 className="text-base font-black text-zinc-900 mb-4 flex items-center gap-2"><UserPlus size={16} className="text-rose-400"/> Identity & Info</h3>
                       
-                      {/* ⭐️ 둥근 직사각형으로 크기 대폭 확대 (w-40 h-56) */}
                       <div className="flex flex-col items-center justify-center mb-6">
                           <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl bg-zinc-50 border border-zinc-200 overflow-hidden relative group shadow-inner">
                               {isExtraImageUploading && (
@@ -939,8 +936,8 @@ const EditProfileView = () => {
                                       <Loader2 size={24} className="text-rose-500 animate-spin" />
                                   </div>
                               )}
-                              {formData.addProfile?.extraImage ? (
-                                  <img src={formData.addProfile?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
+                              {formData.idol?.extraImage ? (
+                                  <img src={formData.idol?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
                               ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
                                       <ImageIcon size={32} />
@@ -956,27 +953,26 @@ const EditProfileView = () => {
                       </div>
 
                       <div className="space-y-4">
-                          {renderInput("MBTI / Personality", ["addProfile", "mbti"], "예: ESTP")}
+                          {renderInput("MBTI / Personality", ["idol", "mbti"], "예: ESTP")}
                           <div className="grid grid-cols-2 gap-3">
-                              {renderInput("혈액형", ["addProfile", "bloodType"], "예: O형")}
-                              {renderInput("키", ["addProfile", "height"], "예: 175cm")}
+                              {renderInput("혈액형", ["idol", "bloodType"], "예: O형")}
+                              {renderInput("키", ["idol", "height"], "예: 175cm")}
                           </div>
-                          {renderInput("종교", ["addProfile", "religion"], "예: 무교")}
-                          {renderInput("연애 여부", ["addProfile", "relationship"], "예: 비혼, 연애 중")}
-                          {renderInput("사용하는 언어", ["addProfile", "languages"], "예: 한국어, 일본어")}
+                          {renderInput("종교", ["idol", "religion"], "예: 무교")}
+                          {renderInput("연애 여부", ["idol", "relationship"], "예: 비혼, 연애 중")}
+                          {renderInput("사용하는 언어", ["idol", "languages"], "예: 한국어, 일본어")}
                       </div>
                   </div>
 
-                  {/* 2. Lifestyle & Tastes (취향 및 라이프스타일) */}
+                  {/* 2. Lifestyle & Tastes */}
                   <div className="md:col-span-2 space-y-4">
-                      
                       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Compass size={16} className="text-blue-500"/> Lifestyle & Work</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {renderInput("좌우명", ["addProfile", "motto"], "예: 피할 수 없으면 즐겨라")}
-                              {renderInput("최근 취미", ["addProfile", "recentHobby"], "예: 클라이밍, 베이킹")}
-                              {renderInput("Working Style", ["addProfile", "workingStyle"], "예: 올빼미족")}
-                              {renderInput("활동 시간대", ["addProfile", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
+                              {renderInput("좌우명", ["idol", "motto"], "예: 피할 수 없으면 즐겨라")}
+                              {renderInput("최근 취미", ["idol", "recentHobby"], "예: 클라이밍, 베이킹")}
+                              {renderInput("Working Style", ["idol", "workingStyle"], "예: 올빼미족")}
+                              {renderInput("활동 시간대", ["idol", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
                               
                               <div className="sm:col-span-2">
                                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">연락 가능 여부</label>
@@ -985,8 +981,8 @@ const EditProfileView = () => {
                                           <button
                                               key={status}
                                               type="button"
-                                              onClick={() => updateNested(["addProfile", "contact"], status)}
-                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.addProfile?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-zinc-200/50' : 'text-zinc-500 hover:bg-zinc-100'}`}
+                                              onClick={() => updateNested(["idol", "contact"], status)}
+                                              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${formData.idol?.contact === status ? 'bg-white shadow-sm text-violet-600 border border-zinc-200/50' : 'text-zinc-500 hover:bg-zinc-100'}`}
                                           >
                                               {status}
                                           </button>
@@ -996,24 +992,23 @@ const EditProfileView = () => {
                           </div>
                       </div>
 
-                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+                      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 h-full">
                           <h3 className="text-base font-black text-zinc-900 mb-5 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> My Tastes</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="p-4 bg-zinc-50/80 rounded-2xl border border-zinc-100">
-                                {renderArrayInput("Hobbies & Interests", ["addProfile", "tastes", "hobbies"], "입력 후 Enter")}
+                                {renderArrayInput("Hobbies & Interests", ["idol", "tastes", "hobbies"], "입력 후 Enter")}
                               </div>
                               <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                                {renderArrayInput("Culture (Music/Movies)", ["addProfile", "tastes", "culture"], "입력 후 Enter")}
+                                {renderArrayInput("Culture (Music/Movies)", ["idol", "tastes", "culture"], "입력 후 Enter")}
                               </div>
                               <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                                {renderArrayInput("Food & Drink", ["addProfile", "tastes", "foods"], "입력 후 Enter")}
+                                {renderArrayInput("Food & Drink", ["idol", "tastes", "foods"], "입력 후 Enter")}
                               </div>
                               <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                                {renderArrayInput("Lifestyle & Places", ["addProfile", "tastes", "lifestyle"], "입력 후 Enter")}
+                                {renderArrayInput("Lifestyle & Places", ["idol", "tastes", "lifestyle"], "입력 후 Enter")}
                               </div>
                           </div>
                       </div>
-
                   </div>
               </div>
             </div>
@@ -1145,7 +1140,7 @@ const EditProfileView = () => {
           )}
         </div>
 
-        {/* 미리보기 모달 부분 시작 */}
+        {/* ⭐️ 미리보기 모달 부분 시작 */}
         {showPreview && (
           <div className="fixed inset-0 bg-zinc-950/80 z-[200] overflow-y-auto p-4 md:p-8 flex flex-col items-center animate-in fade-in backdrop-blur-sm">
             <div className="w-full max-w-[1000px] bg-[#F0F2F5] rounded-3xl shadow-2xl relative overflow-hidden flex flex-col min-h-[80vh]">
@@ -1268,18 +1263,47 @@ const EditProfileView = () => {
                               </div>
                           </div>
                       )}
-                      
-                      {/* ⭐️ Add Profile Preview */}
-                      {previewTab === 'addProfile' && (
-                          <div className="grid grid-cols-1 gap-4">
-                              <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col gap-2">
-                                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><UserPlus size={14}/> Identity & Info</h4>
-                                <div className="text-xs font-bold text-zinc-700">MBTI: {formData.addProfile?.mbti || '-'}</div>
-                                <div className="text-xs font-bold text-zinc-700">Recent Hobby: {formData.addProfile?.recentHobby || '-'}</div>
+                      {/* ⭐️ Add Profile Preview (미리보기 화면 고도화) */}
+                      {previewTab === 'idol' && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                              <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
+                                  <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl overflow-hidden mb-5 border border-zinc-100 shadow-sm relative group bg-zinc-50 flex flex-col items-center justify-center">
+                                      {formData.idol?.extraImage ? (
+                                          <img src={formData.idol.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                      ) : (
+                                          <ImageIcon size={32} className="text-zinc-200" />
+                                      )}
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                          <span className="text-white font-black tracking-widest text-sm drop-shadow-md">IDENTITY</span>
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">MBTI</span><span className="text-xs font-black text-zinc-800">{formData.idol?.mbti || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Blood Type</span><span className="text-xs font-black text-zinc-800">{formData.idol?.bloodType || '-'}</span></div>
+                                      <div className="flex justify-between items-center bg-rose-50/50 p-3 rounded-xl border border-rose-100/50"><span className="text-[10px] font-bold text-rose-400">Height</span><span className="text-xs font-black text-zinc-800">{formData.idol?.height || '-'}</span></div>
+                                  </div>
+                              </div>
+                              <div className="md:col-span-2 flex flex-col gap-4 md:gap-5">
+                                  <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+                                      <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Compass size={14}/> Lifestyle & Work</h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
+                                            <span className="text-[10px] font-bold text-blue-400">Motto (좌우명)</span>
+                                            <span className="text-sm font-black text-zinc-800">{formData.idol?.motto || '-'}</span>
+                                          </div>
+                                          <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                            <span className="text-[10px] font-bold text-zinc-400">Recent Hobby</span>
+                                            <span className="text-xs font-black text-zinc-800">{formData.idol?.recentHobby || '-'}</span>
+                                          </div>
+                                          <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
+                                            <span className="text-[10px] font-bold text-zinc-400">Working Style</span>
+                                            <span className="text-xs font-black text-zinc-800">{formData.idol?.workingStyle || '-'}</span>
+                                          </div>
+                                      </div>
+                                  </div>
                               </div>
                           </div>
                       )}
-                      
                       {previewTab === 'qna' && (
                           <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.qna?.length || 0}개)</h4>
