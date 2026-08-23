@@ -5,7 +5,7 @@ import {
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
   MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus, History, Image as ImageIcon, X as CloseIcon,
-  CreditCard, Mail, Phone // ⭐️ 명함 아이콘 추가
+  CreditCard, Mail, Phone 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -39,7 +39,6 @@ const ProfileView = () => {
     if (!user) return {};
     const parsedUser = JSON.parse(JSON.stringify(user));
     
-    // ⭐️ businessCard 추가
     const jsonFields = ['developer', 'career', 'addProfile', 'businessCard', 'hobby', 'vision', 'quotes', 'qna', 'tags', 'goals', 'links'];
     
     jsonFields.forEach(field => {
@@ -48,6 +47,10 @@ const ProfileView = () => {
         catch (e) { parsedUser[field] = null; }
       }
     });
+
+    if (parsedUser.idol && !parsedUser.addProfile) {
+        parsedUser.addProfile = parsedUser.idol;
+    }
 
     if (!parsedUser.qna || parsedUser.qna.length === 0) {
         if (parsedUser.addProfile?.qna?.length > 0) {
@@ -75,7 +78,6 @@ const ProfileView = () => {
       }
   };
 
-  // ⭐️ 뷰 모드 탭 매핑에 businessCard 추가
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
@@ -104,7 +106,12 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  const availableTabs = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes']
+  // ⭐️ 뷰 모드에서도 사용자가 드래그로 저장해둔 탭 순서(tabOrder)가 그대로 렌더링되게 정렬
+  const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes'];
+  const savedOrder = safeUser.addProfile?.tabOrder || [];
+  const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
+
+  const availableTabs = currentOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
@@ -121,7 +128,6 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
-  // ⭐️ 뷰 모드용 실물 명함 렌더링 함수
   const renderBusinessCardUI = (data, userName) => {
     const t = data?.template || 'dark';
     let tClass = "bg-zinc-900 text-white";
@@ -209,14 +215,14 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-24 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10">
       
-      {/* ⭐️ 히스토리 타임라인 모달 */}
+      {/* ⭐️ 과거 기록 확인 모달창 */}
       {showHistoryModal && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setShowHistoryModal(false)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
                   <div className="p-6 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
                       <div>
                         <h3 className="text-lg font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500"/> Profile Commit History</h3>
-                        <p className="text-[11px] text-zinc-500 font-bold mt-1">과거에 박제해 둔 나의 취향과 관심사 기록들입니다.</p>
+                        <p className="text-[11px] text-zinc-500 font-bold mt-1">과거에 고정해 둔 나의 취향과 관심사 기록들입니다.</p>
                       </div>
                       <button onClick={() => setShowHistoryModal(false)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={20}/></button>
                   </div>
@@ -526,6 +532,7 @@ const ProfileView = () => {
                         {/* 1. Identity */}
                         <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
                           
+                          {/* ⭐️ 사진 비어있어도 둥근 직사각형 유지 */}
                           <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden mb-5 relative group flex items-center justify-center">
                               {safeUser.addProfile?.extraImage ? (
                                   <img src={safeUser.addProfile.extraImage} alt="Extra Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
