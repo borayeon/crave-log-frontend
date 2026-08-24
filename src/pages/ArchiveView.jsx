@@ -432,7 +432,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                             <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none transition-colors shadow-sm" />
                         </div>
                         
-                        {/* ⭐️ 카테고리와 날짜를 세로(1열)로 넓게 배치하여 찌그러짐 방지 */}
                         <div className="flex flex-col gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">카테고리 <span className="text-rose-500">*</span></label>
@@ -825,31 +824,56 @@ const ArchiveView = () => {
       )}
 
       <header className="px-6 md:px-10 pt-8 pb-4 shrink-0 relative z-10 bg-[#F8FAFC]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
             <h2 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
                 취향 아카이브 <Sparkles size={24} className="text-rose-500 fill-rose-500" />
             </h2>
             
-            {isAdmin && !isGuestMode && (
-            <div className="flex flex-wrap gap-2">
-                <button 
-                onClick={() => setAddRecordModalOpen(true)}
-                className="px-4 py-2 bg-zinc-900 text-white rounded-full text-xs font-bold hover:bg-zinc-800 transition-all flex items-center gap-2 shadow-sm"
-                >
-                <Plus size={14}/> 새 기록 추가
-                </button>
-                <button 
-                onClick={() => setIsEditing(!isEditing)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
-                >
-                {isEditing ? <><CloseIcon size={14}/> 편집 완료</> : <><Edit2 size={14}/> 보관함 편집</>}
-                </button>
+            {/* ⭐️ 우측 컨트롤 영역 (보기 모드 스위치 + 관리자 버튼) */}
+            <div className="flex flex-wrap items-center gap-2">
+                
+                {/* ⭐️ 보기 모드 스위치를 카테고리 스크롤 영역에서 밖으로 빼냄 */}
+                {isCurrentCategoryMusic && (
+                    <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
+                        <button 
+                            onClick={() => setMusicViewMode('grid')} 
+                            className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'grid' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
+                            title="그리드 뷰 (레코드판)"
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                        <button 
+                            onClick={() => setMusicViewMode('list')} 
+                            className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'list' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
+                            title="리스트 뷰 (멜론 차트형)"
+                        >
+                            <ListMusic size={16} />
+                        </button>
+                    </div>
+                )}
+
+                {isAdmin && !isGuestMode && (
+                    <div className="flex flex-wrap gap-2">
+                        <button 
+                        onClick={() => setAddRecordModalOpen(true)}
+                        className="px-4 py-2 bg-zinc-900 text-white rounded-full text-xs font-bold hover:bg-zinc-800 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                        <Plus size={14}/> 새 기록 추가
+                        </button>
+                        <button 
+                        onClick={() => setIsEditing(!isEditing)}
+                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
+                        >
+                        {isEditing ? <><CloseIcon size={14}/> 편집 완료</> : <><Edit2 size={14}/> 보관함 편집</>}
+                        </button>
+                    </div>
+                )}
             </div>
-            )}
         </div>
 
+        {/* ⭐️ 카테고리 탭 스크롤 영역 (온전히 카테고리만 존재하게 됨) */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 items-center">
-            <div className="flex-1 flex gap-2">
+            <div className="flex flex-nowrap gap-2 w-max pr-4">
                 {categories.map(cat => (
                     <button
                         key={cat}
@@ -867,25 +891,6 @@ const ArchiveView = () => {
                     </button>
                 ))}
             </div>
-
-            {isCurrentCategoryMusic && (
-                <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0 ml-auto">
-                    <button 
-                        onClick={() => setMusicViewMode('grid')} 
-                        className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'grid' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
-                        title="그리드 뷰 (레코드판)"
-                    >
-                        <LayoutGrid size={16} />
-                    </button>
-                    <button 
-                        onClick={() => setMusicViewMode('list')} 
-                        className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'list' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
-                        title="리스트 뷰 (멜론 차트형)"
-                    >
-                        <ListMusic size={16} />
-                    </button>
-                </div>
-            )}
         </div>
 
         {activeCategory !== '전체' && activeCategoryTags.length > 0 && (
