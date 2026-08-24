@@ -128,6 +128,7 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
+  // ⭐️ [수정됨] 명함 UI - min-w-0 추가 및 패딩 최적화
   const renderBusinessCardUI = (data, userName) => {
     const t = data?.template || 'dark';
     let tClass = "bg-zinc-900 text-white";
@@ -136,7 +137,7 @@ const ProfileView = () => {
     if(t === 'glass') tClass = "bg-zinc-50/80 backdrop-blur-md border border-zinc-200 text-zinc-800 shadow-sm";
 
     return (
-        <div className={`w-full max-w-md mx-auto aspect-[1.58/1] rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${tClass}`}>
+        <div className={`w-full max-w-md mx-auto aspect-[1.58/1] rounded-2xl p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${tClass}`}>
             {t === 'dark' && <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>}
             {t === 'gradient' && <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>}
 
@@ -150,11 +151,11 @@ const ProfileView = () => {
                 <p className="text-xs sm:text-sm font-bold opacity-80 mt-1">{data?.position || 'Position / Role'}</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium opacity-90 mt-6 relative z-10">
-                <div className="flex items-center gap-1.5 truncate"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
-                <div className="flex items-center gap-1.5 truncate"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>
-                <div className="flex items-center gap-1.5 truncate"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data?.address || 'Seoul, Republic of Korea'}</span></div>
-                <div className="flex items-center gap-1.5 truncate"><Globe size={12} className="shrink-0"/> <span className="truncate">{data?.website || 'www.example.com'}</span></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium opacity-90 mt-5 sm:mt-6 relative z-10">
+                <div className="flex items-center gap-1.5 truncate min-w-0"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
+                <div className="flex items-center gap-1.5 truncate min-w-0"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>
+                <div className="flex items-center gap-1.5 truncate min-w-0"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data?.address || 'Seoul, Republic of Korea'}</span></div>
+                <div className="flex items-center gap-1.5 truncate min-w-0"><Globe size={12} className="shrink-0"/> <span className="truncate">{data?.website || 'www.example.com'}</span></div>
             </div>
         </div>
     );
@@ -215,6 +216,7 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
+      {/* (모달창 코드는 동일하여 생략, 기존 그대로 적용됨) */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -318,20 +320,23 @@ const ProfileView = () => {
             </div>
           )}
 
-          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
-            <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-2 z-10">
+          {/* ⭐️ [수정됨] 헤더 영역 패딩 축소 및 레이아웃 재배치 */}
+          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
+            
+            {/* ⭐️ [수정됨] 모바일에서는 프로필 텍스트와 겹치지 않도록 flex 배치, 데스크탑은 absolute 유지 */}
+            <div className="flex justify-end gap-2 mb-3 md:absolute md:top-6 md:right-6 md:mb-0 z-10 relative">
               {!isProfileEmpty && (
-                <button onClick={handleShare} className="w-9 h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
-                    <Share2 size={15} />
+                <button onClick={handleShare} className="w-8 h-8 md:w-9 md:h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
+                    <Share2 size={14} />
                 </button>
               )}
               {isAdmin && !isGuestMode ? (
-                <button onClick={() => setViewMode('edit_profile')} className="w-9 h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
-                  <Edit2 size={15} />
+                <button onClick={() => setViewMode('edit_profile')} className="w-8 h-8 md:w-9 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
+                  <Edit2 size={14} />
                 </button>
               ) : !isAdmin ? (
-                 <button onClick={() => setLoginModalOpen(true)} className="px-4 h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                  <Rocket size={14} /> 시작하기
+                 <button onClick={() => setLoginModalOpen(true)} className="px-3 md:px-4 h-8 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                  <Rocket size={12} /> 시작하기
                 </button>
               ) : null}
             </div>
@@ -343,10 +348,10 @@ const ProfileView = () => {
                 <p className="text-xs md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
               </div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4 md:mt-0">
+              <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-1 md:mt-0">
                 <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
-                  <div className="flex flex-row md:flex-row gap-5 items-center md:items-start">
-                    <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
+                  <div className="flex flex-row gap-4 sm:gap-5 items-center md:items-start">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
                       {safeUser.profileImageUrl ? (
                           <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
@@ -358,17 +363,17 @@ const ProfileView = () => {
                     
                     <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
                       <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                      <p className="text-xs md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-0.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
+                      <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                       
-                      <div className="space-y-1.5 md:space-y-2">
+                      <div className="space-y-1 md:space-y-1.5">
                         <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
-                          <Briefcase size={14} className="text-zinc-400 shrink-0"/> {safeUser.role || '소속/직무 미입력'}
+                          <Briefcase size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.role || '소속/직무 미입력'}
                         </div>
                         <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
-                          <GraduationCap size={14} className="text-zinc-400 shrink-0"/> {safeUser.major || '전공 미입력'}
+                          <GraduationCap size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.major || '전공 미입력'}
                         </div>
                         <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
-                          <MapPin size={14} className="text-zinc-400 shrink-0"/> {safeUser.location || '지역 미입력'}
+                          <MapPin size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.location || '지역 미입력'}
                         </div>
                       </div>
                     </div>
@@ -569,7 +574,7 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ⭐️ ADD PROFILE TAB */}
+                      {/* ADD PROFILE TAB */}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                             
@@ -669,14 +674,14 @@ const ProfileView = () => {
                           </div>
                       )}
                       
-                      {/* ⭐️ BUSINESS CARD TAB */}
+                      {/* BUSINESS CARD TAB */}
                       {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
                           <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                               {renderBusinessCardUI(safeUser.addProfile?.businessCard, safeUser.name)}
                           </div>
                       )}
 
-                      {/* ⭐️ QnA Tab (경로 수정: addProfile.qna) */}
+                      {/* QnA Tab */}
                       {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && (
                           <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-1.5"><MessageSquare size={14}/> 100문 100답</h4>
@@ -693,7 +698,7 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ⭐️ Hobby Tab (경로 수정: addProfile.hobby) */}
+                      {/* Hobby Tab */}
                       {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && (
                           <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden flex flex-col md:flex-row group">
                               <div className="h-56 md:h-auto md:w-1/2 relative bg-zinc-100 overflow-hidden">
@@ -716,7 +721,7 @@ const ProfileView = () => {
                       {/* Vision Tab */}
                       {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && renderVisionPreview()}
 
-                      {/* ⭐️ Quotes Tab (경로 수정: addProfile.quotes) */}
+                      {/* Quotes Tab */}
                       {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                               {(safeUser.addProfile?.quotes || []).map((q, idx) => (
