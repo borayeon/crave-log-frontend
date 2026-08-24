@@ -5,7 +5,7 @@ import {
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
   MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus, History, Image as ImageIcon, X as CloseIcon,
-  CreditCard, Mail, Phone 
+  CreditCard, Mail, Phone, FileText, Grid // ⭐️ FileText, Grid 아이콘 추가
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -79,6 +79,7 @@ const ProfileView = () => {
       }
   };
 
+  // ⭐️ memo 탭 추가
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
@@ -87,11 +88,12 @@ const ProfileView = () => {
     qna: { id: 'qna', icon: <MessageSquare strokeWidth={2}/>, label: 'Q&A', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
     hobby: { id: 'hobby', icon: <Palette strokeWidth={2}/>, label: 'Hobby', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
     vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
-    quotes: { id: 'quotes', icon: <Quote strokeWidth={2}/>, label: 'Quotes', color: 'bg-slate-100/80 text-slate-500 border-slate-200' }
+    quotes: { id: 'quotes', icon: <Quote strokeWidth={2}/>, label: 'Quotes', color: 'bg-slate-100/80 text-slate-500 border-slate-200' },
+    memo: { id: 'memo', icon: <FileText strokeWidth={2}/>, label: 'Memo', color: 'bg-amber-50/80 text-amber-500 border-amber-100' }
   };
 
   const privacyObj = useMemo(() => {
-      let p = { developer: true, career: true, addProfile: true, businessCard: true, qna: true, hobby: true, vision: true, quotes: true };
+      let p = { developer: true, career: true, addProfile: true, businessCard: true, qna: true, hobby: true, vision: true, quotes: true, memo: true };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
@@ -107,7 +109,7 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes'];
+  const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo'];
   const savedOrder = safeUser.addProfile?.tabOrder || [];
   const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
 
@@ -128,7 +130,6 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
-  // ⭐️ [수정됨] 명함 UI - min-w-0 추가 및 패딩 최적화
   const renderBusinessCardUI = (data, userName) => {
     const t = data?.template || 'dark';
     let tClass = "bg-zinc-900 text-white";
@@ -216,7 +217,6 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* (모달창 코드는 동일하여 생략, 기존 그대로 적용됨) */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -320,10 +320,7 @@ const ProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ [수정됨] 헤더 영역 패딩 축소 및 레이아웃 재배치 */}
           <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
-            
-            {/* ⭐️ [수정됨] 모바일에서는 프로필 텍스트와 겹치지 않도록 flex 배치, 데스크탑은 absolute 유지 */}
             <div className="flex justify-end gap-2 mb-3 md:absolute md:top-6 md:right-6 md:mb-0 z-10 relative">
               {!isProfileEmpty && (
                 <button onClick={handleShare} className="w-8 h-8 md:w-9 md:h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
@@ -736,6 +733,29 @@ const ProfileView = () => {
                                   <p className="text-sm text-zinc-400 font-medium">등록된 명언이 없습니다.</p>
                                 </div>
                               )}
+                          </div>
+                      )}
+
+                      {/* ⭐️ MEMO TAB (방문자 뷰) */}
+                      {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && (
+                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-5">
+                              <div className="lg:col-span-2 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col h-full">
+                                  <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><FileText size={14}/> Free Memo</h4>
+                                  <div className="flex-1 text-sm md:text-base text-zinc-800 leading-relaxed font-medium whitespace-pre-line bg-amber-50/30 p-5 rounded-2xl border border-amber-100/50">
+                                      {safeUser.addProfile?.memoArea?.text || '입력된 메모가 없습니다.'}
+                                  </div>
+                              </div>
+                              <div className="lg:col-span-3 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col items-center justify-center">
+                                  <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-1.5"><Grid size={14}/> Dot Canvas</h4>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }} className="gap-1 sm:gap-1.5 bg-zinc-50 p-3 sm:p-4 rounded-3xl border border-zinc-200 shadow-inner w-max">
+                                      {Array.from({length: 225}).map((_, idx) => {
+                                          const isFilled = safeUser.addProfile?.memoArea?.dots?.[idx];
+                                          return (
+                                              <div key={idx} className={`w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-md transition-colors ${isFilled ? 'bg-indigo-500 shadow-md' : 'bg-white border border-zinc-200'}`} />
+                                          )
+                                      })}
+                                  </div>
+                              </div>
                           </div>
                       )}
 
