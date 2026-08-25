@@ -113,9 +113,9 @@ const Sidebar = () => {
                 })}
             </div>
             
-            {/* ⭐️ 수정됨: 배너 슬라이드 영역 */}
+            {/* ⭐️ 수정됨: 배너가 상단 메뉴들과 살짝 떨어지도록 mt-auto 적용 */}
             {!isAdmin && (
-              <div className={`mt-4 px-1 transition-all duration-500 overflow-hidden relative flex flex-col group/banner ${isSidebarOpen ? 'opacity-100 flex-1 min-h-[240px] max-h-[400px] mb-2' : 'opacity-0 h-0 mb-0'}`}>
+              <div className={`mt-auto px-1 transition-all duration-500 overflow-hidden relative flex flex-col group/banner ${isSidebarOpen ? 'opacity-100 flex-1 min-h-[240px] max-h-[380px] mb-2' : 'opacity-0 h-0 mb-0'}`}>
                 
                 {/* 좌우 이동 버튼 */}
                 <button 
@@ -140,8 +140,11 @@ const Sidebar = () => {
                       {/* 데코레이션 블러 이펙트 */}
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl pointer-events-none"></div>
                       
-                      {/* ⭐️ 수정됨: 아이콘과 텍스트를 하나의 그룹(flex-col)으로 묶어서 하단(mt-auto)에 배치 */}
-                      <div className="relative z-10 flex flex-col gap-3 mt-auto">
+                      {/* ⭐️ 1. 핵심 픽스: 카드 내부 위쪽의 빈 공간을 차지하는 투명 스프링 역할 */}
+                      <div className="flex-1 pointer-events-none" />
+
+                      {/* ⭐️ 2. 위의 스프링에 밀려 아이콘과 텍스트가 카드 바닥으로 찰싹! 붙습니다. */}
+                      <div className="relative z-10 flex flex-col gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-md shadow-sm border border-white/50 flex items-center justify-center">
                           {card.icon}
                         </div>
