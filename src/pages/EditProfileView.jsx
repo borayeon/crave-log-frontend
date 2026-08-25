@@ -17,7 +17,7 @@ const EditProfileView = () => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || safeUser.addProfile?.qna || []);
     
-    // ⭐️ art 탭 추가
+    // ⭐️ 핵심: 모든 탭의 초기값을 false(비공개)로 변경
     let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
@@ -27,7 +27,6 @@ const EditProfileView = () => {
         }
     }
 
-    // ⭐️ 기본 순서에 memo와 art 분리
     const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
@@ -88,7 +87,6 @@ const EditProfileView = () => {
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
 
-  // ⭐️ 탭 설정에 memo와 art 분리
   const TABS_CONFIG = {
     developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     career: { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
@@ -116,7 +114,7 @@ const EditProfileView = () => {
       const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
       setPreviewTab(firstTab);
     }
-  }, [showPreview]);
+  }, [showPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -548,7 +546,6 @@ const EditProfileView = () => {
         </header>
 
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
-          {/* 상단 프로필 편집 (동일하여 생략 없이 유지) */}
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
@@ -742,7 +739,7 @@ const EditProfileView = () => {
 
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           
-          {/* DEVELOPER, CAREER 등 기타 탭 생략 없이 유지... */}
+          {/* DEVELOPER TAB */}
           {editTab === 'developer' && (
             <div className="space-y-4">
                 <div className="bg-[#0D1117] text-zinc-300 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-800 relative overflow-hidden">
@@ -846,6 +843,7 @@ const EditProfileView = () => {
             </div>
           )}
 
+          {/* CAREER TAB */}
           {editTab === 'career' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-6 md:gap-8">
@@ -906,6 +904,7 @@ const EditProfileView = () => {
             </div>
           )}
 
+          {/* ADD PROFILE TAB */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="flex flex-col gap-2">
@@ -1058,6 +1057,7 @@ const EditProfileView = () => {
             </div>
           )}
 
+          {/* BUSINESS CARD TAB */}
           {editTab === 'businessCard' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
@@ -1100,6 +1100,7 @@ const EditProfileView = () => {
             </div>
           )}
 
+          {/* Q&A TAB */}
           {editTab === 'qna' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-violet-500"/> 100문 100답 작성</h3>
@@ -1129,6 +1130,7 @@ const EditProfileView = () => {
             </div>
           )}
 
+          {/* HOBBY TAB */}
           {editTab === 'hobby' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-zinc-100">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Target size={16} className="text-amber-500"/> 취미 소개 섹션</h3>
@@ -1178,12 +1180,14 @@ const EditProfileView = () => {
             </div>
           )}
 
+          {/* VISION TAB */}
           {editTab === 'vision' && (
              <div className="animate-in fade-in">
                  {renderMandalartEditor()}
              </div>
           )}
 
+          {/* QUOTES TAB */}
           {editTab === 'quotes' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Quote size={16} className="text-slate-400"/> 좋아하는 명언 모음</h3>
@@ -1221,7 +1225,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ MEMO TAB (독립) */}
+          {/* ⭐️ MEMO TAB */}
           {editTab === 'memo' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1238,7 +1242,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ DOT ART TAB (독립) */}
+          {/* ⭐️ DOT ART TAB */}
           {editTab === 'art' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col items-center">

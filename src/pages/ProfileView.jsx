@@ -5,7 +5,7 @@ import {
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
   MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus, History, Image as ImageIcon, X as CloseIcon,
-  CreditCard, Mail, Phone, FileText, Grid
+  CreditCard, Mail, Phone, FileText, Grid 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -79,7 +79,6 @@ const ProfileView = () => {
       }
   };
 
-  // ⭐️ memo와 art 분리
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
@@ -94,7 +93,8 @@ const ProfileView = () => {
   };
 
   const privacyObj = useMemo(() => {
-      let p = { developer: true, career: true, addProfile: true, businessCard: true, qna: true, hobby: true, vision: true, quotes: true, memo: true, art: true };
+      // ⭐️ 핵심: 초기값을 모두 false(비공개)로 맞춰 기획 의도(Opt-in) 충족
+      let p = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
