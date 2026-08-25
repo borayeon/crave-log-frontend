@@ -232,32 +232,32 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* 메인 콘텐츠 래퍼 */}
       <div className="flex-1">
-          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
-            <div className="flex justify-between items-start mb-6 md:mb-8 w-full">
+          <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm relative z-20 border border-zinc-200/80">
+            {/* ⭐️ 수정됨: 버튼 공간 축소 및 여백 다이어트 */}
+            <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
               <div className="flex-1 pr-4">
                 {!isProfileEmpty && safeUser.status && (
-                  <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl shadow-sm">
-                      <Sparkles size={14} className="text-yellow-500" />
-                      <span className="text-[11px] md:text-xs font-bold tracking-wider">{safeUser.status}</span>
+                  <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
+                      <Sparkles size={13} className="text-yellow-500" />
+                      <span className="text-[10px] md:text-[11px] font-bold tracking-wider">{safeUser.status}</span>
                   </div>
                 )}
               </div>
               
-              <div className="flex justify-end gap-2 shrink-0">
+              <div className="flex justify-end gap-1.5 shrink-0">
                 {!isProfileEmpty && (
-                  <button onClick={handleShare} className="w-8 h-8 md:w-9 md:h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
-                      <Share2 size={14} />
+                  <button onClick={handleShare} className="w-7 h-7 md:w-8 md:h-8 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
+                      <Share2 size={13} />
                   </button>
                 )}
                 {isAdmin && !isGuestMode ? (
-                  <button onClick={() => setViewMode('edit_profile')} className="w-8 h-8 md:w-9 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
-                    <Edit2 size={14} />
+                  <button onClick={() => setViewMode('edit_profile')} className="w-7 h-7 md:w-8 md:h-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
+                    <Edit2 size={13} />
                   </button>
                 ) : !isAdmin ? (
-                   <button onClick={() => setLoginModalOpen(true)} className="px-3 md:px-4 h-8 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                    <Rocket size={12} /> 시작하기
+                   <button onClick={() => setLoginModalOpen(true)} className="px-3 h-7 md:h-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-[10px] md:text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <Rocket size={11} /> 시작하기
                   </button>
                 ) : null}
               </div>
@@ -389,8 +389,6 @@ const ProfileView = () => {
                       
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
-                      
-                      {/* ⭐️ AddProfileTab에 스위치(setShowHistoryModal) 넘겨주기 추가! */}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={setShowHistoryModal} />}
                       
                       {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
