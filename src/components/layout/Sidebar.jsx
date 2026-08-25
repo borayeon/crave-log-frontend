@@ -5,24 +5,24 @@ import { useAppStore } from '../../store/AppStore';
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
-  // ⭐️ 자동으로 슬라이드되는 배너 카드 데이터 (3가지 핵심 설명)
+  // ⭐️ 아이콘 크기를 24로 더 키웠습니다.
   const bannerCards = [
     {
-      icon: <Sparkles size={16} className="text-indigo-500" />,
+      icon: <Sparkles size={24} className="text-indigo-500" />,
       title: "CraveLog 소개",
       desc: <>이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600">취향과 성향</span>을 아카이빙합니다.</>,
       bg: "from-indigo-50 to-violet-50/50",
       border: "border-indigo-100/50"
     },
     {
-      icon: <BookOpen size={16} className="text-emerald-500" />,
+      icon: <BookOpen size={24} className="text-emerald-500" />,
       title: "기록의 재발견",
       desc: <>파편화된 지식부터 소소한 일상까지 <span className="text-emerald-600">모든 기록을 나만의 색깔로</span> 보관하세요.</>,
       bg: "from-emerald-50 to-teal-50/50",
       border: "border-emerald-100/50"
     },
     {
-      icon: <Share2 size={16} className="text-rose-500" />,
+      icon: <Share2 size={24} className="text-rose-500" />,
       title: "간편한 네트워킹",
       desc: <>복잡한 설명 없이 잘 꾸며진 <span className="text-rose-600">프로필 링크 하나로</span> 나를 완벽하게 소개해보세요.</>,
       bg: "from-rose-50 to-pink-50/50",
@@ -33,11 +33,9 @@ const Sidebar = () => {
   const [bannerIdx, setBannerIdx] = useState(0);
   const timerRef = useRef(null);
 
-  // 배너 슬라이드 진행 함수
   const nextBanner = () => setBannerIdx((prev) => (prev + 1) % bannerCards.length);
   const prevBanner = () => setBannerIdx((prev) => (prev === 0 ? bannerCards.length - 1 : prev - 1));
 
-  // 배너 자동 슬라이드 로직 (4초 간격) - 인터랙션 시 타이머 리셋을 위해 ref 사용
   useEffect(() => {
     if (isAdmin || !isSidebarOpen) return;
     
@@ -46,9 +44,8 @@ const Sidebar = () => {
     }, 4000);
 
     return () => clearInterval(timerRef.current);
-  }, [isAdmin, isSidebarOpen, bannerIdx]); // bannerIdx를 의존성에 추가하여 수동 조작 시 타이머 리셋
+  }, [isAdmin, isSidebarOpen, bannerIdx]); 
 
-  // 수동 조작 시 자동 슬라이드 타이머 재시작을 위한 핸들러
   const handleManualSlide = (direction) => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (direction === 'next') nextBanner();
@@ -72,7 +69,7 @@ const Sidebar = () => {
       >
         <div className="w-72 flex flex-col h-full">
           
-          {/* 로고 영역 (홈으로 이동) */}
+          {/* 로고 영역 */}
           <div 
             onClick={() => {
               if (visitedHandle) resetToMyProfile();
@@ -90,67 +87,81 @@ const Sidebar = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-2 flex flex-col">
+          <nav className="flex-1 px-3 py-4 flex flex-col min-h-0">
             <p className={`px-3 text-[10px] font-black uppercase tracking-widest mb-4 text-zinc-400 transition-opacity duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               Navigation
             </p>
-            {navItems.map(item => {
-              const active = viewMode === item.id;
-              return (
-                <button 
-                  key={item.id} 
-                  onClick={() => setViewMode(item.id)} 
-                  className={`w-full flex items-center gap-3 p-2 rounded-2xl transition-all duration-300 text-left group/btn ${
-                    active ? 'bg-white text-indigo-600 shadow-sm border border-zinc-200/80' : 'hover:bg-white hover:text-zinc-900 border border-transparent hover:shadow-sm'
-                  }`}
-                >
-                  <div className={`w-10 h-10 flex items-center justify-center shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'opacity-70 group-hover/btn:scale-110'}`}>
-                    {item.icon}
-                  </div>
-                  <div className={`transition-opacity duration-300 whitespace-nowrap overflow-hidden ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                    <p className="text-sm font-black tracking-tight">{item.label}</p>
-                    <p className={`text-[10px] mt-0.5 font-bold ${active ? 'opacity-80' : 'opacity-50'}`}>{item.desc}</p>
-                  </div>
-                </button>
-              )
-            })}
+            <div className="space-y-2">
+                {navItems.map(item => {
+                const active = viewMode === item.id;
+                return (
+                    <button 
+                    key={item.id} 
+                    onClick={() => setViewMode(item.id)} 
+                    className={`w-full flex items-center gap-3 p-2 rounded-2xl transition-all duration-300 text-left group/btn ${
+                        active ? 'bg-white text-indigo-600 shadow-sm border border-zinc-200/80' : 'hover:bg-white hover:text-zinc-900 border border-transparent hover:shadow-sm'
+                    }`}
+                    >
+                    <div className={`w-10 h-10 flex items-center justify-center shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'opacity-70 group-hover/btn:scale-110'}`}>
+                        {item.icon}
+                    </div>
+                    <div className={`transition-opacity duration-300 whitespace-nowrap overflow-hidden ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        <p className="text-sm font-black tracking-tight">{item.label}</p>
+                        <p className={`text-[10px] mt-0.5 font-bold ${active ? 'opacity-80' : 'opacity-50'}`}>{item.desc}</p>
+                    </div>
+                    </button>
+                )
+                })}
+            </div>
             
-            {/* ⭐️ 여러 장의 카드로 서비스를 설명하는 슬라이드 배너 */}
+            {/* ⭐️ 확장된 슬라이드 배너: flex-1을 주어 남는 공간을 모두 채웁니다! */}
             {!isAdmin && (
-              <div className={`px-4 mt-auto transition-all duration-500 overflow-hidden relative flex flex-col justify-end group/banner ${isSidebarOpen ? 'opacity-100 h-40 mb-2' : 'opacity-0 h-0 mb-0'}`}>
+              <div className={`mt-4 px-1 transition-all duration-500 overflow-hidden relative flex flex-col group/banner ${isSidebarOpen ? 'opacity-100 flex-1 min-h-[240px] max-h-[400px] mb-2' : 'opacity-0 h-0 mb-0'}`}>
                 
-                {/* ⭐️ 좌우 이동 버튼 (마우스 오버 시 나타남) */}
+                {/* 좌우 이동 버튼 */}
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleManualSlide('prev'); }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-6 h-6 bg-white/80 backdrop-blur-sm border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 shadow-sm opacity-0 group-hover/banner:opacity-100 hover:bg-white hover:text-zinc-900 transition-all transform hover:scale-110"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white/80 backdrop-blur-sm border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 shadow-sm opacity-0 group-hover/banner:opacity-100 hover:bg-white hover:text-zinc-900 transition-all transform hover:scale-110"
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft size={16} />
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleManualSlide('next'); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-6 h-6 bg-white/80 backdrop-blur-sm border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 shadow-sm opacity-0 group-hover/banner:opacity-100 hover:bg-white hover:text-zinc-900 transition-all transform hover:scale-110"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white/80 backdrop-blur-sm border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 shadow-sm opacity-0 group-hover/banner:opacity-100 hover:bg-white hover:text-zinc-900 transition-all transform hover:scale-110"
                 >
-                  <ChevronRight size={14} />
+                  <ChevronRight size={16} />
                 </button>
 
-                <div className="relative w-full h-32">
+                {/* ⭐️ 카드가 빈 공간 전체를 채우도록 flex-1 적용 */}
+                <div className="relative w-full h-full flex-1">
                   {bannerCards.map((card, idx) => (
                     <div 
                       key={idx} 
-                      className={`absolute inset-0 p-4 rounded-2xl border shadow-sm overflow-hidden transition-all duration-500 ease-in-out bg-gradient-to-br ${card.bg} ${card.border} ${idx === bannerIdx ? 'opacity-100 translate-x-0 z-10' : idx < bannerIdx ? 'opacity-0 -translate-x-full z-0' : 'opacity-0 translate-x-full z-0'}`}
+                      className={`absolute inset-0 p-6 rounded-[1.5rem] border shadow-sm overflow-hidden transition-all duration-500 ease-in-out bg-gradient-to-br flex flex-col ${card.bg} ${card.border} ${idx === bannerIdx ? 'opacity-100 translate-x-0 z-10' : idx < bannerIdx ? 'opacity-0 -translate-x-full z-0' : 'opacity-0 translate-x-full z-0'}`}
                     >
-                      <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/40 rounded-full blur-xl pointer-events-none"></div>
-                      <h3 className="text-xs font-black text-zinc-800 mb-2 flex items-center gap-1.5 relative z-10">
-                        {card.icon} {card.title}
-                      </h3>
-                      <p className="text-[11px] font-bold text-zinc-600 leading-relaxed relative z-10 break-keep pr-2">
-                        {card.desc}
-                      </p>
+                      {/* 데코레이션 블러 이펙트 */}
+                      <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl pointer-events-none"></div>
+                      
+                      {/* ⭐️ 아이콘을 카드 상단에 큼직하게 배치 */}
+                      <div className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-md shadow-sm border border-white/50 flex items-center justify-center mb-auto relative z-10">
+                        {card.icon}
+                      </div>
+
+                      {/* ⭐️ 텍스트를 카드 하단에 안정감 있게 배치 */}
+                      <div className="relative z-10 mt-auto pt-4">
+                        <h3 className="text-[15px] font-black text-zinc-900 mb-2 tracking-tight">
+                          {card.title}
+                        </h3>
+                        <p className="text-xs font-bold text-zinc-600 leading-relaxed break-keep pr-2">
+                          {card.desc}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
+                
                 {/* 슬라이드 인디케이터(점) */}
-                <div className="flex justify-center gap-1.5 mt-3 h-2 items-center">
+                <div className="flex justify-center gap-1.5 mt-4 h-2 items-center shrink-0">
                   {bannerCards.map((_, idx) => (
                     <button
                       key={idx}
@@ -158,7 +169,7 @@ const Sidebar = () => {
                         if (timerRef.current) clearInterval(timerRef.current);
                         setBannerIdx(idx);
                       }}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === bannerIdx ? 'w-4 bg-indigo-500' : 'w-1.5 bg-zinc-300 hover:bg-zinc-400'}`}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === bannerIdx ? 'w-5 bg-indigo-500' : 'w-1.5 bg-zinc-300 hover:bg-zinc-400'}`}
                     />
                   ))}
                 </div>
@@ -167,7 +178,7 @@ const Sidebar = () => {
           </nav>
           
           {/* Bottom Profile / Login Area */}
-          <div className="p-4 mb-4">
+          <div className="p-4 shrink-0">
             {isAdmin ? (
               <div className={`rounded-3xl flex items-center gap-3 transition-all duration-300 overflow-hidden ${isSidebarOpen ? 'p-4 bg-white shadow-sm border border-zinc-200/80' : 'p-2 bg-transparent group-hover:bg-white group-hover:shadow-sm group-hover:border group-hover:border-zinc-200/80 group-hover:p-4'}`}>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-rose-400 p-[2px] shrink-0">
