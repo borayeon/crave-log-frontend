@@ -5,25 +5,35 @@ import { useAppStore } from '../../store/AppStore';
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
+  // ⭐️ 내용량 대폭 추가 (뱃지, 배경 워터마크 아이콘, 해시태그 기능)
   const bannerCards = [
     {
-      icon: <Sparkles size={24} className="text-indigo-500" />,
-      title: "CraveLog 소개",
-      desc: <>이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600">취향과 성향</span>을 아카이빙합니다.</>,
+      icon: <Sparkles size={20} className="text-indigo-600" />,
+      bgIcon: <Sparkles size={140} strokeWidth={1} className="text-indigo-600/5 absolute -right-6 -bottom-6 transform -rotate-12 pointer-events-none" />,
+      badge: "Portfolio 2.0",
+      title: "새로운 차원의 프로필",
+      desc: <>이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600 font-black">취향과 성향</span>을 아카이빙합니다.</>,
+      features: ["#멀티_페르소나", "#취향_컬렉션", "#도트_캔버스"],
       bg: "from-indigo-50 to-violet-50/50",
       border: "border-indigo-100/50"
     },
     {
-      icon: <BookOpen size={24} className="text-emerald-500" />,
+      icon: <BookOpen size={20} className="text-emerald-600" />,
+      bgIcon: <BookOpen size={140} strokeWidth={1} className="text-emerald-600/5 absolute -right-6 -bottom-6 transform rotate-12 pointer-events-none" />,
+      badge: "Archive",
       title: "기록의 재발견",
-      desc: <>파편화된 지식부터 소소한 일상까지 <span className="text-emerald-600">모든 기록을 나만의 색깔로</span> 보관하세요.</>,
+      desc: <>파편화된 지식부터 소소한 일상까지 <span className="text-emerald-600 font-black">모든 기록을 나만의 색깔로</span> 안전하게 보관하세요.</>,
+      features: ["#개발_인사이트", "#회고록", "#개인_블로그"],
       bg: "from-emerald-50 to-teal-50/50",
       border: "border-emerald-100/50"
     },
     {
-      icon: <Share2 size={24} className="text-rose-500" />,
+      icon: <Share2 size={20} className="text-rose-600" />,
+      bgIcon: <Share2 size={140} strokeWidth={1} className="text-rose-600/5 absolute -right-6 -bottom-6 transform -rotate-12 pointer-events-none" />,
+      badge: "Networking",
       title: "간편한 네트워킹",
-      desc: <>복잡한 설명 없이 잘 꾸며진 <span className="text-rose-600">프로필 링크 하나로</span> 나를 완벽하게 소개해보세요.</>,
+      desc: <>복잡한 설명 없이 잘 꾸며진 <span className="text-rose-600 font-black">프로필 링크 하나로</span> 나를 가장 완벽하게 소개해보세요.</>,
+      features: ["#원클릭_공유", "#이력서_대체", "#모바일_명함"],
       bg: "from-rose-50 to-pink-50/50",
       border: "border-rose-100/50"
     }
@@ -113,7 +123,7 @@ const Sidebar = () => {
                 })}
             </div>
             
-            {/* ⭐️ 수정됨: 배너가 상단 메뉴들과 살짝 떨어지도록 mt-auto 적용 */}
+            {/* 배너 슬라이드 영역 */}
             {!isAdmin && (
               <div className={`mt-auto px-1 transition-all duration-500 overflow-hidden relative flex flex-col group/banner ${isSidebarOpen ? 'opacity-100 flex-1 min-h-[240px] max-h-[380px] mb-2' : 'opacity-0 h-0 mb-0'}`}>
                 
@@ -135,20 +145,33 @@ const Sidebar = () => {
                   {bannerCards.map((card, idx) => (
                     <div 
                       key={idx} 
-                      className={`absolute inset-0 p-6 rounded-[1.5rem] border shadow-sm overflow-hidden transition-all duration-500 ease-in-out bg-gradient-to-br flex flex-col ${card.bg} ${card.border} ${idx === bannerIdx ? 'opacity-100 translate-x-0 z-10' : idx < bannerIdx ? 'opacity-0 -translate-x-full z-0' : 'opacity-0 translate-x-full z-0'}`}
+                      className={`absolute inset-0 p-5 rounded-[1.5rem] border shadow-sm overflow-hidden transition-all duration-500 ease-in-out bg-gradient-to-br flex flex-col ${card.bg} ${card.border} ${idx === bannerIdx ? 'opacity-100 translate-x-0 z-10' : idx < bannerIdx ? 'opacity-0 -translate-x-full z-0' : 'opacity-0 translate-x-full z-0'}`}
                     >
-                      {/* 데코레이션 블러 이펙트 */}
+                      {/* 데코레이션 효과들 */}
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl pointer-events-none"></div>
+                      {card.bgIcon}
                       
-                      {/* ⭐️ 1. 핵심 픽스: 카드 내부 위쪽의 빈 공간을 차지하는 투명 스프링 역할 */}
-                      <div className="flex-1 pointer-events-none" />
-
-                      {/* ⭐️ 2. 위의 스프링에 밀려 아이콘과 텍스트가 카드 바닥으로 찰싹! 붙습니다. */}
-                      <div className="relative z-10 flex flex-col gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-md shadow-sm border border-white/50 flex items-center justify-center">
-                          {card.icon}
+                      {/* ⭐️ 구조 개편: 윗부분과 아랫부분을 분리하여 공간을 완벽하게 채움 */}
+                      <div className="relative z-10 flex flex-col h-full">
+                        {/* 상단: 뱃지와 아이콘 */}
+                        <div className="flex justify-between items-start mb-auto">
+                          <div className="px-2.5 py-1.5 bg-white/70 backdrop-blur-md rounded-lg border border-white/60 text-[9px] font-black text-zinc-600 uppercase tracking-widest shadow-sm">
+                            {card.badge}
+                          </div>
+                          <div className="w-10 h-10 rounded-xl bg-white/70 backdrop-blur-md shadow-sm border border-white/60 flex items-center justify-center">
+                            {card.icon}
+                          </div>
                         </div>
-                        <div>
+
+                        {/* 하단: 해시태그와 텍스트 설명 */}
+                        <div className="mt-auto">
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {card.features.map((feature, fIdx) => (
+                              <span key={fIdx} className="px-2 py-1 bg-white/60 border border-white/50 text-[9px] font-black text-zinc-500 rounded-md shadow-sm backdrop-blur-sm">
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
                           <h3 className="text-[15px] font-black text-zinc-900 mb-1.5 tracking-tight">
                             {card.title}
                           </h3>
