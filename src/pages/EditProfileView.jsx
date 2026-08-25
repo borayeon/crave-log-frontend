@@ -32,7 +32,6 @@ const EditProfileView = () => {
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
 
-    // ⭐️ 기존 불리언 배열을 컬러 문자열 배열로 마이그레이션 및 초기화
     let memoArea = safeUser.idol?.memoArea || safeUser.memoArea || { text: "", dots: [], gridSize: 15 };
     if (!memoArea.gridSize) memoArea.gridSize = 15;
     const totalDots = memoArea.gridSize * memoArea.gridSize;
@@ -98,7 +97,6 @@ const EditProfileView = () => {
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
 
-  // ⭐️ 캔버스 도구 상태
   const [activeColor, setActiveColor] = useState(PALETTE[8]);
   const [isEraser, setIsEraser] = useState(false);
   const isDrawingRef = useRef(false);
@@ -121,9 +119,10 @@ const EditProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
   
+  // ⭐️ 핵심 픽스: 미리보기 모달에서는 '비공개' 필터를 뺍니다! (전체 렌더링)
   const availablePreviewTabs = (formData.idol?.tabOrder || [])
     .map(id => TABS_CONFIG[id])
-    .filter(tab => tab && !isTabPrivate(tab.id));
+    .filter(tab => tab); 
 
   useEffect(() => {
     if (showPreview) {
@@ -515,15 +514,6 @@ const EditProfileView = () => {
     );
   };
 
-  // ⭐️ 도트 캔버스 그리기 공통 함수
-  const handleDotDraw = (idx) => {
-    const memoArea = formData.idol?.memoArea || { gridSize: 15, dots: [] };
-    const currentDots = [...(memoArea.dots || Array(memoArea.gridSize * memoArea.gridSize).fill(""))];
-    
-    currentDots[idx] = isEraser ? "" : activeColor;
-    updateNested(["idol", "memoArea", "dots"], currentDots);
-  };
-
   return (
     <React.Fragment>
       <EditHistoryModal 
@@ -533,6 +523,8 @@ const EditProfileView = () => {
           updateNested={updateNested} 
           showToast={showToast} 
       />
+      
+      {/* ⭐️ 미리보기 모달에 isTabPrivate 함수를 추가로 넘겨줍니다. */}
       <EditPreviewModal 
           showPreview={showPreview} 
           setShowPreview={setShowPreview} 
@@ -543,6 +535,7 @@ const EditProfileView = () => {
           setPreviewTab={setPreviewTab} 
           renderBusinessCardUI={renderBusinessCardUI} 
           renderVisionPreview={renderVisionPreview} 
+          isTabPrivate={isTabPrivate} 
       />
 
       <div className="max-w-[1000px] mx-auto w-full p-4 md:px-10 animate-in fade-in duration-300 pb-28 md:pb-10 relative">
@@ -1272,7 +1265,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ DOT ART TAB (해상도 및 컬러 선택 기능 적용) */}
+          {/* ⭐️ DOT ART TAB (독립 - 해상도 조절 및 색상 선택 추가) */}
           {editTab === 'art' && (() => {
             const gridSize = formData.idol?.memoArea?.gridSize || 15;
             const dots = formData.idol?.memoArea?.dots || Array(gridSize * gridSize).fill("");
