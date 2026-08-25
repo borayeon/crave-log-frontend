@@ -9,7 +9,6 @@ const BusinessCard = ({ data, userName }) => {
   if(t === 'glass') tClass = "bg-zinc-50/80 backdrop-blur-md border border-zinc-200 text-zinc-800 shadow-sm";
 
   return (
-    // ⭐️ 핵심 1: 어떤 화면이든 무조건 aspect-[1.58/1] 비율 고정 유지
     <div className={`w-full max-w-md mx-auto aspect-[1.58/1] rounded-2xl p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${tClass}`}>
         {t === 'dark' && <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>}
         {t === 'gradient' && <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>}
@@ -24,7 +23,6 @@ const BusinessCard = ({ data, userName }) => {
             <p className="text-xs sm:text-sm font-bold opacity-80 mt-1">{data?.position || 'Position / Role'}</p>
         </div>
 
-        {/* ⭐️ 핵심 2: grid-cols-2 를 고정하여 무조건 2열 유지, 모바일은 폰트/간격 축소로 삐져나감 방지 */}
         <div className="grid grid-cols-2 gap-1.5 sm:gap-3 text-[9px] sm:text-xs font-medium opacity-90 relative z-10">
             <div className="flex items-center gap-1.5 truncate min-w-0"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
             <div className="flex items-center gap-1.5 truncate min-w-0"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>

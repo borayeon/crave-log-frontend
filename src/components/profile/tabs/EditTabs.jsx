@@ -3,7 +3,7 @@ import {
   Code, Briefcase, Trash2, Terminal, ExternalLink, Plus, 
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
-  CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser 
+  CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser, MapPin 
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 
