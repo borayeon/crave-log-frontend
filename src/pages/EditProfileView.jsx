@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Image as ImageIcon, Upload, AtSign, Loader2,
-  Code, Briefcase, Sparkles, GraduationCap, MapPin, Target, Heart, MessageSquare, X as CloseIcon,
+  Code, Briefcase, Sparkles, GraduationCap, MapPin, Target, Heart, MessageSquare,
   Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Rocket, UserPlus, Grid, FileText, CreditCard
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
@@ -9,7 +9,6 @@ import { useAppStore } from '../store/AppStore';
 import EditHistoryModal from '../components/profile/EditHistoryModal';
 import Mandalart from '../components/profile/tabs/Mandalart';
 
-// ⭐️ 분리한 편집용 탭 컴포넌트들을 한 번에 불러옵니다!
 import { 
   DeveloperEditTab, CareerEditTab, AddProfileEditTab, BusinessCardEditTab, 
   QnaEditTab, HobbyEditTab, QuotesEditTab, MemoEditTab, ArtEditTab 
