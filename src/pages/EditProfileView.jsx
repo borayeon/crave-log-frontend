@@ -8,7 +8,6 @@ import {
 import { useAppStore } from '../store/AppStore';
 
 import EditHistoryModal from '../components/profile/EditHistoryModal';
-import EditPreviewModal from '../components/profile/EditPreviewModal';
 
 const PALETTE = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#3f3f46'];
 
@@ -89,9 +88,6 @@ const EditProfileView = () => {
 
   const [isCheckingHandle, setIsCheckingHandle] = useState(false);
   const [isHandleAvailable, setIsHandleAvailable] = useState(true);
-
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewTab, setPreviewTab] = useState('developer');
   
   const [viewHistoryItem, setViewHistoryItem] = useState(null); 
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
@@ -118,18 +114,6 @@ const EditProfileView = () => {
       const val = formData.privacy?.[tabId];
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
-  
-  // ⭐️ 핵심 픽스: 미리보기 모달에서는 '비공개' 필터를 뺍니다! (전체 렌더링)
-  const availablePreviewTabs = (formData.idol?.tabOrder || [])
-    .map(id => TABS_CONFIG[id])
-    .filter(tab => tab); 
-
-  useEffect(() => {
-    if (showPreview) {
-      const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
-      setPreviewTab(firstTab);
-    }
-  }, [showPreview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -150,7 +134,7 @@ const EditProfileView = () => {
       
       const commit = {
           id: Date.now().toString(),
-          date: formData.idol.updatedAt || new Date().toISOString().split('T')[0],
+          date: formData.idol.updatedAt || new DatetoISOString().split('T')[0],
           snapshot: currentData
       };
 
@@ -506,14 +490,6 @@ const EditProfileView = () => {
     );
   };
 
-  const renderVisionPreview = () => {
-    return (
-        <div className="opacity-80 pointer-events-none">
-            {renderMandalartEditor()}
-        </div>
-    );
-  };
-
   return (
     <React.Fragment>
       <EditHistoryModal 
@@ -524,20 +500,6 @@ const EditProfileView = () => {
           showToast={showToast} 
       />
       
-      {/* ⭐️ 미리보기 모달에 isTabPrivate 함수를 추가로 넘겨줍니다. */}
-      <EditPreviewModal 
-          showPreview={showPreview} 
-          setShowPreview={setShowPreview} 
-          formData={formData} 
-          handleSave={handleSave} 
-          availablePreviewTabs={availablePreviewTabs} 
-          previewTab={previewTab} 
-          setPreviewTab={setPreviewTab} 
-          renderBusinessCardUI={renderBusinessCardUI} 
-          renderVisionPreview={renderVisionPreview} 
-          isTabPrivate={isTabPrivate} 
-      />
-
       <div className="max-w-[1000px] mx-auto w-full p-4 md:px-10 animate-in fade-in duration-300 pb-28 md:pb-10 relative">
         <header className="sticky top-0 z-[100] mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F8FAFC]/95 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-zinc-200/60 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)]">
           <div>
@@ -546,16 +508,13 @@ const EditProfileView = () => {
             </h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setViewMode('profile')} className="px-3 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-50 transition shadow-sm">
+            <button onClick={() => setViewMode('profile')} className="px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-50 transition shadow-sm">
               취소
-            </button>
-            <button onClick={() => setShowPreview(true)} className="px-3 py-2 bg-zinc-100 text-zinc-700 rounded-xl text-xs font-bold hover:bg-zinc-200 transition shadow-sm flex items-center gap-1.5 border border-zinc-200">
-              <Eye size={14} /> <span className="hidden sm:inline">미리보기</span>
             </button>
             <button 
               onClick={handleSave} 
               disabled={isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${(isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading) ? 'bg-violet-400 text-white/80 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
+              className={`px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${(isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading) ? 'bg-violet-400 text-white/80 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
             >
               {(isLoading || isProfileImageUploading || isHobbyImageUploading || isExtraImageUploading) ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
               {isLoading ? '저장 중...' : '저장 완료'}
@@ -1248,7 +1207,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* MEMO TAB */}
+          {/* ⭐️ MEMO TAB (독립) */}
           {editTab === 'memo' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1265,7 +1224,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ DOT ART TAB (독립 - 해상도 조절 및 색상 선택 추가) */}
+          {/* ⭐️ DOT ART TAB (해상도 조절 및 색상 선택 추가) */}
           {editTab === 'art' && (() => {
             const gridSize = formData.idol?.memoArea?.gridSize || 15;
             const dots = formData.idol?.memoArea?.dots || Array(gridSize * gridSize).fill("");
