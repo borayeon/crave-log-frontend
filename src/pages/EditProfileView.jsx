@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Save, Eye, Lock, Image as ImageIcon, Upload, AtSign, Loader2,
-  Code, Briefcase, Sparkles, GraduationCap, MapPin, Target, Heart, MessageSquare,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Rocket, UserPlus, Grid, FileText, CreditCard
+  Code, Briefcase, Sparkles, GraduationCap, MapPin, Target, Heart, MessageSquare, X as CloseIcon,
+  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Rocket, UserPlus, Grid, FileText, CreditCard,
+  Trash2 // ⭐️ 누락되었던 Trash2 아이콘 복구 완료!
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -585,7 +586,6 @@ const EditProfileView = () => {
           </button>
         </div>
 
-        {/* ⭐️ 리팩토링된 편집용 탭 컴포넌트들 렌더링 (코드 대폭 축소!) */}
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           {editTab === 'developer' && <DeveloperEditTab formData={formData} updateNested={updateNested} renderStringArrayInput={renderStringArrayInput} />}
           {editTab === 'career' && <CareerEditTab formData={formData} updateNested={updateNested} renderArrayInput={renderArrayInput} />}

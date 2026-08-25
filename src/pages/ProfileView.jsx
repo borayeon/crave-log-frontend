@@ -3,11 +3,11 @@ import {
   Code, Briefcase, Link, Edit2, Rocket, User, Sparkles, MapPin, 
   Target, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
   MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, 
-  UserPlus, History, X as CloseIcon, CreditCard, Mail, Phone, FileText, Grid, MessageSquare, Terminal
+  UserPlus, History, X as CloseIcon, CreditCard, Mail, Phone, FileText, Grid, MessageSquare, Terminal,
+  Lock // ⭐️ 누락되었던 Lock 아이콘 복구 완료!
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
-// ⭐️ 분리한 탭 컴포넌트들을 한 번에 불러옵니다!
 import BusinessCard from '../components/profile/tabs/BusinessCard';
 import Mandalart from '../components/profile/tabs/Mandalart';
 import { DeveloperTab, CareerTab, AddProfileTab, QnaTab, HobbyTab, QuotesTab, MemoTab, ArtTab } from '../components/profile/ViewTabs';
@@ -140,7 +140,6 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* ⭐️ 과거 기록 열람 모달 (동일 유지) */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -193,7 +192,47 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* ⭐️ 헤더 영역 (프로필 요약) */}
+      {showHistoryModal && (
+          <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setShowHistoryModal(false)}>
+              <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                  <div className="p-6 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
+                      <div>
+                        <h3 className="text-lg font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500"/> Profile Commit History</h3>
+                        <p className="text-[11px] text-zinc-500 font-bold mt-1">과거에 박제해 둔 나의 취향과 관심사 기록들입니다.</p>
+                      </div>
+                      <button onClick={() => setShowHistoryModal(false)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={20}/></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
+                      <div className="relative border-l-2 border-indigo-100 ml-4 space-y-8 pb-10">
+                          {(safeUser.addProfile?.history || []).map((h, i) => (
+                              <div key={h.id || i} className="relative pl-8 group cursor-pointer" onClick={() => setViewHistoryItem(h)}>
+                                  <div className="absolute w-4 h-4 bg-white border-[4px] border-indigo-500 rounded-full -left-[9px] top-1 shadow-sm group-hover:scale-125 transition-transform" />
+                                  <div className="mb-3 flex items-center gap-2">
+                                      <span className="text-[11px] font-black text-white bg-indigo-500 px-2.5 py-1 rounded-md shadow-sm tracking-widest">{h.date}</span>
+                                      <span className="text-[10px] font-bold text-indigo-400 group-hover:underline">상세 보기</span>
+                                  </div>
+                                  <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm transition-shadow hover:shadow-md">
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                          {h.snapshot?.mbti && <div><span className="block text-[9px] text-zinc-400 font-bold mb-1">MBTI</span><span className="text-xs font-black text-zinc-800">{h.snapshot.mbti}</span></div>}
+                                          {h.snapshot?.recentHobby && <div className="col-span-2 sm:col-span-1"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Recent Hobby</span><span className="text-xs font-black text-zinc-800">{h.snapshot.recentHobby}</span></div>}
+                                          {h.snapshot?.workingStyle && <div className="col-span-2 sm:col-span-1"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Working Style</span><span className="text-xs font-black text-zinc-800">{h.snapshot.workingStyle}</span></div>}
+                                          {h.snapshot?.motto && <div className="col-span-2 sm:col-span-3 pt-2 border-t border-zinc-100 mt-1"><span className="block text-[9px] text-zinc-400 font-bold mb-1">Motto</span><span className="text-xs font-black text-indigo-600 leading-relaxed">"{h.snapshot.motto}"</span></div>}
+                                      </div>
+                                  </div>
+                              </div>
+                          ))}
+                          {(!safeUser.addProfile?.history || safeUser.addProfile?.history.length === 0) && (
+                              <div className="text-center py-10 text-zinc-400 font-bold text-sm">
+                                  아직 고정된 기록이 없습니다.
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* 메인 콘텐츠 래퍼 */}
       <div className="flex-1">
           <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-6 md:mb-8 w-full">
@@ -313,7 +352,6 @@ const ProfileView = () => {
                 </div>
                 <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">CraveLog가 수집한 상세 프로필 데이터를 확인해보세요.</p>
                 
-                {/* ⭐️ 상단 탭 스크롤 영역 */}
                 <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
                   {availableTabs.map(tab => {
                       const isActive = activeTab === tab.id;
@@ -349,7 +387,6 @@ const ProfileView = () => {
               ) : (
                   <div className="mt-4 md:mt-6 pb-10">
                       
-                      {/* ⭐️ 리팩토링된 컴포넌트 렌더링 영역 (엄청나게 짧아졌습니다!) */}
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} />}
