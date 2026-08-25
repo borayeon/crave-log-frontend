@@ -59,7 +59,6 @@ const ProfileView = () => {
         }
     }
     
-    // Legacy dots data parsing
     if (parsedUser.addProfile?.memoArea?.dots) {
         parsedUser.addProfile.memoArea.dots = parsedUser.addProfile.memoArea.dots.map(d => d === true ? '#ec4899' : (d === false ? "" : d));
     }
@@ -315,33 +314,35 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* 메인 콘텐츠 래퍼 */}
       <div className="flex-1">
-          {!isProfileEmpty && safeUser.status && (
-            <div className="mb-4 flex relative z-10">
-                <div className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-800 px-4 py-2 rounded-2xl shadow-sm">
-                    <Sparkles size={14} className="text-yellow-500" />
-                    <span className="text-xs font-bold tracking-wider">{safeUser.status}</span>
-                </div>
-            </div>
-          )}
-
-          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
-            <div className="flex justify-end gap-2 mb-3 md:absolute md:top-6 md:right-6 md:mb-0 z-10 relative">
-              {!isProfileEmpty && (
-                <button onClick={handleShare} className="w-8 h-8 md:w-9 md:h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
-                    <Share2 size={14} />
-                </button>
-              )}
-              {isAdmin && !isGuestMode ? (
-                <button onClick={() => setViewMode('edit_profile')} className="w-8 h-8 md:w-9 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
-                  <Edit2 size={14} />
-                </button>
-              ) : !isAdmin ? (
-                 <button onClick={() => setLoginModalOpen(true)} className="px-3 md:px-4 h-8 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                  <Rocket size={12} /> 시작하기
-                </button>
-              ) : null}
+          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
+            {/* ⭐️ 상태 표시 및 우측 컨트롤 버튼 (모바일/데스크탑 모두 정렬) */}
+            <div className="flex justify-between items-start mb-6 md:mb-8 w-full">
+              <div className="flex-1 pr-4">
+                {!isProfileEmpty && safeUser.status && (
+                  <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl shadow-sm">
+                      <Sparkles size={14} className="text-yellow-500" />
+                      <span className="text-[11px] md:text-xs font-bold tracking-wider">{safeUser.status}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-2 shrink-0">
+                {!isProfileEmpty && (
+                  <button onClick={handleShare} className="w-8 h-8 md:w-9 md:h-9 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
+                      <Share2 size={14} />
+                  </button>
+                )}
+                {isAdmin && !isGuestMode ? (
+                  <button onClick={() => setViewMode('edit_profile')} className="w-8 h-8 md:w-9 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
+                    <Edit2 size={14} />
+                  </button>
+                ) : !isAdmin ? (
+                   <button onClick={() => setLoginModalOpen(true)} className="px-3 md:px-4 h-8 md:h-9 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <Rocket size={12} /> 시작하기
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             {isProfileEmpty && !isAdmin ? (
