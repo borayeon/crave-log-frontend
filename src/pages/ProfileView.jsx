@@ -58,6 +58,12 @@ const ProfileView = () => {
             parsedUser.qna = parsedUser.addProfile.qna;
         }
     }
+    
+    // Legacy dots data parsing
+    if (parsedUser.addProfile?.memoArea?.dots) {
+        parsedUser.addProfile.memoArea.dots = parsedUser.addProfile.memoArea.dots.map(d => d === true ? '#ec4899' : (d === false ? "" : d));
+    }
+
     return parsedUser;
   }, [user]);
 
@@ -93,7 +99,6 @@ const ProfileView = () => {
   };
 
   const privacyObj = useMemo(() => {
-      // ⭐️ 핵심: 초기값을 모두 false(비공개)로 맞춰 기획 의도(Opt-in) 충족
       let p = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
@@ -747,20 +752,28 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ⭐️ DOT ART TAB (독립 - 방문자 뷰) */}
-                      {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && (
-                          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-2">
-                              <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 w-full text-center md:text-left flex items-center justify-center md:justify-start gap-1.5"><Grid size={14}/> Dot Canvas</h4>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }} className="gap-1 sm:gap-1.5 bg-zinc-50 p-3 sm:p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-inner w-max">
-                                  {Array.from({length: 225}).map((_, idx) => {
-                                      const isFilled = safeUser.addProfile?.memoArea?.dots?.[idx];
-                                      return (
-                                          <div key={idx} className={`w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-md transition-colors ${isFilled ? 'bg-pink-500 shadow-md scale-105' : 'bg-white border border-zinc-200/80'}`} />
-                                      )
-                                  })}
+                      {/* ⭐️ DOT ART TAB (독립 - 방문자 뷰 해상도 및 컬러 지원) */}
+                      {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && (() => {
+                          const gridSize = safeUser.addProfile?.memoArea?.gridSize || 15;
+                          const dots = safeUser.addProfile?.memoArea?.dots || Array(gridSize * gridSize).fill("");
+                          
+                          return (
+                              <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-2">
+                                  <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 w-full text-center md:text-left flex items-center justify-center md:justify-start gap-1.5"><Grid size={14}/> Dot Canvas</h4>
+                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }} className="gap-1 sm:gap-1.5 bg-zinc-50 p-3 sm:p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-inner w-max">
+                                      {dots.map((dotColor, idx) => (
+                                          <div 
+                                              key={idx} 
+                                              style={{ backgroundColor: dotColor || 'transparent' }}
+                                              className={`rounded-[2px] sm:rounded-md transition-colors ${dotColor ? 'shadow-md scale-105 border-transparent' : 'bg-white border border-zinc-200/80'}
+                                                  ${gridSize === 10 ? 'w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10' : gridSize === 15 ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' : 'w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5'}
+                                              `} 
+                                          />
+                                      ))}
+                                  </div>
                               </div>
-                          </div>
-                      )}
+                          );
+                      })()}
 
                   </div>
               )}

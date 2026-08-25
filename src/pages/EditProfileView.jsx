@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
   Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown,
-  CreditCard, Mail, Phone, Globe, FileText, Grid
+  CreditCard, Mail, Phone, Globe, FileText, Grid, Eraser
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 import EditHistoryModal from '../components/profile/EditHistoryModal';
 import EditPreviewModal from '../components/profile/EditPreviewModal';
+
+const PALETTE = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#3f3f46'];
 
 const EditProfileView = () => {
   const { setViewMode, user, showToast, fetchAllData, apiFetch } = useAppStore();
@@ -17,7 +19,6 @@ const EditProfileView = () => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || safeUser.addProfile?.qna || []);
     
-    // ⭐️ 핵심: 모든 탭의 초기값을 false(비공개)로 변경
     let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
@@ -30,6 +31,16 @@ const EditProfileView = () => {
     const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
+
+    // ⭐️ 기존 불리언 배열을 컬러 문자열 배열로 마이그레이션 및 초기화
+    let memoArea = safeUser.idol?.memoArea || safeUser.memoArea || { text: "", dots: [], gridSize: 15 };
+    if (!memoArea.gridSize) memoArea.gridSize = 15;
+    const totalDots = memoArea.gridSize * memoArea.gridSize;
+    if (!memoArea.dots || memoArea.dots.length !== totalDots) {
+        memoArea.dots = Array(totalDots).fill("");
+    } else {
+        memoArea.dots = memoArea.dots.map(d => d === true ? '#ec4899' : (d === false ? "" : d));
+    }
 
     return {
       ...safeUser,
@@ -46,7 +57,7 @@ const EditProfileView = () => {
           hobby: safeUser.idol?.hobby || safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
           vision: safeUser.idol?.vision || safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
           quotes: safeUser.idol?.quotes || safeUser.quotes || [],
-          memoArea: safeUser.idol?.memoArea || safeUser.memoArea || { text: "", dots: Array(225).fill(false) },
+          memoArea: memoArea,
           updatedAt: safeUser.idol?.updatedAt || new Date().toISOString().split('T')[0],
           history: safeUser.idol?.history || [],
           extraImage: safeUser.idol?.extraImage || "", 
@@ -86,6 +97,11 @@ const EditProfileView = () => {
   const [viewHistoryItem, setViewHistoryItem] = useState(null); 
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
+
+  // ⭐️ 캔버스 도구 상태
+  const [activeColor, setActiveColor] = useState(PALETTE[8]);
+  const [isEraser, setIsEraser] = useState(false);
+  const isDrawingRef = useRef(false);
 
   const TABS_CONFIG = {
     developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
@@ -499,6 +515,15 @@ const EditProfileView = () => {
     );
   };
 
+  // ⭐️ 도트 캔버스 그리기 공통 함수
+  const handleDotDraw = (idx) => {
+    const memoArea = formData.idol?.memoArea || { gridSize: 15, dots: [] };
+    const currentDots = [...(memoArea.dots || Array(memoArea.gridSize * memoArea.gridSize).fill(""))];
+    
+    currentDots[idx] = isEraser ? "" : activeColor;
+    updateNested(["idol", "memoArea", "dots"], currentDots);
+  };
+
   return (
     <React.Fragment>
       <EditHistoryModal 
@@ -546,6 +571,7 @@ const EditProfileView = () => {
         </header>
 
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
+          {/* 상단 프로필 편집 영역 */}
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
@@ -888,7 +914,7 @@ const EditProfileView = () => {
                     {(formData.career?.strengths || []).map((str, idx) => (
                         <div key={idx} className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200/80 shadow-sm relative flex gap-3">
                             <button type="button" onClick={()=>{const arr=[...(formData.career?.strengths||[])]; arr.splice(idx,1); updateNested(["career","strengths"], arr);}} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white border border-zinc-200 p-1 rounded-lg transition-colors"><Trash2 size={12}/></button>
-                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs shrink-0">{idx+1}</div>
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs mb-3 shadow-sm">{idx+1}</div>
                             <div className="flex-1 pr-6 flex flex-col gap-2">
                                 <input value={str.title} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].title=e.target.value; updateNested(["career","strengths"], arr); }} className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black text-zinc-900 outline-none focus:border-blue-300 transition-colors" placeholder="핵심 역량" />
                                 <textarea value={str.desc} onChange={e => { const arr=[...(formData.career?.strengths||[])]; arr[idx].desc=e.target.value; updateNested(["career","strengths"], arr); }} className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-[11px] font-medium text-zinc-600 outline-none resize-none focus:border-blue-300 transition-colors" placeholder="상세 설명" rows={3} />
@@ -1006,16 +1032,20 @@ const EditProfileView = () => {
                           <h3 className="text-sm font-black text-zinc-900 mb-4 flex items-center gap-2"><Compass size={14} className="text-blue-500"/> Lifestyle & Work</h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
-                                {renderInput("좌우명", ["idol", "motto"], "예: 피할 수 없으면 즐겨라")}
+                                <span className="text-[10px] font-bold text-blue-400">Motto (좌우명)</span>
+                                <span className="text-sm font-black text-zinc-800">{formData.idol?.motto || '-'}</span>
                               </div>
                               <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
-                                {renderInput("최근 취미", ["idol", "recentHobby"], "예: 클라이밍, 베이킹")}
+                                <span className="text-[10px] font-bold text-zinc-400">Recent Hobby</span>
+                                <span className="text-xs font-black text-zinc-800">{formData.idol?.recentHobby || '-'}</span>
                               </div>
                               <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
-                                {renderInput("Working Style", ["idol", "workingStyle"], "예: 올빼미족")}
+                                <span className="text-[10px] font-bold text-zinc-400">Working Style</span>
+                                <span className="text-xs font-black text-zinc-800">{formData.idol?.workingStyle || '-'}</span>
                               </div>
                               <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
-                                {renderInput("활동 시간대", ["idol", "activeHours"], "예: 저녁 8시 ~ 새벽 2시")}
+                                <span className="text-[10px] font-bold text-zinc-400">Active Hours</span>
+                                <span className="text-xs font-black text-zinc-800">{formData.idol?.activeHours || '-'}</span>
                               </div>
                               <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">연락 가능 여부</label>
@@ -1225,7 +1255,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ MEMO TAB */}
+          {/* MEMO TAB */}
           {editTab === 'memo' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1242,45 +1272,110 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ DOT ART TAB */}
-          {editTab === 'art' && (
-            <div className="space-y-6 animate-in fade-in">
-                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col items-center">
-                    <h3 className="text-base font-black text-zinc-900 mb-2 w-full flex items-center gap-2"><Grid size={16} className="text-pink-500"/> 도트 캔버스 (Pixel Art)</h3>
-                    <p className="text-[11px] text-zinc-500 font-medium mb-8 w-full">네모 칸을 클릭하여 나만의 도트 그림이나 패턴을 만들어보세요. (15x15)</p>
-                    
-                    <div className="flex flex-col items-center justify-center">
-                        <div 
-                            style={{ display: 'grid', gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }} 
-                            className="gap-0.5 sm:gap-1 bg-zinc-50 p-2 sm:p-3 rounded-2xl border border-zinc-200 shadow-inner w-max"
-                        >
-                            {Array.from({length: 225}).map((_, idx) => {
-                                const isFilled = formData.idol?.memoArea?.dots?.[idx];
-                                return (
-                                    <button
-                                        key={idx}
-                                        type="button"
-                                        onClick={() => {
-                                            const newDots = [...(formData.idol?.memoArea?.dots || Array(225).fill(false))];
-                                            newDots[idx] = !newDots[idx];
-                                            updateNested(["idol", "memoArea", "dots"], newDots);
-                                        }}
-                                        className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-sm transition-all duration-200 ${isFilled ? 'bg-pink-500 shadow-sm scale-105' : 'bg-white border border-zinc-200 hover:bg-pink-50'}`}
-                                    />
-                                )
-                            })}
-                        </div>
-                        <button 
-                            type="button" 
-                            onClick={() => updateNested(["idol", "memoArea", "dots"], Array(225).fill(false))} 
-                            className="mt-6 px-5 py-2.5 bg-zinc-100 text-zinc-500 text-xs font-bold rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors"
-                        >
-                            캔버스 초기화
-                        </button>
-                    </div>
-                </div>
-            </div>
-          )}
+          {/* ⭐️ DOT ART TAB (해상도 및 컬러 선택 기능 적용) */}
+          {editTab === 'art' && (() => {
+            const gridSize = formData.idol?.memoArea?.gridSize || 15;
+            const dots = formData.idol?.memoArea?.dots || Array(gridSize * gridSize).fill("");
+
+            return (
+              <div className="space-y-6 animate-in fade-in">
+                  <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col items-center">
+                      <h3 className="text-base font-black text-zinc-900 mb-2 w-full flex items-center gap-2"><Grid size={16} className="text-pink-500"/> 도트 캔버스 (Pixel Art)</h3>
+                      <p className="text-[11px] text-zinc-500 font-medium mb-6 w-full">색상을 선택하고 클릭하거나 드래그하여 그림을 그려보세요.</p>
+                      
+                      {/* ⭐️ 캔버스 해상도 조절 버튼 */}
+                      <div className="w-full flex items-center justify-between bg-zinc-50 p-3 rounded-2xl border border-zinc-200 mb-6">
+                          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2 hidden sm:block">그리드 크기 (Grid Size)</span>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                              {[10, 15, 20].map(size => (
+                                  <button
+                                      key={size}
+                                      type="button"
+                                      onClick={() => {
+                                          if (size !== gridSize && window.confirm("크기를 변경하면 기존 캔버스가 초기화됩니다. 변경하시겠습니까?")) {
+                                              updateNested(["idol", "memoArea", "gridSize"], size);
+                                              updateNested(["idol", "memoArea", "dots"], Array(size * size).fill(""));
+                                          }
+                                      }}
+                                      className={`flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm ${gridSize === size ? 'bg-zinc-800 text-white' : 'bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-100'}`}
+                                  >
+                                      {size} x {size}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* ⭐️ 컬러 팔레트 & 지우개 */}
+                      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 bg-white p-3 rounded-full border border-zinc-200 shadow-sm">
+                          {PALETTE.map(color => (
+                              <button
+                                  key={color}
+                                  type="button"
+                                  onClick={() => { setActiveColor(color); setIsEraser(false); }}
+                                  style={{ backgroundColor: color }}
+                                  className={`w-6 h-6 rounded-full transition-all ring-offset-2 hover:scale-110 ${activeColor === color && !isEraser ? 'ring-2 ring-zinc-800 scale-110' : 'ring-1 ring-zinc-200/50'}`}
+                                  title={color}
+                              />
+                          ))}
+                          <div className="w-px h-6 bg-zinc-200 mx-1"></div>
+                          <button
+                              type="button"
+                              onClick={() => setIsEraser(true)}
+                              className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold rounded-full transition-colors ${isEraser ? 'bg-rose-500 text-white shadow-sm' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}
+                          >
+                              <Eraser size={14} />
+                              <span className="hidden sm:inline">지우개</span>
+                          </button>
+                      </div>
+                      
+                      {/* ⭐️ 드래그 캔버스 영역 */}
+                      <div className="flex flex-col items-center justify-center select-none overflow-x-auto w-full pb-4">
+                          <div 
+                              style={{ display: 'grid', gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }} 
+                              className="gap-0.5 sm:gap-1 bg-zinc-50 p-2 sm:p-3 rounded-2xl border border-zinc-200 shadow-inner w-max mx-auto"
+                              onMouseLeave={() => { isDrawingRef.current = false; }}
+                              onMouseUp={() => { isDrawingRef.current = false; }}
+                          >
+                              {dots.map((dotColor, idx) => (
+                                  <button
+                                      key={idx}
+                                      type="button"
+                                      onMouseDown={() => {
+                                          isDrawingRef.current = true;
+                                          const newDots = [...dots];
+                                          newDots[idx] = isEraser ? "" : activeColor;
+                                          updateNested(["idol", "memoArea", "dots"], newDots);
+                                      }}
+                                      onMouseEnter={() => {
+                                          if (isDrawingRef.current) {
+                                              const newDots = [...dots];
+                                              newDots[idx] = isEraser ? "" : activeColor;
+                                              updateNested(["idol", "memoArea", "dots"], newDots);
+                                          }
+                                      }}
+                                      style={{ backgroundColor: dotColor || 'transparent' }}
+                                      className={`transition-colors rounded-[2px] sm:rounded-sm border ${dotColor ? 'border-transparent shadow-sm' : 'border-zinc-200/60 bg-white hover:bg-zinc-100'} 
+                                          ${gridSize === 10 ? 'w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10' : gridSize === 15 ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' : 'w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5'}
+                                      `}
+                                  />
+                              ))}
+                          </div>
+                          <button 
+                              type="button" 
+                              onClick={() => {
+                                  if (window.confirm("캔버스를 모두 지우시겠습니까?")) {
+                                      updateNested(["idol", "memoArea", "dots"], Array(gridSize * gridSize).fill(""));
+                                  }
+                              }} 
+                              className="mt-6 px-5 py-2.5 bg-zinc-100 text-zinc-500 text-xs font-bold rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                          >
+                              캔버스 초기화
+                          </button>
+                      </div>
+                  </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </React.Fragment>
