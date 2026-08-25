@@ -9,6 +9,10 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
+// ⭐️ 분리한 컴포넌트 불러오기
+import BusinessCard from '../components/profile/tabs/BusinessCard';
+import Mandalart from '../components/profile/tabs/Mandalart';
+
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
@@ -135,90 +139,6 @@ const ProfileView = () => {
     }
   }, [isGuest, activeTab, privacyObj, availableTabs]);
 
-  const renderBusinessCardUI = (data, userName) => {
-    const t = data?.template || 'dark';
-    let tClass = "bg-zinc-900 text-white";
-    if(t === 'light') tClass = "bg-white text-zinc-900 border border-zinc-200 shadow-sm";
-    if(t === 'gradient') tClass = "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md";
-    if(t === 'glass') tClass = "bg-zinc-50/80 backdrop-blur-md border border-zinc-200 text-zinc-800 shadow-sm";
-
-    return (
-        <div className={`w-full max-w-md mx-auto aspect-[1.58/1] rounded-2xl p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${tClass}`}>
-            {t === 'dark' && <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>}
-            {t === 'gradient' && <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>}
-
-            <div className="flex justify-between items-start relative z-10">
-                <span className="font-black text-lg sm:text-xl tracking-tight opacity-90">{data?.company || 'Company Name'}</span>
-                <CreditCard size={20} className="opacity-50"/>
-            </div>
-
-            <div className="relative z-10 mt-4">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{userName || 'Your Name'}</h2>
-                <p className="text-xs sm:text-sm font-bold opacity-80 mt-1">{data?.position || 'Position / Role'}</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium opacity-90 mt-5 sm:mt-6 relative z-10">
-                <div className="flex items-center gap-1.5 truncate min-w-0"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
-                <div className="flex items-center gap-1.5 truncate min-w-0"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>
-                <div className="flex items-center gap-1.5 truncate min-w-0"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data?.address || 'Seoul, Republic of Korea'}</span></div>
-                <div className="flex items-center gap-1.5 truncate min-w-0"><Globe size={12} className="shrink-0"/> <span className="truncate">{data?.website || 'www.example.com'}</span></div>
-            </div>
-        </div>
-    );
-  };
-
-  const renderVisionPreview = () => {
-    const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
-    const v = {
-        core: safeUser.addProfile?.vision?.core || defaultVision.core,
-        subs: safeUser.addProfile?.vision?.subs?.length === 8 ? safeUser.addProfile.vision.subs : defaultVision.subs,
-        details: safeUser.addProfile?.vision?.details?.length === 8 ? safeUser.addProfile.vision.details : defaultVision.details
-    };
-    const blocks = [];
-    for (let i = 0; i < 9; i++) {
-        if (i === 4) {
-            blocks.push([v.subs[0], v.subs[1], v.subs[2], v.subs[3], v.core, v.subs[4], v.subs[5], v.subs[6], v.subs[7]]);
-        } else {
-            const subIdx = i < 4 ? i : i - 1;
-            const d = v.details[subIdx] || Array(8).fill("");
-            blocks.push([d[0], d[1], d[2], d[3], v.subs[subIdx], d[4], d[5], d[6], d[7]]);
-        }
-    }
-    return (
-        <div className="bg-zinc-900 p-6 md:p-10 rounded-3xl shadow-sm text-white relative overflow-hidden border border-zinc-800">
-            <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-500/10 md:bg-violet-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div className="text-center mb-8 relative z-10">
-                <h3 className="text-2xl md:text-3xl font-black mb-2 flex items-center justify-center gap-2"><Compass className="text-violet-400"/> Mandalart</h3>
-                <p className="text-violet-200/80 text-[11px] md:text-xs font-bold uppercase tracking-widest">나의 비전을 이루기 위한 81가지 세부 계획</p>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-1 md:gap-1.5 p-1.5 md:p-2 bg-white/10 backdrop-blur-md rounded-2xl w-full max-w-2xl mx-auto aspect-square relative z-10 shadow-2xl">
-                {blocks.map((block, bIdx) => (
-                    <div key={bIdx} className="grid grid-cols-3 gap-px bg-white/20 border border-white/10 rounded-xl overflow-hidden shadow-inner">
-                        {block.map((cell, cIdx) => {
-                            const isCore = bIdx === 4 && cIdx === 4;
-                            const isMainSub = bIdx === 4 && cIdx !== 4;
-                            const isCenterOfOuter = bIdx !== 4 && cIdx === 4;
-                            let bg = "bg-white/95";
-                            let text = "text-slate-800";
-                            let font = "font-bold text-[7px] sm:text-[9px] md:text-xs";
-                            if (isCore) { bg = "bg-violet-500 shadow-lg z-10"; text = "text-white"; font = "font-black text-[9px] sm:text-[11px] md:text-sm"; } 
-                            else if (isMainSub || isCenterOfOuter) { bg = "bg-violet-50"; text = "text-violet-900"; font = "font-black text-[8px] sm:text-[10px] md:text-sm"; }
-                            return (
-                                <div key={cIdx} className={`${bg} ${text} ${font} flex items-center justify-center text-center p-0.5 md:p-1 overflow-hidden break-words leading-tight transition-colors hover:brightness-95 cursor-default`}>
-                                    {cell || '-'}
-                                </div>
-                            )
-                        })}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-  };
-
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
@@ -314,9 +234,9 @@ const ProfileView = () => {
           </div>
       )}
 
+      {/* 메인 콘텐츠 래퍼 */}
       <div className="flex-1">
-          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
-            {/* ⭐️ 상태 표시 및 우측 컨트롤 버튼 (모바일/데스크탑 모두 정렬) */}
+          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-6 md:mb-8 w-full">
               <div className="flex-1 pr-4">
                 {!isProfileEmpty && safeUser.status && (
@@ -469,7 +389,6 @@ const ProfileView = () => {
               ) : (
                   <div className="mt-4 md:mt-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
                       
-                      {/* Developer Tab */}
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                             <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
@@ -529,7 +448,6 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* Career Tab */}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                             <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
@@ -578,7 +496,7 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ADD PROFILE TAB */}
+                      {/* ⭐️ ADD PROFILE TAB */}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                             
@@ -604,9 +522,6 @@ const ProfileView = () => {
                                   ) : (
                                       <ImageIcon size={32} className="text-zinc-200" />
                                   )}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                                      <span className="text-white font-black tracking-widest text-sm drop-shadow-md">IDENTITY</span>
-                                  </div>
                               </div>
 
                               <div className="space-y-2">
@@ -678,10 +593,10 @@ const ProfileView = () => {
                           </div>
                       )}
                       
-                      {/* BUSINESS CARD TAB */}
+                      {/* ⭐️ BUSINESS CARD TAB (리팩토링 적용) */}
                       {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
                           <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                              {renderBusinessCardUI(safeUser.addProfile?.businessCard, safeUser.name)}
+                              <BusinessCard data={safeUser.addProfile?.businessCard} userName={safeUser.name} />
                           </div>
                       )}
 
@@ -722,8 +637,12 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* Vision Tab */}
-                      {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && renderVisionPreview()}
+                      {/* ⭐️ VISION TAB (리팩토링 적용) */}
+                      {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && (
+                          <div className="animate-in fade-in">
+                              <Mandalart visionData={safeUser.addProfile?.vision} isEditMode={false} />
+                          </div>
+                      )}
 
                       {/* Quotes Tab */}
                       {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && (
@@ -743,7 +662,7 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ⭐️ MEMO TAB (독립 - 방문자 뷰) */}
+                      {/* MEMO TAB (방문자 뷰) */}
                       {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && (
                           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col h-full animate-in fade-in slide-in-from-bottom-2">
                               <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><FileText size={14}/> Free Memo</h4>
@@ -753,7 +672,7 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ⭐️ DOT ART TAB (독립 - 방문자 뷰 해상도 및 컬러 지원) */}
+                      {/* DOT ART TAB (방문자 뷰 해상도 및 컬러 지원) */}
                       {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && (() => {
                           const gridSize = safeUser.addProfile?.memoArea?.gridSize || 15;
                           const dots = safeUser.addProfile?.memoArea?.dots || Array(gridSize * gridSize).fill("");

@@ -8,6 +8,9 @@ import {
 import { useAppStore } from '../store/AppStore';
 
 import EditHistoryModal from '../components/profile/EditHistoryModal';
+// ⭐️ 분리한 컴포넌트 임포트!
+import BusinessCard from '../components/profile/tabs/BusinessCard';
+import Mandalart from '../components/profile/tabs/Mandalart';
 
 const PALETTE = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#3f3f46'];
 
@@ -134,7 +137,7 @@ const EditProfileView = () => {
       
       const commit = {
           id: Date.now().toString(),
-          date: formData.idol.updatedAt || new DatetoISOString().split('T')[0],
+          date: formData.idol.updatedAt || new Date().toISOString().split('T')[0],
           snapshot: currentData
       };
 
@@ -360,133 +363,6 @@ const EditProfileView = () => {
           placeholder={placeholder}
         />
       </div>
-    );
-  };
-
-  const renderBusinessCardUI = (data, userName) => {
-    const t = data?.template || 'dark';
-    let tClass = "bg-zinc-900 text-white";
-    if(t === 'light') tClass = "bg-white text-zinc-900 border border-zinc-200 shadow-sm";
-    if(t === 'gradient') tClass = "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md";
-    if(t === 'glass') tClass = "bg-zinc-50/80 backdrop-blur-md border border-zinc-200 text-zinc-800 shadow-sm";
-
-    return (
-        <div className={`w-full max-w-md mx-auto aspect-[1.58/1] rounded-2xl p-5 sm:p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${tClass}`}>
-            {t === 'dark' && <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>}
-            {t === 'gradient' && <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>}
-
-            <div className="flex justify-between items-start relative z-10">
-                <span className="font-black text-lg sm:text-xl tracking-tight opacity-90">{data?.company || 'Company Name'}</span>
-                <CreditCard size={20} className="opacity-50"/>
-            </div>
-
-            <div className="relative z-10 mt-4">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{userName || 'Your Name'}</h2>
-                <p className="text-xs sm:text-sm font-bold opacity-80 mt-1">{data?.position || 'Position / Role'}</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium opacity-90 mt-5 sm:mt-6 relative z-10">
-                <div className="flex items-center gap-1.5 truncate min-w-0"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
-                <div className="flex items-center gap-1.5 truncate min-w-0"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>
-                <div className="flex items-center gap-1.5 truncate min-w-0"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data?.address || 'Seoul, Republic of Korea'}</span></div>
-                <div className="flex items-center gap-1.5 truncate min-w-0"><Globe size={12} className="shrink-0"/> <span className="truncate">{data?.website || 'www.example.com'}</span></div>
-            </div>
-        </div>
-    );
-  };
-
-  const renderMandalartEditor = () => {
-    const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
-    const v = {
-        core: formData.idol?.vision?.core || defaultVision.core,
-        subs: formData.idol?.vision?.subs?.length === 8 ? formData.idol.vision.subs : defaultVision.subs,
-        details: formData.idol?.vision?.details?.length === 8 ? formData.idol.vision.details : defaultVision.details
-    };
-    
-    const handleCoreChange = (val) => updateNested(['idol', 'vision', 'core'], val);
-    const handleSubChange = (subIdx, val) => {
-      const newSubs = [...v.subs];
-      newSubs[subIdx] = val;
-      updateNested(['idol', 'vision', 'subs'], newSubs);
-    };
-    const handleDetailChange = (subIdx, detailIdx, val) => {
-      const newDetails = [...v.details];
-      if (!newDetails[subIdx]) newDetails[subIdx] = Array(8).fill("");
-      else newDetails[subIdx] = [...newDetails[subIdx]]; 
-      newDetails[subIdx][detailIdx] = val;
-      updateNested(['idol', 'vision', 'details'], newDetails);
-    };
-
-    const blocks = [];
-    for (let i = 0; i < 9; i++) {
-        if (i === 4) {
-            blocks.push([
-                { t: 'sub', idx: 0, val: v.subs[0] }, { t: 'sub', idx: 1, val: v.subs[1] }, { t: 'sub', idx: 2, val: v.subs[2] },
-                { t: 'sub', idx: 3, val: v.subs[3] }, { t: 'core', idx: 0, val: v.core }, { t: 'sub', idx: 4, val: v.subs[4] },
-                { t: 'sub', idx: 5, val: v.subs[5] }, { t: 'sub', idx: 6, val: v.subs[6] }, { t: 'sub', idx: 7, val: v.subs[7] }
-            ]);
-        } else {
-            const subIdx = i < 4 ? i : i - 1;
-            const d = v.details[subIdx] || Array(8).fill("");
-            blocks.push([
-                { t: 'detail', subIdx, idx: 0, val: d[0] }, { t: 'detail', subIdx, idx: 1, val: d[1] }, { t: 'detail', subIdx, idx: 2, val: d[2] },
-                { t: 'detail', subIdx, idx: 3, val: d[3] }, { t: 'sub-readonly', subIdx, idx: 0, val: v.subs[subIdx] }, { t: 'detail', subIdx, idx: 4, val: d[4] },
-                { t: 'detail', subIdx, idx: 5, val: d[5] }, { t: 'detail', subIdx, idx: 6, val: d[6] }, { t: 'detail', subIdx, idx: 7, val: d[7] }
-            ]);
-        }
-    }
-
-    return (
-        <div className="bg-zinc-900 p-6 md:p-10 rounded-3xl shadow-sm overflow-x-auto scrollbar-hide text-white relative">
-            <div className="absolute -top-20 -right-20 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="text-center mb-8 relative z-10">
-                <h3 className="text-2xl md:text-3xl font-black mb-2 flex items-center justify-center gap-2"><Compass className="text-violet-400"/> Mandalart Editor</h3>
-                <p className="text-violet-200/80 text-[11px] font-medium uppercase tracking-widest">나의 비전을 이루기 위한 81가지 세부 계획을 수정하세요.</p>
-            </div>
-            <div className="min-w-[650px] max-w-2xl mx-auto aspect-square grid grid-cols-3 gap-1 md:gap-1.5 p-1.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 relative z-10">
-                {blocks.map((block, bIdx) => (
-                    <div key={bIdx} className="grid grid-cols-3 gap-px bg-white/30 border border-white/20 rounded-xl overflow-hidden shadow-inner p-px">
-                        {block.map((cell, cIdx) => {
-                            let bg = "bg-white/95 hover:bg-white focus:bg-white";
-                            let textClass = "text-slate-800 font-bold";
-                            let placeholder = "세부 계획";
-                            let onChange = null;
-                            let disabled = false;
-
-                            if (cell.t === 'core') {
-                                bg = "bg-violet-500 hover:bg-violet-400 focus:bg-violet-400 z-10 shadow-md";
-                                textClass = "text-white font-black";
-                                placeholder = "최종 목표";
-                                onChange = (e) => handleCoreChange(e.target.value);
-                            } else if (cell.t === 'sub') {
-                                bg = "bg-violet-100 hover:bg-violet-50 focus:bg-violet-50";
-                                textClass = "text-violet-900 font-black";
-                                placeholder = "핵심 요건";
-                                onChange = (e) => handleSubChange(cell.idx, e.target.value);
-                            } else if (cell.t === 'sub-readonly') {
-                                bg = "bg-violet-200/80 cursor-not-allowed";
-                                textClass = "text-violet-900 font-black";
-                                disabled = true;
-                            } else if (cell.t === 'detail') {
-                                onChange = (e) => handleDetailChange(cell.subIdx, cell.idx, e.target.value);
-                            }
-
-                            return (
-                                <textarea
-                                    key={cIdx}
-                                    disabled={disabled}
-                                    value={cell.val || ''}
-                                    onChange={onChange}
-                                    placeholder={placeholder}
-                                    className={`w-full h-full min-h-[50px] p-1 text-center text-[9px] sm:text-[10px] md:text-xs resize-none outline-none transition-colors placeholder:text-black/20 flex items-center justify-center ${bg} ${textClass}`}
-                                    style={{ lineHeight: '1.2' }}
-                                />
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-        </div>
     );
   };
 
@@ -1044,7 +920,7 @@ const EditProfileView = () => {
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Live Card Preview</p>
-                    {renderBusinessCardUI(formData.idol?.businessCard, formData.name)}
+                    <BusinessCard data={formData.idol?.businessCard} userName={formData.name} />
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1165,7 +1041,7 @@ const EditProfileView = () => {
           {/* VISION TAB */}
           {editTab === 'vision' && (
              <div className="animate-in fade-in">
-                 {renderMandalartEditor()}
+                 <Mandalart visionData={formData.idol?.vision} isEditMode={true} updateNested={updateNested} />
              </div>
           )}
 
@@ -1224,7 +1100,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ DOT ART TAB (해상도 조절 및 색상 선택 추가) */}
+          {/* ⭐️ DOT ART TAB (독립) */}
           {editTab === 'art' && (() => {
             const gridSize = formData.idol?.memoArea?.gridSize || 15;
             const dots = formData.idol?.memoArea?.dots || Array(gridSize * gridSize).fill("");
