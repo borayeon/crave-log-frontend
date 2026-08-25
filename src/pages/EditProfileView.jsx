@@ -3,7 +3,7 @@ import {
   Save, Eye, Lock, Trash2, Image as ImageIcon, Upload, AtSign, ExternalLink, Loader2,
   Code, Briefcase, HeartHandshake, User, Sparkles, GraduationCap, MapPin, Target, ArrowRight, Heart, MessageSquare, X as CloseIcon,
   Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Plus, Rocket, UserPlus, History, Calendar, ChevronDown,
-  CreditCard, Mail, Phone, Globe, FileText, Grid // ⭐️ FileText, Grid 아이콘 추가
+  CreditCard, Mail, Phone, Globe, FileText, Grid
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -17,8 +17,8 @@ const EditProfileView = () => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || safeUser.addProfile?.qna || []);
     
-    // ⭐️ memo 탭 추가
-    let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false };
+    // ⭐️ art 탭 추가
+    let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
@@ -27,8 +27,8 @@ const EditProfileView = () => {
         }
     }
 
-    // ⭐️ 기본 순서에 memo 추가
-    const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo'];
+    // ⭐️ 기본 순서에 memo와 art 분리
+    const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
 
@@ -47,7 +47,6 @@ const EditProfileView = () => {
           hobby: safeUser.idol?.hobby || safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
           vision: safeUser.idol?.vision || safeUser.vision || { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) },
           quotes: safeUser.idol?.quotes || safeUser.quotes || [],
-          // ⭐️ 메모 및 도트 캔버스 데이터 (15x15 = 225칸)
           memoArea: safeUser.idol?.memoArea || safeUser.memoArea || { text: "", dots: Array(225).fill(false) },
           updatedAt: safeUser.idol?.updatedAt || new Date().toISOString().split('T')[0],
           history: safeUser.idol?.history || [],
@@ -89,7 +88,7 @@ const EditProfileView = () => {
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); 
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
 
-  // ⭐️ 탭 설정에 memo 추가
+  // ⭐️ 탭 설정에 memo와 art 분리
   const TABS_CONFIG = {
     developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     career: { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
@@ -99,7 +98,8 @@ const EditProfileView = () => {
     hobby: { id: 'hobby', label: 'Hobby', icon: <Palette size={16}/> },
     vision: { id: 'vision', label: 'Mandalart', icon: <Compass size={16}/> },
     quotes: { id: 'quotes', label: 'Quotes', icon: <Quote size={16}/> },
-    memo: { id: 'memo', label: 'Memo & Art', icon: <FileText size={16}/> }
+    memo: { id: 'memo', label: 'Memo', icon: <FileText size={16}/> },
+    art: { id: 'art', label: 'Dot Art', icon: <Grid size={16}/> }
   };
 
   const isTabPrivate = (tabId) => {
@@ -116,7 +116,7 @@ const EditProfileView = () => {
       const firstTab = availablePreviewTabs.length > 0 ? availablePreviewTabs[0].id : null;
       setPreviewTab(firstTab);
     }
-  }, [showPreview]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showPreview]);
 
   const updateNested = (path, value) => {
     setFormData(prev => {
@@ -548,6 +548,7 @@ const EditProfileView = () => {
         </header>
 
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
+          {/* 상단 프로필 편집 (동일하여 생략 없이 유지) */}
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             <div className="shrink-0 flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
@@ -741,7 +742,7 @@ const EditProfileView = () => {
 
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           
-          {/* DEVELOPER TAB */}
+          {/* DEVELOPER, CAREER 등 기타 탭 생략 없이 유지... */}
           {editTab === 'developer' && (
             <div className="space-y-4">
                 <div className="bg-[#0D1117] text-zinc-300 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-800 relative overflow-hidden">
@@ -845,7 +846,6 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* CAREER TAB */}
           {editTab === 'career' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60 flex flex-col md:flex-row gap-6 md:gap-8">
@@ -906,7 +906,6 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ADD PROFILE TAB */}
           {editTab === 'addProfile' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="flex flex-col gap-2">
@@ -980,9 +979,7 @@ const EditProfileView = () => {
                               {formData.idol?.extraImage ? (
                                   <img src={formData.idol?.extraImage} alt="Extra Profile" className="w-full h-full object-cover" />
                               ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-100">
-                                      <ImageIcon size={32} />
-                                  </div>
+                                  <ImageIcon size={32} className="text-zinc-200" />
                               )}
                               <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]">
                                   <Upload size={20} className="mb-2" />
@@ -1061,7 +1058,6 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* BUSINESS CARD TAB */}
           {editTab === 'businessCard' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-zinc-50 rounded-3xl p-6 md:p-10 border border-zinc-200/80 shadow-inner flex flex-col items-center justify-center">
@@ -1104,7 +1100,6 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* Q&A TAB */}
           {editTab === 'qna' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><MessageSquare size={16} className="text-violet-500"/> 100문 100답 작성</h3>
@@ -1134,7 +1129,6 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* HOBBY TAB */}
           {editTab === 'hobby' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-zinc-100">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Target size={16} className="text-amber-500"/> 취미 소개 섹션</h3>
@@ -1184,14 +1178,12 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* VISION TAB */}
           {editTab === 'vision' && (
              <div className="animate-in fade-in">
                  {renderMandalartEditor()}
              </div>
           )}
 
-          {/* QUOTES TAB */}
           {editTab === 'quotes' && (
             <div className="animate-in fade-in p-6 md:p-8 bg-white rounded-3xl border border-zinc-100 shadow-sm">
                 <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2"><Quote size={16} className="text-slate-400"/> 좋아하는 명언 모음</h3>
@@ -1229,7 +1221,7 @@ const EditProfileView = () => {
             </div>
           )}
 
-          {/* ⭐️ MEMO & DOT ART TAB */}
+          {/* ⭐️ MEMO TAB (독립) */}
           {editTab === 'memo' && (
             <div className="space-y-6 animate-in fade-in">
                 <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
@@ -1238,15 +1230,20 @@ const EditProfileView = () => {
                     <textarea 
                         value={formData.idol?.memoArea?.text || ''} 
                         onChange={e => updateNested(["idol", "memoArea", "text"], e.target.value)} 
-                        rows={6} 
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-800 outline-none focus:bg-white focus:border-amber-400 resize-none transition-colors shadow-sm" 
+                        rows={8} 
+                        className="w-full bg-amber-50/30 border border-amber-100/50 rounded-xl px-5 py-4 text-sm font-medium text-zinc-800 outline-none focus:bg-white focus:border-amber-400 resize-none transition-colors shadow-sm" 
                         placeholder="자유롭게 글을 작성해보세요..." 
                     />
                 </div>
+            </div>
+          )}
 
-                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
-                    <h3 className="text-base font-black text-zinc-900 mb-2 flex items-center gap-2"><Grid size={16} className="text-indigo-500"/> 도트 캔버스 (Pixel Art)</h3>
-                    <p className="text-[11px] text-zinc-500 font-medium mb-5">네모 칸을 클릭하여 나만의 도트 그림이나 패턴을 만들어보세요. (15x15)</p>
+          {/* ⭐️ DOT ART TAB (독립) */}
+          {editTab === 'art' && (
+            <div className="space-y-6 animate-in fade-in">
+                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col items-center">
+                    <h3 className="text-base font-black text-zinc-900 mb-2 w-full flex items-center gap-2"><Grid size={16} className="text-pink-500"/> 도트 캔버스 (Pixel Art)</h3>
+                    <p className="text-[11px] text-zinc-500 font-medium mb-8 w-full">네모 칸을 클릭하여 나만의 도트 그림이나 패턴을 만들어보세요. (15x15)</p>
                     
                     <div className="flex flex-col items-center justify-center">
                         <div 
@@ -1264,7 +1261,7 @@ const EditProfileView = () => {
                                             newDots[idx] = !newDots[idx];
                                             updateNested(["idol", "memoArea", "dots"], newDots);
                                         }}
-                                        className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-sm transition-all duration-200 ${isFilled ? 'bg-indigo-500 shadow-sm scale-105' : 'bg-white border border-zinc-200 hover:bg-indigo-50'}`}
+                                        className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-sm transition-all duration-200 ${isFilled ? 'bg-pink-500 shadow-sm scale-105' : 'bg-white border border-zinc-200 hover:bg-pink-50'}`}
                                     />
                                 )
                             })}
@@ -1272,7 +1269,7 @@ const EditProfileView = () => {
                         <button 
                             type="button" 
                             onClick={() => updateNested(["idol", "memoArea", "dots"], Array(225).fill(false))} 
-                            className="mt-5 px-4 py-2 bg-zinc-100 text-zinc-500 text-xs font-bold rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                            className="mt-6 px-5 py-2.5 bg-zinc-100 text-zinc-500 text-xs font-bold rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors"
                         >
                             캔버스 초기화
                         </button>

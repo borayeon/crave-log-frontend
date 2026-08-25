@@ -5,7 +5,7 @@ import {
   ArrowRight, Heart, MessageSquare, Lock, 
   ExternalLink, Terminal, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
   MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, UserPlus, History, Image as ImageIcon, X as CloseIcon,
-  CreditCard, Mail, Phone, FileText, Grid // ⭐️ FileText, Grid 아이콘 추가
+  CreditCard, Mail, Phone, FileText, Grid
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -79,7 +79,7 @@ const ProfileView = () => {
       }
   };
 
-  // ⭐️ memo 탭 추가
+  // ⭐️ memo와 art 분리
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
@@ -89,11 +89,12 @@ const ProfileView = () => {
     hobby: { id: 'hobby', icon: <Palette strokeWidth={2}/>, label: 'Hobby', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
     vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
     quotes: { id: 'quotes', icon: <Quote strokeWidth={2}/>, label: 'Quotes', color: 'bg-slate-100/80 text-slate-500 border-slate-200' },
-    memo: { id: 'memo', icon: <FileText strokeWidth={2}/>, label: 'Memo', color: 'bg-amber-50/80 text-amber-500 border-amber-100' }
+    memo: { id: 'memo', icon: <FileText strokeWidth={2}/>, label: 'Memo', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
+    art: { id: 'art', icon: <Grid strokeWidth={2}/>, label: 'Dot Art', color: 'bg-pink-50/80 text-pink-500 border-pink-100' }
   };
 
   const privacyObj = useMemo(() => {
-      let p = { developer: true, career: true, addProfile: true, businessCard: true, qna: true, hobby: true, vision: true, quotes: true, memo: true };
+      let p = { developer: true, career: true, addProfile: true, businessCard: true, qna: true, hobby: true, vision: true, quotes: true, memo: true, art: true };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
@@ -109,7 +110,7 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo'];
+  const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
   const savedOrder = safeUser.addProfile?.tabOrder || [];
   const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
 
@@ -736,25 +737,27 @@ const ProfileView = () => {
                           </div>
                       )}
 
-                      {/* ⭐️ MEMO TAB (방문자 뷰) */}
+                      {/* ⭐️ MEMO TAB (독립 - 방문자 뷰) */}
                       {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && (
-                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-5">
-                              <div className="lg:col-span-2 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col h-full">
-                                  <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><FileText size={14}/> Free Memo</h4>
-                                  <div className="flex-1 text-sm md:text-base text-zinc-800 leading-relaxed font-medium whitespace-pre-line bg-amber-50/30 p-5 rounded-2xl border border-amber-100/50">
-                                      {safeUser.addProfile?.memoArea?.text || '입력된 메모가 없습니다.'}
-                                  </div>
+                          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col h-full animate-in fade-in slide-in-from-bottom-2">
+                              <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><FileText size={14}/> Free Memo</h4>
+                              <div className="flex-1 text-sm md:text-base text-zinc-800 leading-relaxed font-medium whitespace-pre-line bg-amber-50/30 p-5 md:p-8 rounded-2xl border border-amber-100/50 min-h-[200px]">
+                                  {safeUser.addProfile?.memoArea?.text || '입력된 메모가 없습니다.'}
                               </div>
-                              <div className="lg:col-span-3 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col items-center justify-center">
-                                  <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-1.5"><Grid size={14}/> Dot Canvas</h4>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }} className="gap-1 sm:gap-1.5 bg-zinc-50 p-3 sm:p-4 rounded-3xl border border-zinc-200 shadow-inner w-max">
-                                      {Array.from({length: 225}).map((_, idx) => {
-                                          const isFilled = safeUser.addProfile?.memoArea?.dots?.[idx];
-                                          return (
-                                              <div key={idx} className={`w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-md transition-colors ${isFilled ? 'bg-indigo-500 shadow-md' : 'bg-white border border-zinc-200'}`} />
-                                          )
-                                      })}
-                                  </div>
+                          </div>
+                      )}
+
+                      {/* ⭐️ DOT ART TAB (독립 - 방문자 뷰) */}
+                      {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && (
+                          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-2">
+                              <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 w-full text-center md:text-left flex items-center justify-center md:justify-start gap-1.5"><Grid size={14}/> Dot Canvas</h4>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }} className="gap-1 sm:gap-1.5 bg-zinc-50 p-3 sm:p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-inner w-max">
+                                  {Array.from({length: 225}).map((_, idx) => {
+                                      const isFilled = safeUser.addProfile?.memoArea?.dots?.[idx];
+                                      return (
+                                          <div key={idx} className={`w-3.5 h-3.5 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-[2px] sm:rounded-md transition-colors ${isFilled ? 'bg-pink-500 shadow-md scale-105' : 'bg-white border border-zinc-200/80'}`} />
+                                      )
+                                  })}
                               </div>
                           </div>
                       )}
