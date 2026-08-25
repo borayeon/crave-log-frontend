@@ -232,9 +232,9 @@ const ProfileView = () => {
           </div>
       )}
 
+      {/* 메인 콘텐츠 래퍼 */}
       <div className="flex-1">
-          <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm relative z-20 border border-zinc-200/80">
-            {/* ⭐️ 수정됨: 버튼 공간 축소 및 여백 다이어트 */}
+          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-20 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
               <div className="flex-1 pr-4">
                 {!isProfileEmpty && safeUser.status && (
@@ -272,18 +272,19 @@ const ProfileView = () => {
             ) : (
               <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-1 md:mt-0">
                 <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
-                  <div className="flex flex-row gap-4 sm:gap-5 items-center md:items-start">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
+                  <div className="flex flex-row gap-5 md:gap-8 items-center md:items-start">
+                    {/* ⭐️ 프로필 사진 대폭 확대 (w-24/h-24 -> md:w-40/h-40) */}
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
                       {safeUser.profileImageUrl ? (
                           <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
-                          <div className="w-full h-full flex items-center justify-center text-4xl font-black text-zinc-300">
+                          <div className="w-full h-full flex items-center justify-center text-4xl md:text-5xl font-black text-zinc-300">
                             {safeUser.name ? safeUser.name.charAt(0) : '?'}
                           </div>
                       )}
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
+                    <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-2">
                       <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
                       <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                       
@@ -333,7 +334,7 @@ const ProfileView = () => {
 
                 <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
-                <div className="flex-1 flex flex-col justify-center md:pl-6 mt-2 md:mt-0">
+                <div className="flex-1 flex flex-col justify-center md:pl-6 mt-3 md:mt-0">
                   <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
                   <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
                     "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
@@ -386,30 +387,24 @@ const ProfileView = () => {
                   </div>
               ) : (
                   <div className="mt-4 md:mt-6 pb-10">
-                      
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={setShowHistoryModal} />}
-                      
                       {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
                           <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                               <BusinessCard data={safeUser.addProfile?.businessCard} userName={safeUser.name} />
                           </div>
                       )}
-                      
                       {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && <QnaTab data={safeUser.addProfile?.qna} />}
                       {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && <HobbyTab data={safeUser.addProfile?.hobby} />}
-                      
                       {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && (
                           <div className="animate-in fade-in">
                               <Mandalart visionData={safeUser.addProfile?.vision} isEditMode={false} />
                           </div>
                       )}
-                      
                       {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && <QuotesTab data={safeUser.addProfile?.quotes} />}
                       {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && <MemoTab data={safeUser.addProfile?.memoArea} />}
                       {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && <ArtTab data={safeUser.addProfile?.memoArea} />}
-
                   </div>
               )}
             </>

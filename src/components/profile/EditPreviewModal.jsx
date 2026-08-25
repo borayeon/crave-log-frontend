@@ -31,49 +31,50 @@ const EditPreviewModal = ({
             </div>
 
             <div className="flex-1 overflow-y-auto pb-10">
-              <div className="mx-4 md:mx-10 mt-6 bg-white rounded-3xl p-6 md:p-8 shadow-sm relative z-20 border border-zinc-100">
-                <div className="flex justify-between items-start mb-6 md:mb-8 w-full">
+              <div className="mx-4 md:mx-10 mt-6 bg-white rounded-3xl p-5 md:p-8 shadow-sm relative z-20 border border-zinc-100">
+                <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
                   <div className="flex-1 pr-4">
                     {formData.status && (
-                      <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl shadow-sm">
-                          <Sparkles size={14} className="text-yellow-500" />
-                          <span className="text-[11px] md:text-xs font-bold tracking-wider">{formData.status}</span>
+                      <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
+                          <Sparkles size={13} className="text-yellow-500" />
+                          <span className="text-[10px] md:text-[11px] font-bold tracking-wider">{formData.status}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 md:gap-10 items-stretch">
+                <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch">
                   <div className="flex-1 flex flex-col min-w-0 pr-4 md:pr-0">
-                    <div className="flex flex-row md:flex-row gap-4 items-center md:items-start">
-                      <div className="w-20 h-20 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-200 shadow-inner">
+                    <div className="flex flex-row gap-5 md:gap-8 items-center md:items-start">
+                      {/* ⭐️ 미리보기 화면도 프로필 사진 확대 적용 (w-24/h-24 -> md:w-40/h-40) */}
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
                         {formData.profileImageUrl ? (
                             <img src={formData.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-300">
+                            <div className="w-full h-full flex items-center justify-center text-4xl md:text-5xl font-black text-zinc-300">
                               {formData.name ? formData.name.charAt(0) : '?'}
                             </div>
                         )}
                       </div>
                       
-                      <div className="flex-1 flex flex-col justify-center min-w-0">
-                        <h2 className="text-xl md:text-3xl font-black text-zinc-900 mb-0.5 truncate">{formData.name || '이름 없음'}</h2>
-                        <p className="text-[10px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-md inline-block w-max mb-2 shadow-sm">@{formData.handle || 'handle'}</p>
+                      <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-2">
+                        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{formData.name || '이름 없음'}</h2>
+                        <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{formData.handle || 'handle'}</p>
                         
-                        <div className="space-y-1 md:space-y-2">
-                          <div className="flex items-center gap-1.5 text-[11px] md:text-sm font-medium text-zinc-600 truncate"><Briefcase size={12} className="text-zinc-400 shrink-0"/> {formData.role || '소속 미입력'}</div>
-                          <div className="flex items-center gap-1.5 text-[11px] md:text-sm font-medium text-zinc-600 truncate"><GraduationCap size={12} className="text-zinc-400 shrink-0"/> {formData.major || '전공 미입력'}</div>
-                          <div className="flex items-center gap-1.5 text-[11px] md:text-sm font-medium text-zinc-600 truncate"><MapPin size={12} className="text-zinc-400 shrink-0"/> {formData.location || '지역 미입력'}</div>
+                        <div className="space-y-1 md:space-y-1.5">
+                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><Briefcase size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.role || '소속 미입력'}</div>
+                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><GraduationCap size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.major || '전공 미입력'}</div>
+                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><MapPin size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.location || '지역 미입력'}</div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="hidden md:block w-px bg-zinc-100 my-2"></div>
+                  <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
 
-                  <div className="flex-1 flex flex-col justify-center md:pl-2 mt-2 md:mt-0">
-                    <Quote size={16} className="text-violet-300 mb-1.5 md:mb-3"/>
-                    <p className="text-xs md:text-base text-zinc-800 font-bold leading-relaxed mb-3 md:mb-6">
+                  <div className="flex-1 flex flex-col justify-center md:pl-6 mt-3 md:mt-0">
+                    <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
+                    <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
                       "{formData.bio || '한 줄 소개'}"
                     </p>
                     <div className="flex flex-wrap gap-1.5 md:gap-2">
@@ -244,13 +245,6 @@ const EditPreviewModal = ({
 
                   </div>
                 </React.Fragment>
-              )}
-
-              {availablePreviewTabs.length === 0 && (
-                 <div className="mx-4 md:mx-10 py-16 flex flex-col items-center justify-center bg-white rounded-3xl border border-zinc-100 shadow-sm mt-6">
-                     <div className="w-12 h-12 bg-zinc-50 flex items-center justify-center rounded-full mb-3 shadow-inner"><Lock size={20} className="text-zinc-300" /></div>
-                     <h3 className="text-sm font-black text-zinc-800">모든 탭 비공개</h3>
-                 </div>
               )}
             </div>
           </div>

@@ -3,7 +3,7 @@ import {
   Save, Eye, Lock, Image as ImageIcon, Upload, AtSign, Loader2,
   Code, Briefcase, Sparkles, GraduationCap, MapPin, Target, Heart, MessageSquare, X as CloseIcon,
   Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Rocket, UserPlus, Grid, FileText, CreditCard,
-  Trash2 // ⭐️ 누락되었던 Trash2 아이콘 복구 완료!
+  Trash2
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -397,7 +397,8 @@ const EditProfileView = () => {
           {/* 상단 프로필 편집 영역 */}
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             <div className="shrink-0 flex flex-col items-center">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group">
+                {/* ⭐️ 편집 화면 프로필 사진 확대 적용 (w-28/h-28 -> md:w-40/h-40) */}
+                <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-[1.5rem] md:rounded-[2rem] bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group flex items-center justify-center">
                     {isProfileImageUploading && (
                         <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
                             <Loader2 size={24} className="text-violet-500 animate-spin mb-1" />
@@ -406,7 +407,7 @@ const EditProfileView = () => {
                     {formData.profileImageUrl ? (
                         <img src={formData.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl font-black text-zinc-300">
+                        <div className="w-full h-full flex items-center justify-center text-5xl font-black text-zinc-300">
                             {formData.name ? formData.name.charAt(0) : '?'}
                         </div>
                     )}
