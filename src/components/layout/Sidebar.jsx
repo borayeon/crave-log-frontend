@@ -5,7 +5,6 @@ import { useAppStore } from '../../store/AppStore';
 const Sidebar = () => {
   const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
-  // ⭐️ 아이콘 크기를 24로 더 키웠습니다.
   const bannerCards = [
     {
       icon: <Sparkles size={24} className="text-indigo-500" />,
@@ -114,7 +113,7 @@ const Sidebar = () => {
                 })}
             </div>
             
-            {/* ⭐️ 확장된 슬라이드 배너: flex-1을 주어 남는 공간을 모두 채웁니다! */}
+            {/* ⭐️ 수정됨: 배너 슬라이드 영역 */}
             {!isAdmin && (
               <div className={`mt-4 px-1 transition-all duration-500 overflow-hidden relative flex flex-col group/banner ${isSidebarOpen ? 'opacity-100 flex-1 min-h-[240px] max-h-[400px] mb-2' : 'opacity-0 h-0 mb-0'}`}>
                 
@@ -132,7 +131,6 @@ const Sidebar = () => {
                   <ChevronRight size={16} />
                 </button>
 
-                {/* ⭐️ 카드가 빈 공간 전체를 채우도록 flex-1 적용 */}
                 <div className="relative w-full h-full flex-1">
                   {bannerCards.map((card, idx) => (
                     <div 
@@ -142,20 +140,21 @@ const Sidebar = () => {
                       {/* 데코레이션 블러 이펙트 */}
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl pointer-events-none"></div>
                       
-                      {/* ⭐️ 아이콘을 카드 상단에 큼직하게 배치 */}
-                      <div className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-md shadow-sm border border-white/50 flex items-center justify-center mb-auto relative z-10">
-                        {card.icon}
+                      {/* ⭐️ 수정됨: 아이콘과 텍스트를 하나의 그룹(flex-col)으로 묶어서 하단(mt-auto)에 배치 */}
+                      <div className="relative z-10 flex flex-col gap-3 mt-auto">
+                        <div className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-md shadow-sm border border-white/50 flex items-center justify-center">
+                          {card.icon}
+                        </div>
+                        <div>
+                          <h3 className="text-[15px] font-black text-zinc-900 mb-1.5 tracking-tight">
+                            {card.title}
+                          </h3>
+                          <p className="text-xs font-bold text-zinc-600 leading-relaxed break-keep pr-2">
+                            {card.desc}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* ⭐️ 텍스트를 카드 하단에 안정감 있게 배치 */}
-                      <div className="relative z-10 mt-auto pt-4">
-                        <h3 className="text-[15px] font-black text-zinc-900 mb-2 tracking-tight">
-                          {card.title}
-                        </h3>
-                        <p className="text-xs font-bold text-zinc-600 leading-relaxed break-keep pr-2">
-                          {card.desc}
-                        </p>
-                      </div>
                     </div>
                   ))}
                 </div>
