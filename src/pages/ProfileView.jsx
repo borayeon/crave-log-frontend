@@ -3,8 +3,7 @@ import {
   Code, Briefcase, Link, Edit2, Rocket, User, Sparkles, MapPin, 
   Target, Quote, Palette, Compass, Share2, ChevronRight, GraduationCap,
   MessageCircle, Globe, Tv, PlayCircle, Camera, Hash, Users, Loader2, 
-  UserPlus, History, X as CloseIcon, CreditCard, Mail, Phone, FileText, Grid, MessageSquare, Terminal,
-  Lock // ⭐️ 누락되었던 Lock 아이콘 복구 완료!
+  UserPlus, History, X as CloseIcon, CreditCard, Mail, Phone, FileText, Grid, MessageSquare, Terminal, Lock
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -15,6 +14,7 @@ import { DeveloperTab, CareerTab, AddProfileTab, QnaTab, HobbyTab, QuotesTab, Me
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
   const [activeTab, setActiveTab] = useState('developer'); 
+  const [showHistoryModal, setShowHistoryModal] = useState(false); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
 
   if (isLoading) {
@@ -389,7 +389,9 @@ const ProfileView = () => {
                       
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
-                      {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} />}
+                      
+                      {/* ⭐️ AddProfileTab에 스위치(setShowHistoryModal) 넘겨주기 추가! */}
+                      {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={setShowHistoryModal} />}
                       
                       {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
                           <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">

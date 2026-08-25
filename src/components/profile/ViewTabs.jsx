@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Code, Briefcase, Terminal, ExternalLink, Target, MapPin, 
-  UserPlus, Compass, Heart, MessageSquare, Quote, FileText, Grid 
+  UserPlus, Compass, Heart, MessageSquare, Quote, FileText, Grid, History // ⭐️ History 추가
 } from 'lucide-react';
 
 export const DeveloperTab = ({ data }) => (
@@ -107,8 +107,25 @@ export const CareerTab = ({ data }) => (
   </div>
 );
 
-export const AddProfileTab = ({ data }) => (
+// ⭐️ 핵심: setShowHistoryModal props로 받기
+export const AddProfileTab = ({ data, setShowHistoryModal }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 animate-in fade-in slide-in-from-bottom-2">
+    
+    {/* ⭐️ 누락되었던 타이틀 및 과거 기록 버튼 복구 */}
+    <div className="md:col-span-3 flex justify-between items-end mb-1">
+        <div>
+            <h3 className="text-sm md:text-base font-black text-zinc-800 tracking-tight flex items-center gap-2"><UserPlus size={16} className="text-rose-500"/> 나의 상세 프로필</h3>
+            <p className="text-[10px] md:text-xs text-zinc-500 font-medium mt-1">
+                마지막 업데이트: {data?.updatedAt || '-'}
+            </p>
+        </div>
+        {(data?.history?.length > 0) && (
+            <button onClick={() => setShowHistoryModal && setShowHistoryModal(true)} className="px-3 py-1.5 md:px-4 md:py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] md:text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 shadow-sm">
+                <History size={14}/> 과거 기록 보기
+            </button>
+        )}
+    </div>
+
     <div className="md:col-span-1 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full flex flex-col">
       <div className="w-40 h-56 sm:w-48 sm:h-64 mx-auto rounded-3xl bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden mb-5 relative group flex items-center justify-center">
           {data?.extraImage ? (
