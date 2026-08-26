@@ -3,8 +3,8 @@ import {
   Code, Briefcase, Trash2, Terminal, ExternalLink, Plus, 
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
-  CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser, MapPin,
-  Rocket
+  CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser,
+  Layers, Check // ⭐️ Layers, Check 아이콘 추가
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 
@@ -606,3 +606,62 @@ export const ArtEditTab = ({ formData, updateNested }) => {
     </div>
   );
 };
+
+// ⭐️ 추가됨: 페르소나 설정용 컴포넌트 
+export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_CONFIG }) => {
+    const userPersonas = formData.idol?.personas || DEFAULT_PERSONAS;
+ 
+    return (
+      <div className="space-y-6 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+             <h3 className="text-base font-black text-zinc-900 mb-2 flex items-center gap-2"><Layers size={16} className="text-indigo-500"/> 멀티 페르소나 편집</h3>
+             <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-6">각각의 페르소나 모드에서 방문자에게 보여줄 탭을 자유롭게 켜고 끄세요. (공유 링크 및 다이어리 인덱스 스티커에 반영됩니다)</p>
+ 
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.keys(DEFAULT_PERSONAS).map(pKey => {
+                    if(pKey === 'all') return null; // 'all'은 편집 제외 (무조건 전체 표시)
+                    const pData = userPersonas[pKey] || DEFAULT_PERSONAS[pKey];
+                    return (
+                        <div key={pKey} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-5 shadow-sm transition-colors focus-within:bg-white focus-within:border-indigo-300">
+                            <input 
+                                value={pData.name} 
+                                onChange={e => updateNested(["idol", "personas", pKey, "name"], e.target.value)} 
+                                className="w-full bg-transparent text-sm font-black text-zinc-800 mb-1.5 outline-none border-b border-transparent focus:border-indigo-300"
+                                placeholder="페르소나 이름"
+                            />
+                            <input 
+                                value={pData.desc} 
+                                onChange={e => updateNested(["idol", "personas", pKey, "desc"], e.target.value)} 
+                                className="w-full bg-transparent text-[11px] font-bold text-zinc-500 mb-4 outline-none border-b border-transparent focus:border-indigo-300"
+                                placeholder="간단한 설명"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                               {Object.keys(TABS_CONFIG).map(tabKey => {
+                                   if (tabKey === 'persona') return null; 
+                                   const isChecked = pData.tabs.includes(tabKey);
+                                   return (
+                                       <button 
+                                            key={tabKey} 
+                                            type="button"
+                                            onClick={() => {
+                                                let newTabs = [...pData.tabs];
+                                                if (isChecked) newTabs = newTabs.filter(t => t !== tabKey);
+                                                else newTabs.push(tabKey);
+                                                updateNested(["idol", "personas", pKey, "tabs"], newTabs);
+                                            }}
+                                            className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all shadow-sm ${isChecked ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-white text-zinc-400 border-zinc-200 hover:bg-zinc-100'}`}
+                                        >
+                                          {isChecked && <Check size={10} className="text-indigo-500"/>}
+                                          {TABS_CONFIG[tabKey].label}
+                                       </button>
+                                   )
+                               })}
+                            </div>
+                        </div>
+                    )
+                })}
+             </div>
+          </div>
+      </div>
+    )
+ }
