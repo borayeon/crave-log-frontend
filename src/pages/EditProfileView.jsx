@@ -1,12 +1,19 @@
+// 1. React Hooks
 import React, { useState, useEffect } from 'react';
+
+// 2. Lucide Icons (미사용 제거 및 그룹화)
 import { 
-  Save, Eye, Lock, Image as ImageIcon, Upload, AtSign, Loader2,
-  Code, Briefcase, Sparkles, GraduationCap, MapPin, Target, Heart, MessageSquare, X as CloseIcon,
-  Terminal, Quote, Palette, Compass, Link as LinkIcon, Edit2, Rocket, UserPlus, Grid, FileText, CreditCard,
-  Trash2
+  // UI & 폼 아이콘
+  Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
+  GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
+  // 탭 메뉴 아이콘
+  Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid
 } from 'lucide-react';
+
+// 3. Store
 import { useAppStore } from '../store/AppStore';
 
+// 4. 로컬 컴포넌트
 import EditHistoryModal from '../components/profile/EditHistoryModal';
 import Mandalart from '../components/profile/tabs/Mandalart';
 
@@ -394,10 +401,8 @@ const EditProfileView = () => {
         </header>
 
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 mb-6 mt-2">
-          {/* 상단 프로필 편집 영역 */}
           <div className="flex flex-col md:flex-row gap-6 md:gap-10">
             <div className="shrink-0 flex flex-col items-center">
-                {/* ⭐️ 편집 화면 프로필 사진 확대 적용 (w-28/h-28 -> md:w-40/h-40) */}
                 <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-[1.5rem] md:rounded-[2rem] bg-zinc-50 border border-zinc-200 shadow-inner overflow-hidden relative group flex items-center justify-center">
                     {isProfileImageUploading && (
                         <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
