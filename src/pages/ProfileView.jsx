@@ -15,12 +15,12 @@ import {
   QuotesTab, MemoTab, ArtTab 
 } from '../components/profile/ViewTabs';
 
-// ⭐️ ProfileView 상단의 DEFAULT_PERSONAS 
+// ⭐️ isVisible: true 디폴트 속성 적용
 const DEFAULT_PERSONAS = {
-  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500' },
-  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500' },
-  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500' },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500' }
+  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
+  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
+  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true },
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true }
 };
 
 const ProfileView = () => {
@@ -54,18 +54,23 @@ const ProfileView = () => {
     return parsedUser;
   }, [user]);
 
-  // ⭐️ 유저가 커스텀한 페르소나 데이터 로드! 없으면 기본값 사용
   const CUSTOM_PERSONAS = useMemo(() => {
     const p = safeUser.addProfile?.personas || DEFAULT_PERSONAS;
     return {
-      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800' },
+      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true },
       ...p
     };
   }, [safeUser.addProfile?.personas]);
 
+  // ⭐️ 비공개 처리된 페르소나 필터링 로직 (스티커 및 공유 모달에서 숨김)
+  const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
+
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('p');
-    if (p && CUSTOM_PERSONAS[p]) setCurrentPersona(p);
+    // URL로 숨겨진 페르소나에 접근하려고 하면 'all'로 튕겨냅니다.
+    if (p && CUSTOM_PERSONAS[p] && CUSTOM_PERSONAS[p].isVisible !== false) {
+        setCurrentPersona(p);
+    }
   }, [CUSTOM_PERSONAS]);
 
   if (isLoading) {
@@ -152,7 +157,6 @@ const ProfileView = () => {
         if (!tab) return false;
         if (isGuest && isTabPrivate(tab.id)) return false; 
         
-        // 커스텀 페르소나 설정에 해당 탭이 포함되지 않으면 숨김
         if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) {
             return false;
         }
@@ -168,7 +172,7 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* 공유 모달 */}
+      {/* ⭐️ 모달 렌더링 시 필터링된 visiblePersonas 목록만 보여줍니다 */}
       {showShareModal && (
         <div className="fixed inset-0 z-[400] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -189,9 +193,9 @@ const ProfileView = () => {
                         <Copy size={16} className="text-zinc-300 group-hover:text-zinc-600 transition-colors" />
                     </button>
 
-                    <div className="h-px bg-zinc-100 my-2 mx-2"></div>
+                    {visiblePersonas.length > 1 && <div className="h-px bg-zinc-100 my-2 mx-2"></div>}
 
-                    {Object.values(CUSTOM_PERSONAS).map(persona => {
+                    {visiblePersonas.map(persona => {
                         if (persona.id === 'all') return null;
                         return (
                           <button key={persona.id} onClick={() => handleCopyLink(persona.id)} className="w-full flex items-center justify-between p-4 rounded-2xl border border-zinc-100 hover:border-violet-300 hover:bg-violet-50/50 transition-all text-left group">
@@ -208,7 +212,6 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 과거 기록 열람 모달 (유지) */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -230,10 +233,10 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* 인덱스 스티커 탭 영역 */}
+      {/* ⭐️ 인덱스 스티커 렌더링 시 필터링된 visiblePersonas 목록만 보여줍니다 */}
       {!isProfileEmpty && (
         <div className="flex px-4 md:px-8 gap-1.5 md:gap-2 mb-[-12px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
-          {Object.values(CUSTOM_PERSONAS).map(p => {
+          {visiblePersonas.map(p => {
             const isActive = currentPersona === p.id;
             return (
               <button
@@ -253,14 +256,19 @@ const ProfileView = () => {
       )}
 
       <div className="flex-1">
-          {/* 메인 프로필 카드 */}
           <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-30 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
-              <div className="flex-1 pr-4">
+              <div className="flex-1 pr-4 flex gap-2 items-center flex-wrap">
                 {!isProfileEmpty && safeUser.status && (
                   <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
                       <Sparkles size={13} className="text-yellow-500" />
                       <span className="text-[10px] md:text-[11px] font-bold tracking-wider">{safeUser.status}</span>
+                  </div>
+                )}
+                
+                {isGuest && currentPersona !== 'all' && (
+                  <div className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 border border-violet-200 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
+                      <span className="text-[10px] md:text-[11px] font-black tracking-widest uppercase">{CUSTOM_PERSONAS[currentPersona].name} 뷰 접속중</span>
                   </div>
                 )}
               </div>
@@ -400,8 +408,8 @@ const ProfileView = () => {
               {availableTabs.length === 0 ? (
                   <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                       <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
-                      <h3 className="text-base md:text-lg font-black text-zinc-800">이 페르소나에는 설정된 탭이 없습니다</h3>
-                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">상단의 편집 버튼을 눌러 페르소나를 구성해보세요.</p>
+                      <h3 className="text-base md:text-lg font-black text-zinc-800">해당 모드에서는 표시할 탭이 없습니다</h3>
+                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">다른 인덱스를 선택해보세요.</p>
                   </div>
               ) : (
                   <div className="mt-4 md:mt-6 pb-10">

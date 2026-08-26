@@ -3,7 +3,7 @@ import {
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  Layers // ⭐️ Layers 아이콘 추가
+  Layers 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -13,15 +13,15 @@ import Mandalart from '../components/profile/tabs/Mandalart';
 import { 
   DeveloperEditTab, CareerEditTab, AddProfileEditTab, BusinessCardEditTab, 
   QnaEditTab, HobbyEditTab, QuotesEditTab, MemoEditTab, ArtEditTab,
-  PersonaEditTab // ⭐️ 페르소나 편집 탭 컴포넌트 불러오기
+  PersonaEditTab 
 } from '../components/profile/tabs/EditTabs';
 
-// ⭐️ 기본 페르소나 템플릿 (유저 데이터가 없을 때 폴백)
+// ⭐️ isVisible: true 속성을 기본값으로 추가
 export const DEFAULT_PERSONAS = {
-  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500' },
-  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500' },
-  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500' },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500' }
+  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
+  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
+  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true },
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true }
 };
 
 const EditProfileView = () => {
@@ -63,7 +63,6 @@ const EditProfileView = () => {
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
-          // ⭐️ 페르소나 데이터 초기화 (없으면 디폴트 복사)
           personas: safeUser.idol?.personas || JSON.parse(JSON.stringify(DEFAULT_PERSONAS)),
           businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
           qna: qnaData,
@@ -117,7 +116,6 @@ const EditProfileView = () => {
     quotes: { id: 'quotes', label: 'Quotes', icon: <Quote size={16}/> },
     memo: { id: 'memo', label: 'Memo', icon: <FileText size={16}/> },
     art: { id: 'art', label: 'Dot Art', icon: <Grid size={16}/> },
-    // ⭐️ 페르소나 설정용 탭 등록!
     persona: { id: 'persona', label: 'Persona Set', icon: <Layers size={16}/> }
   };
 
@@ -153,7 +151,7 @@ const EditProfileView = () => {
       const newHistory = [commit, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
       
       updateNested(['idol', 'history'], newHistory);
-      showToast(`${commit.date} 기준으로 현재 기록이 고정되었습니다! 📸`);
+      showToast(`${commit.date} 기준으로 현재 기록 고정되었습니다! 📸`);
   };
 
   const uploadImageToServer = async (file, path, setUploadingState) => {
@@ -550,7 +548,6 @@ const EditProfileView = () => {
         </div>
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 p-1">
-          {/* ⭐️ 기본 탭 목록 렌더링에 페르소나 설정용 탭(persona)을 고정 노출 */}
           {['persona', ...(formData.idol?.tabOrder || [])].map((tabId, index) => {
               const tab = TABS_CONFIG[tabId];
               if (!tab) return null;
@@ -559,7 +556,7 @@ const EditProfileView = () => {
               return (
                   <button 
                     key={tab.id} 
-                    draggable={!isPersonaTab} // 페르소나 탭은 드래그 제외
+                    draggable={!isPersonaTab} 
                     onDragStart={(e) => { if(!isPersonaTab) { setDraggedTabIndex(index-1); e.dataTransfer.effectAllowed = 'move'; } }}
                     onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
                     onDragEnter={(e) => e.preventDefault()}
@@ -608,7 +605,6 @@ const EditProfileView = () => {
         )}
 
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          {/* ⭐️ 새로 추가된 페르소나 설정 탭 */}
           {editTab === 'persona' && <PersonaEditTab formData={formData} updateNested={updateNested} DEFAULT_PERSONAS={DEFAULT_PERSONAS} TABS_CONFIG={TABS_CONFIG} />}
           
           {editTab === 'developer' && <DeveloperEditTab formData={formData} updateNested={updateNested} renderStringArrayInput={renderStringArrayInput} />}

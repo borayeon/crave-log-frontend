@@ -4,7 +4,7 @@ import {
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
   CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser,
-  Layers, Check, Rocket 
+  Layers, Check, Rocket, Eye, Lock // ⭐️ Eye, Lock 아이콘 추가
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 
@@ -607,28 +607,43 @@ export const ArtEditTab = ({ formData, updateNested }) => {
   );
 };
 
-// ⭐️ 추가됨: 페르소나 설정용 컴포넌트 
+// ⭐️ 업데이트됨: 페르소나 공개/비공개 토글 추가
 export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_CONFIG }) => {
     const userPersonas = formData.idol?.personas || DEFAULT_PERSONAS;
  
     return (
       <div className="space-y-6 animate-in fade-in">
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
-             <h3 className="text-base font-black text-zinc-900 mb-2 flex items-center gap-2"><Layers size={16} className="text-indigo-500"/> 멀티 페르소나 편집</h3>
-             <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-6">각각의 페르소나 모드에서 방문자에게 보여줄 탭을 자유롭게 켜고 끄세요. (공유 링크 및 다이어리 인덱스 스티커에 반영됩니다)</p>
+             <div className="flex items-center gap-2 mb-2">
+                <Layers size={16} className="text-indigo-500"/>
+                <h3 className="text-base font-black text-zinc-900">멀티 페르소나 편집</h3>
+             </div>
+             <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-6">각각의 페르소나 모드에서 방문자에게 보여줄 탭을 자유롭게 켜고 끄세요. <strong>비공개</strong> 처리하면 프로필 화면의 인덱스 스티커에서 완전히 숨겨집니다.</p>
  
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.keys(DEFAULT_PERSONAS).map(pKey => {
-                    if(pKey === 'all') return null; // 'all'은 편집 제외 (무조건 전체 표시)
+                    if(pKey === 'all') return null;
                     const pData = userPersonas[pKey] || DEFAULT_PERSONAS[pKey];
+                    const isVisible = pData.isVisible !== false; // 기본값은 true(공개)
+                    
                     return (
-                        <div key={pKey} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-5 shadow-sm transition-colors focus-within:bg-white focus-within:border-indigo-300">
-                            <input 
-                                value={pData.name} 
-                                onChange={e => updateNested(["idol", "personas", pKey, "name"], e.target.value)} 
-                                className="w-full bg-transparent text-sm font-black text-zinc-800 mb-1.5 outline-none border-b border-transparent focus:border-indigo-300"
-                                placeholder="페르소나 이름"
-                            />
+                        <div key={pKey} className={`border rounded-2xl p-5 shadow-sm transition-colors focus-within:bg-white focus-within:border-indigo-300 ${isVisible ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-100/50 border-zinc-200 opacity-75'}`}>
+                            <div className="flex justify-between items-start mb-1.5">
+                                <input 
+                                    value={pData.name} 
+                                    onChange={e => updateNested(["idol", "personas", pKey, "name"], e.target.value)} 
+                                    className="flex-1 bg-transparent text-sm font-black text-zinc-800 outline-none border-b border-transparent focus:border-indigo-300"
+                                    placeholder="페르소나 이름"
+                                />
+                                {/* ⭐️ 공개/비공개 토글 스위치 버튼 */}
+                                <button
+                                    type="button"
+                                    onClick={() => updateNested(["idol", "personas", pKey, "isVisible"], !isVisible)}
+                                    className={`ml-2 shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 ${isVisible ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 shadow-sm' : 'bg-rose-50 text-rose-600 hover:bg-rose-100 shadow-sm'}`}
+                                >
+                                    {isVisible ? <><Eye size={12}/> 공개됨</> : <><Lock size={12}/> 비공개</>}
+                                </button>
+                            </div>
                             <input 
                                 value={pData.desc} 
                                 onChange={e => updateNested(["idol", "personas", pKey, "desc"], e.target.value)} 
@@ -638,13 +653,13 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
                             <div className="flex flex-wrap gap-2">
                                {Object.keys(TABS_CONFIG).map(tabKey => {
                                    if (tabKey === 'persona') return null; 
-                                   const isChecked = pData.tabs.includes(tabKey);
+                                   const isChecked = pData.tabs?.includes(tabKey);
                                    return (
                                        <button 
                                             key={tabKey} 
                                             type="button"
                                             onClick={() => {
-                                                let newTabs = [...pData.tabs];
+                                                let newTabs = [...(pData.tabs || [])];
                                                 if (isChecked) newTabs = newTabs.filter(t => t !== tabKey);
                                                 else newTabs.push(tabKey);
                                                 updateNested(["idol", "personas", pKey, "tabs"], newTabs);
