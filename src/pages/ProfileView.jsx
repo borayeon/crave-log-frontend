@@ -15,7 +15,17 @@ import {
   QuotesTab, MemoTab, ArtTab 
 } from '../components/profile/ViewTabs';
 
-// ⭐️ 커스텀 페르소나가 추가된 기본 설정
+// ⭐️ 로딩 중에 띄울 꿀팁(Tip) 배열 추가
+const LOADING_TIPS = [
+  "CraveLog에서는 목적에 따라 나만의 멀티 페르소나를 구성할 수 있어요.",
+  "도트 캔버스 탭에서 방문자에게 남기고 싶은 귀여운 픽셀 아트를 그려보세요!",
+  "특정 상대에게만 보여주고 싶은 탭이 있다면 '1:1 맞춤형 링크'를 활용해보세요.",
+  "방문자에게 보여주고 싶지 않은 탭은 언제든지 비공개(🔒)로 전환할 수 있습니다.",
+  "마음에 드는 과거의 프로필 상태를 달력 날짜와 함께 '박제(고정)' 해둘 수 있어요.",
+  "이력서나 포트폴리오를 넘어, 나라는 사람의 취향과 성향을 아카이빙합니다.",
+  "소셜 링크에 깃허브, 블로그, 인스타그램 등 다양한 플랫폼을 연결해 보세요."
+];
+
 const DEFAULT_PERSONAS = {
   portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
   social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
@@ -31,6 +41,9 @@ const ProfileView = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   
   const [currentPersona, setCurrentPersona] = useState('all');
+
+  // ⭐️ 랜덤으로 꿀팁 하나를 선택 (리렌더링 시 깜빡이지 않게 useMemo 사용)
+  const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
 
   const safeUser = useMemo(() => {
     if (!user) return {};
@@ -63,7 +76,6 @@ const ProfileView = () => {
     };
   }, [safeUser.addProfile?.personas]);
 
-  // 비공개 처리된 페르소나를 필터링
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
 
   useEffect(() => {
@@ -73,12 +85,24 @@ const ProfileView = () => {
     }
   }, [CUSTOM_PERSONAS]);
 
+  // ⭐️ 로딩 화면 개선: 스피너와 함께 정보(Tip) 표시
   if (isLoading) {
     return (
-      <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
-        <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
-        <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
-        <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
+      <div className="w-full h-[80vh] flex flex-col items-center justify-center bg-[#F8FAFC] px-6 animate-in fade-in duration-500">
+        <div className="relative flex items-center justify-center mb-8">
+           <div className="absolute inset-0 bg-indigo-200/50 rounded-full blur-2xl animate-pulse"></div>
+           <Loader2 size={40} className="text-indigo-500 animate-spin relative z-10" />
+        </div>
+        <h2 className="text-xl md:text-2xl font-black text-zinc-800 tracking-tight mb-8">데이터를 불러오는 중입니다</h2>
+        
+        {/* 꿀팁 박스 UI */}
+        <div className="bg-white/80 backdrop-blur-sm px-6 py-5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-md w-full text-center relative overflow-hidden group">
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
+           <div className="flex justify-center mb-2">
+              <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">CraveLog Tip</span>
+           </div>
+           <p className="text-[13px] text-zinc-600 font-bold leading-relaxed">{randomTip}</p>
+        </div>
       </div>
     );
   }
@@ -195,7 +219,6 @@ const ProfileView = () => {
 
                     {visiblePersonas.length > 1 && <div className="h-px bg-zinc-100 my-2 mx-2"></div>}
 
-                    {/* 공개 처리된 페르소나만 공유 목록에 표시 */}
                     {visiblePersonas.map(persona => {
                         if (persona.id === 'all') return null;
                         return (
@@ -213,6 +236,7 @@ const ProfileView = () => {
         </div>
       )}
 
+      {/* 과거 기록 열람 모달 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -234,7 +258,7 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* 인덱스 스티커 탭 영역 (공개 처리된 페르소나만 표시) */}
+      {/* 인덱스 스티커 탭 영역 */}
       {!isProfileEmpty && (
         <div className="flex px-4 md:px-8 gap-1.5 md:gap-2 mb-[-12px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
           {visiblePersonas.map(p => {
@@ -257,6 +281,7 @@ const ProfileView = () => {
       )}
 
       <div className="flex-1">
+          {/* 메인 프로필 카드 */}
           <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-30 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
               <div className="flex-1 pr-4 flex gap-2 items-center flex-wrap">
@@ -379,6 +404,7 @@ const ProfileView = () => {
                   <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
                   <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
                 </div>
+                
                 <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">
                   선택한 페르소나 <strong className="text-indigo-500">({CUSTOM_PERSONAS[currentPersona]?.name})</strong> 에 맞는 데이터만 필터링되어 보입니다.
                 </p>
