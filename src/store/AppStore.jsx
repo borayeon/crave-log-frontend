@@ -273,12 +273,6 @@ export const AppProvider = ({ children }) => {
             '프로필 조회 실패:',
             profileRes?.status
           );
-
-          /*
-           * 중요:
-           * 기존 코드처럼 setUser(INITIAL_USER_DATA)를 하지 않고
-           * 기존 user 상태를 유지한다.
-           */
         }
 
         // ==================================================
@@ -288,19 +282,12 @@ export const AppProvider = ({ children }) => {
           setTagTree(await treeRes.json());
         }
 
-        // 실패하더라도 기존 데이터 유지
-        // 최초 접근 시에만 빈 배열로 유지
         if (recordsRes?.ok) {
           setRecords(await recordsRes.json());
         }
 
       } catch (error) {
         console.error('데이터 로드 중 에러:', error);
-
-        /*
-         * 절대 여기서 setUser(INITIAL_USER_DATA) 하지 않는다.
-         * 네트워크 에러 때문에 정상 프로필을 "설정된 프로필 없음"으로 바꾸면 안 된다.
-         */
       } finally {
         if (!isSilent) {
           setIsLoading(false);
@@ -319,8 +306,10 @@ export const AppProvider = ({ children }) => {
       setIsGuestMode(true);
       setViewMode('profile');
 
-      const newUrl =
-        `${window.location.pathname}?u=${targetHandle}`;
+      // ⭐️ 핵심 수정 부분: 기존 URL의 ?p= 파라미터가 날아가지 않도록 안전하게 합칩니다.
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('u', targetHandle);
+      const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
 
       window.history.pushState({}, '', newUrl);
 
@@ -469,24 +458,21 @@ export const AppProvider = ({ children }) => {
       }
 
       // --------------------------------------------
-      // 공유 프로필
+      // 공유 프로필 접속 (파라미터 증발 버그 원인이었던 부분)
       // --------------------------------------------
       if (sharedHandle) {
         if (!cancelled) {
           await visitUserProfile(sharedHandle);
         }
-
         return;
       }
 
       // --------------------------------------------
       // 일반 접근
       // --------------------------------------------
-      const savedToken =
-        localStorage.getItem('accessToken');
+      const savedToken = localStorage.getItem('accessToken');
 
       if (savedToken) {
-        // 토큰이 있으면 우선 /me 시도
         setIsAdmin(true);
         setIsGuestMode(false);
 
@@ -494,7 +480,6 @@ export const AppProvider = ({ children }) => {
           await fetchAllData(false, '');
         }
       } else {
-        // 토큰이 없다면 무조건 공개 프로필
         setIsAdmin(false);
         setIsGuestMode(true);
 
