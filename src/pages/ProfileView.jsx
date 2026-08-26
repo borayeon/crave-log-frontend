@@ -18,11 +18,9 @@ import {
 const LOADING_TIPS = [
   "CraveLog에서는 목적에 따라 나만의 멀티 페르소나를 구성할 수 있어요.",
   "도트 캔버스 탭에서 방문자에게 남기고 싶은 귀여운 픽셀 아트를 그려보세요!",
-  "비공개로 설정한 페르소나도 '비밀 링크'를 통해 특정인에게만 공유할 수 있어요.",
+  "비공개로 설정한 페르소나도 '시크릿 링크'를 통해 특정인에게만 공유할 수 있어요.",
   "방문자에게 보여주고 싶지 않은 탭은 언제든지 비공개(🔒)로 전환할 수 있습니다.",
-  "마음에 드는 과거의 프로필 상태를 달력 날짜와 함께 '박제(고정)' 해둘 수 있어요.",
-  "이력서나 포트폴리오를 넘어, 나라는 사람의 취향과 성향을 아카이빙합니다.",
-  "소셜 링크에 깃허브, 블로그, 인스타그램 등 다양한 플랫폼을 연결해 보세요."
+  "서버 원천 차단 기술이 적용되어, 허락되지 않은 방문자는 민감한 데이터를 절대 볼 수 없습니다. 🛡️"
 ];
 
 const DEFAULT_PERSONAS = {
@@ -35,7 +33,7 @@ const DEFAULT_PERSONAS = {
 
 const ProfileView = () => {
   const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
-  const [activeTab, setActiveTab] = useState('developer'); 
+  const [activeTab, setActiveTab] = useState(null); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   
@@ -43,6 +41,7 @@ const ProfileView = () => {
 
   const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
 
+  // ⭐️ 백엔드에서 Null로 차단된 데이터를 안전하게 파싱하는 로직
   const safeUser = useMemo(() => {
     if (!user) return {};
     const parsedUser = JSON.parse(JSON.stringify(user));
@@ -57,8 +56,8 @@ const ProfileView = () => {
     });
 
     if (parsedUser.idol && !parsedUser.addProfile) parsedUser.addProfile = parsedUser.idol;
-    if (!parsedUser.qna || parsedUser.qna.length === 0) {
-        if (parsedUser.addProfile?.qna?.length > 0) parsedUser.qna = parsedUser.addProfile.qna;
+    if (parsedUser.addProfile?.qna?.length > 0 && (!parsedUser.qna || parsedUser.qna.length === 0)) {
+        parsedUser.qna = parsedUser.addProfile.qna;
     }
     if (parsedUser.addProfile?.memoArea?.dots) {
         parsedUser.addProfile.memoArea.dots = parsedUser.addProfile.memoArea.dots.map(d => d === true ? '#ec4899' : (d === false ? "" : d));
@@ -76,7 +75,6 @@ const ProfileView = () => {
 
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
 
-  // ⭐️ 1. URL 파라미터 처리 변경 (비공개된 페르소나라도 직접 주소를 치고 오면 접속 허용!)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('p');
     if (p && CUSTOM_PERSONAS[p]) {
@@ -84,7 +82,6 @@ const ProfileView = () => {
     }
   }, [CUSTOM_PERSONAS]);
 
-  // ⭐️ 2. 다이어리 인덱스 스티커 표시 로직 변경 (비밀 링크로 들어오면 해당 스티커도 임시로 나타나게 함)
   const displayPersonas = useMemo(() => {
     const list = [...visiblePersonas];
     if (currentPersona !== 'all' && CUSTOM_PERSONAS[currentPersona]?.isVisible === false) {
@@ -105,7 +102,7 @@ const ProfileView = () => {
         <div className="bg-white/80 backdrop-blur-sm px-6 py-5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-md w-full text-center relative overflow-hidden group">
            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
            <div className="flex justify-center mb-2">
-              <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">CraveLog Tip</span>
+              <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">CraveLog Tips</span>
            </div>
            <p className="text-[13px] text-zinc-600 font-bold leading-relaxed">{randomTip}</p>
         </div>
@@ -127,9 +124,7 @@ const ProfileView = () => {
     });
   };
 
-  // ⭐️ 3. 공유 모달에 띄울 목록 (본인은 비공개도 공유 가능, 방문자는 공개된 것만 공유 가능)
   const shareablePersonas = !isGuest ? Object.values(CUSTOM_PERSONAS) : visiblePersonas;
-
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
 
   const getPlatformIcon = (platform) => {
@@ -161,38 +156,35 @@ const ProfileView = () => {
     art: { id: 'art', icon: <Grid strokeWidth={2}/>, label: 'Dot Art', color: 'bg-pink-50/80 text-pink-500 border-pink-100' }
   };
 
-  const privacyObj = useMemo(() => {
-      let p = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
-      if (safeUser.privacy) {
-          if (typeof safeUser.privacy === 'string') {
-              try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
-          } else if (typeof safeUser.privacy === 'object') {
-              p = { ...p, ...safeUser.privacy };
-          }
-      }
-      return p;
-  }, [safeUser.privacy]);
-
-  const isTabPrivate = (tabId) => {
-      const val = privacyObj[tabId];
-      return String(val).toLowerCase() === 'false' || String(val) === '0';
-  };
-
   const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
   const savedOrder = safeUser.addProfile?.tabOrder || [];
   const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
 
-  const activePersonaObj = CUSTOM_PERSONAS[currentPersona] || CUSTOM_PERSONAS['all'];
+  // ⭐️ 백엔드가 차단해서 데이터가 텅 비어있는 탭인지 검사하는 핵심 보안 방어 함수
+  const isDataActuallyEmpty = (tabId) => {
+    switch(tabId) {
+      case 'developer': return !safeUser.developer || (!safeUser.developer.about && (!safeUser.developer.projects || safeUser.developer.projects.length === 0));
+      case 'career': return !safeUser.career || (!safeUser.career.targetJob && (!safeUser.career.strengths || safeUser.career.strengths.length === 0));
+      case 'businessCard': return !safeUser.addProfile?.businessCard || !safeUser.addProfile.businessCard.email;
+      case 'qna': return !safeUser.addProfile?.qna || safeUser.addProfile.qna.length === 0;
+      case 'hobby': return !safeUser.addProfile?.hobby || !safeUser.addProfile.hobby.title;
+      case 'vision': return !safeUser.addProfile?.vision || !safeUser.addProfile.vision.core;
+      case 'quotes': return !safeUser.addProfile?.quotes || safeUser.addProfile.quotes.length === 0;
+      case 'memo': return !safeUser.addProfile?.memoArea || !safeUser.addProfile.memoArea.text;
+      case 'art': return !safeUser.addProfile?.memoArea?.dots || safeUser.addProfile.memoArea.dots.every(d => d === "");
+      case 'addProfile': return !safeUser.addProfile || (!safeUser.addProfile.mbti && !safeUser.addProfile.motto);
+      default: return false;
+    }
+  };
   
   const availableTabs = currentOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
-        if (isGuest && isTabPrivate(tab.id)) return false; 
         
-        if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) {
-            return false;
-        }
+        // 백엔드가 데이터를 Null로 보내서 텅 빈 탭이면 무조건 숨김 처리 (보안)
+        if (isDataActuallyEmpty(tab.id)) return false; 
+        
         return true; 
     });
 
@@ -200,12 +192,12 @@ const ProfileView = () => {
     if (!availableTabs.some(t => t.id === activeTab)) {
       setActiveTab(availableTabs.length > 0 ? availableTabs[0].id : null);
     }
-  }, [currentPersona, availableTabs, activeTab]);
+  }, [availableTabs, activeTab]);
 
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* ⭐️ 4. 공유 모달 업데이트 */}
+      {/* 공유 모달 */}
       {showShareModal && (
         <div className="fixed inset-0 z-[400] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -228,7 +220,6 @@ const ProfileView = () => {
 
                     <div className="h-px bg-zinc-100 my-2 mx-2"></div>
 
-                    {/* shareablePersonas 배열로 렌더링 */}
                     {shareablePersonas.map(persona => {
                         if (persona.id === 'all') return null;
                         const isSecret = persona.isVisible === false;
@@ -253,6 +244,7 @@ const ProfileView = () => {
         </div>
       )}
 
+      {/* 과거 기록 열람 모달 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -274,7 +266,6 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* ⭐️ 5. 업데이트된 displayPersonas 매핑 */}
       {!isProfileEmpty && (
         <div className="flex px-4 md:px-8 gap-1.5 md:gap-2 mb-[-12px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
           {displayPersonas.map(p => {
@@ -312,7 +303,10 @@ const ProfileView = () => {
                 
                 {isGuest && currentPersona !== 'all' && (
                   <div className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 border border-violet-200 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
-                      <span className="text-[10px] md:text-[11px] font-black tracking-widest uppercase">{CUSTOM_PERSONAS[currentPersona].name} 뷰 접속중</span>
+                      <span className="text-[10px] md:text-[11px] font-black tracking-widest uppercase">
+                          {CUSTOM_PERSONAS[currentPersona]?.isVisible === false && <Lock size={10} className="inline mr-1 -mt-0.5" />}
+                          {CUSTOM_PERSONAS[currentPersona]?.name} 뷰 접속중
+                      </span>
                   </div>
                 )}
               </div>
@@ -424,13 +418,12 @@ const ProfileView = () => {
                 </div>
                 
                 <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">
-                  선택한 페르소나 <strong className="text-indigo-500">({CUSTOM_PERSONAS[currentPersona]?.name})</strong> 에 맞는 데이터만 필터링되어 보입니다.
+                  선택한 페르소나 <strong className="text-indigo-500">({CUSTOM_PERSONAS[currentPersona]?.name})</strong> 에 맞는 데이터만 서버에서 전송받아 렌더링합니다.
                 </p>
                 
                 <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
                   {availableTabs.map(tab => {
                       const isActive = activeTab === tab.id;
-                      const isPrivate = isTabPrivate(tab.id);
                       
                       return (
                         <button 
@@ -440,11 +433,6 @@ const ProfileView = () => {
                         >
                           <div className={`w-16 h-16 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
                             {React.cloneElement(tab.icon, { className: 'w-6 h-6 md:w-7 md:h-7 transition-colors' })}
-                            {isPrivate && (
-                              <div className="absolute -top-2 -right-2 bg-white border border-zinc-200 p-1 md:p-1.5 rounded-full shadow-sm z-10">
-                                <Lock size={10} className="text-zinc-400"/>
-                              </div>
-                            )}
                           </div>
                           <span className={`text-[10px] md:text-[11px] font-black transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 group-hover:text-zinc-600'}`}>{tab.label}</span>
                         </button>
@@ -456,8 +444,8 @@ const ProfileView = () => {
               {availableTabs.length === 0 ? (
                   <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                       <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
-                      <h3 className="text-base md:text-lg font-black text-zinc-800">해당 모드에서는 표시할 탭이 없습니다</h3>
-                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">다른 인덱스를 선택하거나 편집 화면에서 탭을 구성해보세요.</p>
+                      <h3 className="text-base md:text-lg font-black text-zinc-800">접근할 수 있는 데이터가 없습니다</h3>
+                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">백엔드 보안(원천 차단)에 의해 데이터가 제거되었습니다.</p>
                   </div>
               ) : (
                   <div className="mt-4 md:mt-6 pb-10">

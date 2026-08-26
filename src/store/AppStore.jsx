@@ -207,8 +207,17 @@ export const AppProvider = ({ children }) => {
           }
         };
 
+        // ⭐️ 주소창에서 페르소나 파라미터(?p=) 추출 
+        const searchParams = new URLSearchParams(window.location.search);
+        const personaId = searchParams.get('p');
+
+        // ⭐️ 백엔드로 프로필을 요청할 때 페르소나 값이 있으면 붙여서 보냄
+        const profileEndpoint = personaId 
+            ? `${targetUrlBase}/profile?p=${personaId}`
+            : `${targetUrlBase}/profile`;
+
         const [profileRes, treeRes, recordsRes] = await Promise.all([
-          fetchSafe(`${targetUrlBase}/profile`),
+          fetchSafe(profileEndpoint), // ⭐️ 수정된 프로필 엔드포인트 적용
           fetchSafe(`${targetUrlBase}/categories`),
           fetchSafe(`${targetUrlBase}/records`)
         ]);
@@ -267,14 +276,8 @@ export const AppProvider = ({ children }) => {
 
           /*
            * 중요:
-           *
-           * 기존 코드:
-           * setUser(INITIAL_USER_DATA);
-           *
-           * 이렇게 하면 API가 잠깐 실패했을 때
-           * 정상 프로필이 "손님"으로 덮어써진다.
-           *
-           * 따라서 여기서는 기존 user 상태를 유지한다.
+           * 기존 코드처럼 setUser(INITIAL_USER_DATA)를 하지 않고
+           * 기존 user 상태를 유지한다.
            */
         }
 
@@ -295,14 +298,8 @@ export const AppProvider = ({ children }) => {
         console.error('데이터 로드 중 에러:', error);
 
         /*
-         * 절대 여기서
-         *
-         * setUser(INITIAL_USER_DATA)
-         *
-         * 하지 않는다.
-         *
-         * 네트워크 에러 때문에 정상 프로필을
-         * "설정된 프로필 없음"으로 바꾸면 안 된다.
+         * 절대 여기서 setUser(INITIAL_USER_DATA) 하지 않는다.
+         * 네트워크 에러 때문에 정상 프로필을 "설정된 프로필 없음"으로 바꾸면 안 된다.
          */
       } finally {
         if (!isSilent) {
