@@ -17,10 +17,8 @@ import {
 
 const LOADING_TIPS = [
   "CraveLog에서는 목적에 따라 나만의 멀티 페르소나를 구성할 수 있어요.",
-  "도트 캔버스 탭에서 방문자에게 남기고 싶은 귀여운 픽셀 아트를 그려보세요!",
   "비공개로 설정한 페르소나도 '시크릿 링크'를 통해 특정인에게만 공유할 수 있어요.",
-  "방문자에게 보여주고 싶지 않은 탭은 언제든지 비공개(🔒)로 전환할 수 있습니다.",
-  "서버 원천 차단 기술이 적용되어, 허락되지 않은 방문자는 민감한 데이터를 절대 볼 수 없습니다. 🛡️"
+  "서버 원천 차단(Level 3) 기술이 적용되어, 허락되지 않은 방문자는 민감한 데이터를 절대 볼 수 없습니다. 🛡️"
 ];
 
 const DEFAULT_PERSONAS = {
@@ -41,7 +39,6 @@ const ProfileView = () => {
 
   const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
 
-  // ⭐️ 백엔드에서 Null로 차단된 데이터를 안전하게 파싱하는 로직
   const safeUser = useMemo(() => {
     if (!user) return {};
     const parsedUser = JSON.parse(JSON.stringify(user));
@@ -156,11 +153,31 @@ const ProfileView = () => {
     art: { id: 'art', icon: <Grid strokeWidth={2}/>, label: 'Dot Art', color: 'bg-pink-50/80 text-pink-500 border-pink-100' }
   };
 
+  // ⭐️ 프론트엔드 프라이버시 체크 함수 복구!
+  const privacyObj = useMemo(() => {
+      let p = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
+      if (safeUser.privacy) {
+          if (typeof safeUser.privacy === 'string') {
+              try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
+          } else if (typeof safeUser.privacy === 'object') {
+              p = { ...p, ...safeUser.privacy };
+          }
+      }
+      return p;
+  }, [safeUser.privacy]);
+
+  const isTabPrivate = (tabId) => {
+      const val = privacyObj[tabId];
+      return String(val).toLowerCase() === 'false' || String(val) === '0';
+  };
+
   const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
   const savedOrder = safeUser.addProfile?.tabOrder || [];
   const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
 
-  // ⭐️ 백엔드가 차단해서 데이터가 텅 비어있는 탭인지 검사하는 핵심 보안 방어 함수
+  const activePersonaObj = CUSTOM_PERSONAS[currentPersona] || CUSTOM_PERSONAS['all'];
+
+  // ⭐️ 백엔드에서 날아온 데이터가 정말 텅 비었는지 확인하는 함수
   const isDataActuallyEmpty = (tabId) => {
     switch(tabId) {
       case 'developer': return !safeUser.developer || (!safeUser.developer.about && (!safeUser.developer.projects || safeUser.developer.projects.length === 0));
@@ -177,12 +194,21 @@ const ProfileView = () => {
     }
   };
   
+  // ⭐️ 심층 방어 (이중 차단) 로직 적용
   const availableTabs = currentOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
         
-        // 백엔드가 데이터를 Null로 보내서 텅 빈 탭이면 무조건 숨김 처리 (보안)
+        // [방어 1] 프론트엔드 UI 레벨 숨김 (게스트일 경우)
+        if (isGuest) {
+            // 일반 접근(?p=all)일 때는 비공개 설정된 탭을 무조건 숨김
+            if (currentPersona === 'all' && isTabPrivate(tab.id)) return false;
+            // 페르소나 접근일 때는 해당 페르소나에 포함되지 않은 탭 숨김
+            if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) return false;
+        }
+
+        // [방어 2] 백엔드 데이터 레벨 확인 (Null 이면 숨김)
         if (isDataActuallyEmpty(tab.id)) return false; 
         
         return true; 
@@ -244,7 +270,6 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 과거 기록 열람 모달 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -445,7 +470,7 @@ const ProfileView = () => {
                   <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                       <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
                       <h3 className="text-base md:text-lg font-black text-zinc-800">접근할 수 있는 데이터가 없습니다</h3>
-                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">백엔드 보안(원천 차단)에 의해 데이터가 제거되었습니다.</p>
+                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">비공개 처리되었거나 페르소나 설정에 의해 숨겨진 항목입니다.</p>
                   </div>
               ) : (
                   <div className="mt-4 md:mt-6 pb-10">
