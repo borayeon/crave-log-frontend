@@ -16,7 +16,6 @@ import {
   PersonaEditTab 
 } from '../components/profile/tabs/EditTabs';
 
-// ⭐️ 커스텀 페르소나(custom) 슬롯 추가
 export const DEFAULT_PERSONAS = {
   portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
   social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
@@ -584,6 +583,7 @@ const EditProfileView = () => {
           })}
         </div>
 
+        {/* ⭐️ 수정됨: 페르소나 탭이 아닐 때만 공개/비공개 멘트 표시 */}
         {editTab !== 'persona' && (
           <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
             <div>

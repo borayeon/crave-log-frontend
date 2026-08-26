@@ -15,11 +15,10 @@ import {
   QuotesTab, MemoTab, ArtTab 
 } from '../components/profile/ViewTabs';
 
-// ⭐️ 로딩 중에 띄울 꿀팁(Tip) 배열 추가
 const LOADING_TIPS = [
   "CraveLog에서는 목적에 따라 나만의 멀티 페르소나를 구성할 수 있어요.",
   "도트 캔버스 탭에서 방문자에게 남기고 싶은 귀여운 픽셀 아트를 그려보세요!",
-  "특정 상대에게만 보여주고 싶은 탭이 있다면 '1:1 맞춤형 링크'를 활용해보세요.",
+  "비공개로 설정한 페르소나도 '비밀 링크'를 통해 특정인에게만 공유할 수 있어요.",
   "방문자에게 보여주고 싶지 않은 탭은 언제든지 비공개(🔒)로 전환할 수 있습니다.",
   "마음에 드는 과거의 프로필 상태를 달력 날짜와 함께 '박제(고정)' 해둘 수 있어요.",
   "이력서나 포트폴리오를 넘어, 나라는 사람의 취향과 성향을 아카이빙합니다.",
@@ -42,7 +41,6 @@ const ProfileView = () => {
   
   const [currentPersona, setCurrentPersona] = useState('all');
 
-  // ⭐️ 랜덤으로 꿀팁 하나를 선택 (리렌더링 시 깜빡이지 않게 useMemo 사용)
   const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
 
   const safeUser = useMemo(() => {
@@ -78,14 +76,23 @@ const ProfileView = () => {
 
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
 
+  // ⭐️ 1. URL 파라미터 처리 변경 (비공개된 페르소나라도 직접 주소를 치고 오면 접속 허용!)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('p');
-    if (p && CUSTOM_PERSONAS[p] && CUSTOM_PERSONAS[p].isVisible !== false) {
+    if (p && CUSTOM_PERSONAS[p]) {
         setCurrentPersona(p);
     }
   }, [CUSTOM_PERSONAS]);
 
-  // ⭐️ 로딩 화면 개선: 스피너와 함께 정보(Tip) 표시
+  // ⭐️ 2. 다이어리 인덱스 스티커 표시 로직 변경 (비밀 링크로 들어오면 해당 스티커도 임시로 나타나게 함)
+  const displayPersonas = useMemo(() => {
+    const list = [...visiblePersonas];
+    if (currentPersona !== 'all' && CUSTOM_PERSONAS[currentPersona]?.isVisible === false) {
+        list.push(CUSTOM_PERSONAS[currentPersona]);
+    }
+    return list;
+  }, [visiblePersonas, currentPersona, CUSTOM_PERSONAS]);
+
   if (isLoading) {
     return (
       <div className="w-full h-[80vh] flex flex-col items-center justify-center bg-[#F8FAFC] px-6 animate-in fade-in duration-500">
@@ -95,7 +102,6 @@ const ProfileView = () => {
         </div>
         <h2 className="text-xl md:text-2xl font-black text-zinc-800 tracking-tight mb-8">데이터를 불러오는 중입니다</h2>
         
-        {/* 꿀팁 박스 UI */}
         <div className="bg-white/80 backdrop-blur-sm px-6 py-5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-md w-full text-center relative overflow-hidden group">
            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
            <div className="flex justify-center mb-2">
@@ -120,6 +126,9 @@ const ProfileView = () => {
       showToast("링크 복사에 실패했습니다.");
     });
   };
+
+  // ⭐️ 3. 공유 모달에 띄울 목록 (본인은 비공개도 공유 가능, 방문자는 공개된 것만 공유 가능)
+  const shareablePersonas = !isGuest ? Object.values(CUSTOM_PERSONAS) : visiblePersonas;
 
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
 
@@ -196,7 +205,7 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* 공유 모달 */}
+      {/* ⭐️ 4. 공유 모달 업데이트 */}
       {showShareModal && (
         <div className="fixed inset-0 z-[400] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -208,7 +217,7 @@ const ProfileView = () => {
                     <button onClick={() => setShowShareModal(false)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={18}/></button>
                 </div>
                 
-                <div className="p-4 space-y-2">
+                <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
                     <button onClick={() => handleCopyLink(null)} className="w-full flex items-center justify-between p-4 rounded-2xl border border-zinc-200 hover:border-zinc-400 hover:shadow-sm bg-white transition-all text-left group">
                         <div>
                             <p className="text-sm font-black text-zinc-900 mb-0.5">🌐 기본 프로필 (전체 탭)</p>
@@ -217,15 +226,23 @@ const ProfileView = () => {
                         <Copy size={16} className="text-zinc-300 group-hover:text-zinc-600 transition-colors" />
                     </button>
 
-                    {visiblePersonas.length > 1 && <div className="h-px bg-zinc-100 my-2 mx-2"></div>}
+                    <div className="h-px bg-zinc-100 my-2 mx-2"></div>
 
-                    {visiblePersonas.map(persona => {
+                    {/* shareablePersonas 배열로 렌더링 */}
+                    {shareablePersonas.map(persona => {
                         if (persona.id === 'all') return null;
+                        const isSecret = persona.isVisible === false;
+
                         return (
                           <button key={persona.id} onClick={() => handleCopyLink(persona.id)} className="w-full flex items-center justify-between p-4 rounded-2xl border border-zinc-100 hover:border-violet-300 hover:bg-violet-50/50 transition-all text-left group">
                               <div>
-                                  <p className="text-sm font-black text-zinc-900 mb-0.5">{persona.name}</p>
-                                  <p className="text-[10px] font-bold text-zinc-500">{persona.desc}</p>
+                                  <p className="text-sm font-black text-zinc-900 mb-0.5 flex items-center gap-1.5">
+                                      {isSecret && <Lock size={12} className="text-rose-500" title="비공개 시크릿 링크" />}
+                                      {persona.name}
+                                  </p>
+                                  <p className="text-[10px] font-bold text-zinc-500">
+                                      {isSecret ? <span className="text-rose-500 font-black">[시크릿 링크]</span> : ''} {persona.desc}
+                                  </p>
                               </div>
                               <Copy size={16} className="text-zinc-300 group-hover:text-violet-500 transition-colors" />
                           </button>
@@ -236,7 +253,6 @@ const ProfileView = () => {
         </div>
       )}
 
-      {/* 과거 기록 열람 모달 */}
       {viewHistoryItem && (
           <div className="fixed inset-0 z-[300] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 animate-in fade-in" onClick={() => setViewHistoryItem(null)}>
               <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -258,21 +274,24 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* 인덱스 스티커 탭 영역 */}
+      {/* ⭐️ 5. 업데이트된 displayPersonas 매핑 */}
       {!isProfileEmpty && (
         <div className="flex px-4 md:px-8 gap-1.5 md:gap-2 mb-[-12px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
-          {visiblePersonas.map(p => {
+          {displayPersonas.map(p => {
             const isActive = currentPersona === p.id;
+            const isSecret = p.isVisible === false;
+
             return (
               <button
                 key={p.id}
                 onClick={() => setCurrentPersona(p.id)}
-                className={`shrink-0 px-4 md:px-6 py-2.5 rounded-t-2xl text-[11px] md:text-[13px] font-black transition-all duration-300 border border-b-0 
+                className={`shrink-0 px-4 md:px-6 py-2.5 rounded-t-2xl text-[11px] md:text-[13px] font-black transition-all duration-300 border border-b-0 flex items-center gap-1.5
                   ${isActive 
                     ? `${p.activeColor || 'bg-indigo-500 text-white border-indigo-500'} pb-6 pt-3.5 -mt-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20`
                     : `${p.color || 'bg-zinc-50 text-zinc-500'} border-zinc-200/80 pb-4 opacity-70 hover:opacity-100 hover:bg-white z-10 hover:pb-5 hover:-mt-1`}
                 `}
               >
+                {isSecret && <Lock size={12} className={isActive ? "text-white/80" : "text-rose-400"} />}
                 {p.name}
               </button>
             )
@@ -281,7 +300,6 @@ const ProfileView = () => {
       )}
 
       <div className="flex-1">
-          {/* 메인 프로필 카드 */}
           <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-30 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
               <div className="flex-1 pr-4 flex gap-2 items-center flex-wrap">
