@@ -4,7 +4,7 @@ import {
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
   CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser,
-  Layers, Check // ⭐️ Layers, Check 아이콘 추가
+  Layers, Check, Rocket 
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 

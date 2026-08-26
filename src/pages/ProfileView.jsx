@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Edit2, Share2, Rocket, User, Sparkles, MapPin, GraduationCap, 
-  ChevronRight, Loader2, History, X as CloseIcon, Lock, Copy,
+  ChevronRight, Loader2, History, X as CloseIcon, Lock, Copy, Heart,
   Link, Terminal, PlayCircle, Camera, Hash, Users, Tv, MessageCircle, Globe,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid
 } from 'lucide-react';
