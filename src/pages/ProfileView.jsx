@@ -15,12 +15,13 @@ import {
   QuotesTab, MemoTab, ArtTab 
 } from '../components/profile/ViewTabs';
 
-// ⭐️ isVisible: true 디폴트 속성 적용
+// ⭐️ 커스텀 페르소나가 추가된 기본 설정
 const DEFAULT_PERSONAS = {
   portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
   social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
   dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true }
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true },
+  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true }
 };
 
 const ProfileView = () => {
@@ -62,12 +63,11 @@ const ProfileView = () => {
     };
   }, [safeUser.addProfile?.personas]);
 
-  // ⭐️ 비공개 처리된 페르소나 필터링 로직 (스티커 및 공유 모달에서 숨김)
+  // 비공개 처리된 페르소나를 필터링
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('p');
-    // URL로 숨겨진 페르소나에 접근하려고 하면 'all'로 튕겨냅니다.
     if (p && CUSTOM_PERSONAS[p] && CUSTOM_PERSONAS[p].isVisible !== false) {
         setCurrentPersona(p);
     }
@@ -172,7 +172,7 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* ⭐️ 모달 렌더링 시 필터링된 visiblePersonas 목록만 보여줍니다 */}
+      {/* 공유 모달 */}
       {showShareModal && (
         <div className="fixed inset-0 z-[400] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -195,6 +195,7 @@ const ProfileView = () => {
 
                     {visiblePersonas.length > 1 && <div className="h-px bg-zinc-100 my-2 mx-2"></div>}
 
+                    {/* 공개 처리된 페르소나만 공유 목록에 표시 */}
                     {visiblePersonas.map(persona => {
                         if (persona.id === 'all') return null;
                         return (
@@ -233,7 +234,7 @@ const ProfileView = () => {
           </div>
       )}
 
-      {/* ⭐️ 인덱스 스티커 렌더링 시 필터링된 visiblePersonas 목록만 보여줍니다 */}
+      {/* 인덱스 스티커 탭 영역 (공개 처리된 페르소나만 표시) */}
       {!isProfileEmpty && (
         <div className="flex px-4 md:px-8 gap-1.5 md:gap-2 mb-[-12px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
           {visiblePersonas.map(p => {
@@ -378,6 +379,9 @@ const ProfileView = () => {
                   <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
                   <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
                 </div>
+                <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">
+                  선택한 페르소나 <strong className="text-indigo-500">({CUSTOM_PERSONAS[currentPersona]?.name})</strong> 에 맞는 데이터만 필터링되어 보입니다.
+                </p>
                 
                 <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
                   {availableTabs.map(tab => {
@@ -409,7 +413,7 @@ const ProfileView = () => {
                   <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
                       <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
                       <h3 className="text-base md:text-lg font-black text-zinc-800">해당 모드에서는 표시할 탭이 없습니다</h3>
-                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">다른 인덱스를 선택해보세요.</p>
+                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">다른 인덱스를 선택하거나 편집 화면에서 탭을 구성해보세요.</p>
                   </div>
               ) : (
                   <div className="mt-4 md:mt-6 pb-10">

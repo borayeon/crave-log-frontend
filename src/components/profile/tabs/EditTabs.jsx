@@ -4,7 +4,7 @@ import {
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
   CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser,
-  Layers, Check, Rocket, Eye, Lock // ⭐️ Eye, Lock 아이콘 추가
+  Layers, Check, Rocket, Eye, Lock
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 
@@ -607,7 +607,6 @@ export const ArtEditTab = ({ formData, updateNested }) => {
   );
 };
 
-// ⭐️ 업데이트됨: 페르소나 공개/비공개 토글 추가
 export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_CONFIG }) => {
     const userPersonas = formData.idol?.personas || DEFAULT_PERSONAS;
  
@@ -624,7 +623,7 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
                 {Object.keys(DEFAULT_PERSONAS).map(pKey => {
                     if(pKey === 'all') return null;
                     const pData = userPersonas[pKey] || DEFAULT_PERSONAS[pKey];
-                    const isVisible = pData.isVisible !== false; // 기본값은 true(공개)
+                    const isVisible = pData.isVisible !== false; // 기본값은 true
                     
                     return (
                         <div key={pKey} className={`border rounded-2xl p-5 shadow-sm transition-colors focus-within:bg-white focus-within:border-indigo-300 ${isVisible ? 'bg-zinc-50 border-zinc-200' : 'bg-zinc-100/50 border-zinc-200 opacity-75'}`}>
@@ -635,7 +634,6 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
                                     className="flex-1 bg-transparent text-sm font-black text-zinc-800 outline-none border-b border-transparent focus:border-indigo-300"
                                     placeholder="페르소나 이름"
                                 />
-                                {/* ⭐️ 공개/비공개 토글 스위치 버튼 */}
                                 <button
                                     type="button"
                                     onClick={() => updateNested(["idol", "personas", pKey, "isVisible"], !isVisible)}

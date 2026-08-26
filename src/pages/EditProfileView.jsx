@@ -16,12 +16,13 @@ import {
   PersonaEditTab 
 } from '../components/profile/tabs/EditTabs';
 
-// ⭐️ isVisible: true 속성을 기본값으로 추가
+// ⭐️ 커스텀 페르소나(custom) 슬롯 추가
 export const DEFAULT_PERSONAS = {
   portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
   social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
   dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true }
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true },
+  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true }
 };
 
 const EditProfileView = () => {
@@ -151,7 +152,7 @@ const EditProfileView = () => {
       const newHistory = [commit, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
       
       updateNested(['idol', 'history'], newHistory);
-      showToast(`${commit.date} 기준으로 현재 기록 고정되었습니다! 📸`);
+      showToast(`${commit.date} 기준으로 현재 기록이 고정되었습니다! 📸`);
   };
 
   const uploadImageToServer = async (file, path, setUploadingState) => {
