@@ -72,8 +72,10 @@ const ProfileView = () => {
 
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
 
+  // ⭐️ 주소창에서 'p' 파라미터를 읽어와 현재 페르소나로 설정
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('p');
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('p');
     if (p && CUSTOM_PERSONAS[p]) {
         setCurrentPersona(p);
     }
@@ -109,6 +111,7 @@ const ProfileView = () => {
 
   const isGuest = !isAdmin || isGuestMode;
 
+  // ⭐️ 링크 복사 시 ?p= 형식으로 올바르게 생성되도록 수정
   const handleCopyLink = (personaId) => {
     const baseUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
     const finalUrl = personaId && personaId !== 'all' ? `${baseUrl}&p=${personaId}` : baseUrl;
@@ -153,7 +156,6 @@ const ProfileView = () => {
     art: { id: 'art', icon: <Grid strokeWidth={2}/>, label: 'Dot Art', color: 'bg-pink-50/80 text-pink-500 border-pink-100' }
   };
 
-  // ⭐️ 프론트엔드 프라이버시 체크 함수 복구!
   const privacyObj = useMemo(() => {
       let p = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
       if (safeUser.privacy) {
@@ -177,7 +179,6 @@ const ProfileView = () => {
 
   const activePersonaObj = CUSTOM_PERSONAS[currentPersona] || CUSTOM_PERSONAS['all'];
 
-  // ⭐️ 백엔드에서 날아온 데이터가 정말 텅 비었는지 확인하는 함수
   const isDataActuallyEmpty = (tabId) => {
     switch(tabId) {
       case 'developer': return !safeUser.developer || (!safeUser.developer.about && (!safeUser.developer.projects || safeUser.developer.projects.length === 0));
@@ -194,21 +195,16 @@ const ProfileView = () => {
     }
   };
   
-  // ⭐️ 심층 방어 (이중 차단) 로직 적용
   const availableTabs = currentOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
         
-        // [방어 1] 프론트엔드 UI 레벨 숨김 (게스트일 경우)
         if (isGuest) {
-            // 일반 접근(?p=all)일 때는 비공개 설정된 탭을 무조건 숨김
             if (currentPersona === 'all' && isTabPrivate(tab.id)) return false;
-            // 페르소나 접근일 때는 해당 페르소나에 포함되지 않은 탭 숨김
             if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) return false;
         }
 
-        // [방어 2] 백엔드 데이터 레벨 확인 (Null 이면 숨김)
         if (isDataActuallyEmpty(tab.id)) return false; 
         
         return true; 
@@ -223,7 +219,6 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
-      {/* 공유 모달 */}
       {showShareModal && (
         <div className="fixed inset-0 z-[400] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
