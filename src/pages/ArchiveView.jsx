@@ -22,6 +22,7 @@ const getDomain = (url) => {
   }
 };
 
+// ⭐️ 에어비앤비/항공권 스타일 커스텀 달력 컴포넌트
 const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
   const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
 
@@ -400,6 +401,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             )}
         </div>
 
+        {/* 우측 텍스트 정보 및 폼 영역 */}
         <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-white text-zinc-800 overflow-hidden relative z-10">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100 shrink-0">
                 <div className="flex items-center gap-3">
@@ -447,6 +449,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 </select>
                             </div>
                             
+                            {/* ⭐️ 에어비앤비 스타일 달력 렌더링 */}
                             <div className="relative">
                               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜 설정</label>
                               <div 
@@ -826,8 +829,10 @@ const ArchiveView = () => {
                 취향 아카이브 <Sparkles size={24} className="text-rose-500 fill-rose-500" />
             </h2>
             
+            {/* ⭐️ 우측 컨트롤 영역 (보기 모드 스위치 + 관리자 버튼) */}
             <div className="flex flex-wrap items-center gap-2">
                 
+                {/* ⭐️ 보기 모드 스위치를 카테고리 스크롤 영역에서 밖으로 빼냄 */}
                 {isCurrentCategoryMusic && (
                     <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
                         <button 
@@ -866,6 +871,7 @@ const ArchiveView = () => {
             </div>
         </div>
 
+        {/* ⭐️ 카테고리 탭 스크롤 영역 (온전히 카테고리만 존재하게 됨) */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 items-center">
             <div className="flex flex-nowrap gap-2 w-max pr-4">
                 {categories.map(cat => (
@@ -924,14 +930,11 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* ⭐️ 그리드 크기를 보기 좋게 복구하고(minmax 230px), 세로 늘어남 방지 옵션(items-start) 추가! */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
-            : "grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-5 sm:gap-7 md:gap-8 pb-10 justify-items-center items-start w-full"
+            : "grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3 sm:gap-4 md:gap-5 pb-10 justify-items-center w-full"
         }>
             {customOrderedRecords.map((item, index) => {
-                
-                // 1. 음악 레코드판 UI 
                 if (item.isMusic) {
                   const thumbnailUrl = item.videoId ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
                   
@@ -1044,13 +1047,12 @@ const ArchiveView = () => {
                   }
 
                   return (
-                    // ⭐️ 원본 비율(max-w-[260px]) 복구
-                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[260px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
-                      <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[5px] sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
+                    <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[300px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
+                      <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
-                            <PlayCircle size={24} className="text-white/80 translate-x-[1px]" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
+                            <PlayCircle size={18} className="text-white/80 translate-x-[1px]" />
                         </div>
                         {isEditing && (
                             <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50">
@@ -1058,18 +1060,16 @@ const ArchiveView = () => {
                             </button>
                         )}
                       </div>
-                      <div className="mt-4 sm:mt-5 text-center px-2 w-full">
+                      <div className="mt-3 sm:mt-4 text-center px-2">
                         <h3 className="text-sm sm:text-base font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                        <p className="text-[10px] sm:text-[11px] font-bold text-red-500 mt-1.5 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={12} /> Record</p>
+                        <p className="text-[9px] sm:text-[11px] font-bold text-red-500 mt-1.5 flex items-center justify-center gap-1 uppercase tracking-widest"><Disc size={12} /> Record</p>
                       </div>
                       {!item.isPublic && !isEditing && <div className="absolute top-0 right-0 p-1.5 sm:p-2 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20"><Lock size={12} /></div>}
                     </div>
                   );
                 }
 
-                // 2. 일반 카드 (URL 및 이미지 뷰)
                 return (
-                  // ⭐️ 원본 비율(max-w-[260px]) 복구
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       if (item.isUrlItem && item.youtubeUrl) {
@@ -1077,7 +1077,7 @@ const ArchiveView = () => {
                           return;
                       }
                       setSelectedRecord(item);
-                  }} className={`group relative aspect-[3/4] w-full max-w-[260px] mx-auto rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
+                  }} className={`group relative aspect-[3/4] w-full max-w-[300px] mx-auto rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm cursor-pointer border border-zinc-200/80 bg-white transition-all duration-500 ease-out transform flex flex-col ${!isEditing ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:z-10 hover:border-indigo-300' : ''}`}>
                       {item.isUrlItem ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-50/80 via-white to-zinc-50/80 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center relative overflow-hidden group/card">
                               <div className="absolute top-3 sm:top-5 left-3 sm:left-5 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100/60 text-blue-700 text-[10px] sm:text-[11px] font-black rounded-lg flex items-center gap-1.5 shadow-sm z-10"><LinkIcon size={12} /> {item.category}</div>
