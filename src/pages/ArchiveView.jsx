@@ -22,7 +22,6 @@ const getDomain = (url) => {
   }
 };
 
-// ⭐️ 에어비앤비/항공권 스타일 커스텀 달력 컴포넌트
 const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
   const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
 
@@ -401,7 +400,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             )}
         </div>
 
-        {/* 우측 텍스트 정보 및 폼 영역 */}
         <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-white text-zinc-800 overflow-hidden relative z-10">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100 shrink-0">
                 <div className="flex items-center gap-3">
@@ -449,7 +447,6 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                                 </select>
                             </div>
                             
-                            {/* ⭐️ 에어비앤비 스타일 달력 렌더링 */}
                             <div className="relative">
                               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">날짜 설정</label>
                               <div 
@@ -829,10 +826,8 @@ const ArchiveView = () => {
                 취향 아카이브 <Sparkles size={24} className="text-rose-500 fill-rose-500" />
             </h2>
             
-            {/* ⭐️ 우측 컨트롤 영역 (보기 모드 스위치 + 관리자 버튼) */}
             <div className="flex flex-wrap items-center gap-2">
                 
-                {/* ⭐️ 보기 모드 스위치를 카테고리 스크롤 영역에서 밖으로 빼냄 */}
                 {isCurrentCategoryMusic && (
                     <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1 shadow-sm shrink-0">
                         <button 
@@ -871,7 +866,6 @@ const ArchiveView = () => {
             </div>
         </div>
 
-        {/* ⭐️ 카테고리 탭 스크롤 영역 (온전히 카테고리만 존재하게 됨) */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 items-center">
             <div className="flex flex-nowrap gap-2 w-max pr-4">
                 {categories.map(cat => (
@@ -930,11 +924,14 @@ const ArchiveView = () => {
             </div>
         )}
         
+        {/* ⭐️ 모든 항목(음악 포함)이 예쁜 카드 사이즈(max-w-[300px])를 유지하도록 그리드 옵션 완벽 수정 */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
             : "grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3 sm:gap-4 md:gap-5 pb-10 justify-items-center w-full"
         }>
             {customOrderedRecords.map((item, index) => {
+                
+                // ⭐️ 1. 음악 레코드판 UI (전체 탭에서도 일관된 사이즈 유지)
                 if (item.isMusic) {
                   const thumbnailUrl = item.videoId ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg` : MUSIC_DEFAULT_IMAGE;
                   
@@ -1047,6 +1044,7 @@ const ArchiveView = () => {
                   }
 
                   return (
+                    // ⭐️ 핵심 수정: w-full 대신 최대 너비(max-w-[300px])를 설정하여, 어느 탭에서든 일관된 크기를 갖도록 조정
                     <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[300px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-4 sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
@@ -1069,6 +1067,7 @@ const ArchiveView = () => {
                   );
                 }
 
+                // ⭐️ 2. 일반 카드 (URL 및 이미지 뷰)
                 return (
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
