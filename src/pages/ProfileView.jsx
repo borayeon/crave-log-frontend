@@ -327,7 +327,7 @@ const ProfileView = () => {
 
       <div className="flex-1">
           <div className="bg-white rounded-3xl p-5 md:p-7 shadow-sm relative z-30 border border-zinc-200/80">
-            <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
+            <div className="flex justify-between items-start mb-3 md:mb-5 w-full">
               <div className="flex-1 pr-4 flex gap-2 items-center flex-wrap">
                 {!isProfileEmpty && safeUser.status && (
                   <div className="inline-flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 text-zinc-800 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
@@ -371,58 +371,67 @@ const ProfileView = () => {
                 <p className="text-xs md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
               </div>
             ) : (
-              // ⭐️ 좌우 분할을 없애고 통합(1단) 레이아웃으로 변경
-              <div className="flex flex-col mt-1 md:mt-0 w-full">
+              <div className="flex flex-col w-full">
                 
-                {/* 1. 아바타 & 핵심 정보 영역 (상단) */}
-                <div className="flex flex-row gap-5 md:gap-7 items-center md:items-start">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
-                    {safeUser.profileImageUrl ? (
-                        <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl md:text-5xl font-black text-zinc-300">
-                          {safeUser.name ? safeUser.name.charAt(0) : '?'}
-                        </div>
-                    )}
-                  </div>
+                {/* ⭐️ 이전 2단 레이아웃 복구 (왼쪽: 정보, 오른쪽: 자기소개) */}
+                <div className="flex flex-col md:flex-row gap-5 md:gap-8 items-stretch w-full">
                   
-                  <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
-                    <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
-                    <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
+                  {/* 왼쪽: 아바타 및 기본 정보 */}
+                  <div className="flex-1 md:flex-none md:w-[45%] flex flex-row gap-4 md:gap-5 items-center md:items-start">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
+                      {safeUser.profileImageUrl ? (
+                          <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl md:text-5xl font-black text-zinc-300">
+                            {safeUser.name ? safeUser.name.charAt(0) : '?'}
+                          </div>
+                      )}
+                    </div>
                     
-                    <div className="space-y-1 md:space-y-1.5">
-                      <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
-                        <Briefcase size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.role || '소속/직무 미입력'}
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
-                        <GraduationCap size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.major || '전공 미입력'}
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
-                        <MapPin size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.location || '지역 미입력'}
+                    <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1">
+                      <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
+                      <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
+                      
+                      <div className="space-y-1 md:space-y-1.5">
+                        <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
+                          <Briefcase size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.role || '소속/직무 미입력'}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
+                          <GraduationCap size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.major || '전공 미입력'}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate">
+                          <MapPin size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {safeUser.location || '지역 미입력'}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* 2. 자기소개란 영역 (가로 전체 차지) */}
-                <div className="mt-5 md:mt-6 bg-zinc-50/70 border border-zinc-200/80 p-4 md:p-5 rounded-2xl relative shadow-sm">
-                  <Quote size={20} className="text-violet-300 absolute top-3 right-4 md:top-4 md:right-5 opacity-40"/>
-                  <p className="text-[13px] md:text-[14px] text-zinc-800 font-bold leading-relaxed whitespace-pre-line pr-6">
-                    {safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}
-                  </p>
-                </div>
+                  {/* 구분선 */}
+                  <div className="hidden md:block w-px bg-zinc-100 my-1 mx-2"></div>
 
-                {/* 3. 태그 & 소셜 링크 영역 (하단 정렬) */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-5">
-                  <div className="flex flex-wrap gap-2">
-                      {(safeUser.tags || []).map(tag => (
-                        <span key={tag} className="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-600 text-[10px] md:text-xs font-bold rounded-lg cursor-default shadow-sm hover:border-zinc-300 transition-colors">#{tag}</span>
-                      ))}
+                  {/* 오른쪽: 자기소개 (Bio) */}
+                  <div className="flex-1 flex flex-col justify-center md:pl-2">
+                    <Quote size={24} className="text-violet-300 mb-2 md:mb-3"/>
+                    <p className="text-[13px] md:text-[14px] text-zinc-800 font-bold leading-relaxed whitespace-pre-line">
+                      {safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}
+                    </p>
                   </div>
+                </div>
 
-                  {(safeUser.links && safeUser.links.length > 0) && (
+                {/* ⭐️ 하단: 태그와 소셜 링크 (전체 너비 사용) */}
+                {((safeUser.tags && safeUser.tags.length > 0) || (safeUser.links && safeUser.links.length > 0)) && (
+                  <>
+                    <div className="w-full h-px bg-zinc-100 my-5 md:my-6"></div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      
+                      <div className="flex flex-wrap gap-2">
+                          {(safeUser.tags || []).map(tag => (
+                            <span key={tag} className="px-3 py-1.5 bg-white border border-zinc-200 text-zinc-600 text-[10px] md:text-xs font-bold rounded-lg cursor-default shadow-sm hover:border-zinc-300 transition-colors">#{tag}</span>
+                          ))}
+                      </div>
+
                       <div className="flex flex-wrap gap-2.5">
-                          {safeUser.links.map((link, idx) => (
+                          {(safeUser.links || []).map((link, idx) => (
                               <a 
                                   key={idx} 
                                   href={link.url} 
@@ -439,9 +448,9 @@ const ProfileView = () => {
                               </a>
                           ))}
                       </div>
-                  )}
-                </div>
-
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
