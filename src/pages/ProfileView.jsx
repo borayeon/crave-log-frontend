@@ -80,7 +80,6 @@ const ProfileView = () => {
     }
   }, [CUSTOM_PERSONAS]);
 
-  // ⭐️ 페르소나 순서(personaOrder)를 적용하여 정렬
   const personaOrder = safeUser.addProfile?.personaOrder || ['all', ...Object.keys(DEFAULT_PERSONAS)];
   const displayPersonas = useMemo(() => {
     const list = [...visiblePersonas];
@@ -89,7 +88,6 @@ const ProfileView = () => {
             list.push(CUSTOM_PERSONAS[currentPersona]);
         }
     }
-    // 사용자가 설정한 순서대로 정렬
     list.sort((a, b) => {
         const idxA = personaOrder.indexOf(a.id);
         const idxB = personaOrder.indexOf(b.id);
@@ -303,8 +301,9 @@ const ProfileView = () => {
           </div>
       )}
 
+      {/* ⭐️ 페르소나 탭 크기 및 여백 완벽 축소 (슬림한 인덱스 탭 디자인) */}
       {!isProfileEmpty && (
-        <div className="flex px-4 md:px-8 gap-1.5 md:gap-2 mb-[-12px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
+        <div className="flex px-6 md:px-10 gap-1 md:gap-1.5 mb-[-8px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
           {displayPersonas.map(p => {
             const isActive = currentPersona === p.id;
             const isSecret = p.isVisible === false;
@@ -313,10 +312,10 @@ const ProfileView = () => {
               <button
                 key={p.id}
                 onClick={() => setCurrentPersona(p.id)}
-                className={`shrink-0 px-4 md:px-6 py-2.5 rounded-t-2xl text-[11px] md:text-[13px] font-black transition-all duration-300 border border-b-0 flex items-center gap-1.5
+                className={`shrink-0 px-4 md:px-5 rounded-t-[14px] text-[11px] md:text-xs font-bold transition-all duration-200 border border-b-0 flex items-center gap-1.5
                   ${isActive 
-                    ? `${p.activeColor || 'bg-indigo-500 text-white border-indigo-500'} pb-6 pt-3.5 -mt-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20`
-                    : `${p.color || 'bg-zinc-50 text-zinc-500'} border-zinc-200/80 pb-4 opacity-70 hover:opacity-100 hover:bg-white z-10 hover:pb-5 hover:-mt-1`}
+                    ? `${p.activeColor || 'bg-indigo-500 text-white border-indigo-500'} pt-2.5 pb-4 -mt-1 shadow-sm z-20`
+                    : `${p.color || 'bg-zinc-50 text-zinc-500'} border-zinc-200/80 pt-2 pb-3 opacity-60 hover:opacity-100 hover:bg-white z-10 hover:pb-3.5 hover:-mt-0.5`}
                 `}
               >
                 {isSecret && <Lock size={12} className={isActive ? "text-white/80" : "text-rose-400"} />}
@@ -328,7 +327,6 @@ const ProfileView = () => {
       )}
 
       <div className="flex-1">
-          {/* ⭐️ 프로필 카드 패딩 및 여백 축소 (p-5 md:p-10 -> p-5 md:p-7) */}
           <div className="bg-white rounded-3xl p-5 md:p-7 shadow-sm relative z-30 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
               <div className="flex-1 pr-4 flex gap-2 items-center flex-wrap">
@@ -374,7 +372,6 @@ const ProfileView = () => {
                 <p className="text-xs md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
               </div>
             ) : (
-              // ⭐️ 좌우 영역 사이의 gap 축소
               <div className="flex flex-col md:flex-row gap-5 md:gap-7 items-stretch mt-1 md:mt-0">
                 <div className="flex-1 flex flex-col min-w-0 md:pr-2"> 
                   <div className="flex flex-row gap-4 md:gap-6 items-center md:items-start">
@@ -455,8 +452,6 @@ const ProfileView = () => {
                   <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
                   <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
                 </div>
-                
-                {/* ⭐️ 설명란 제거 (요청 3번 반영) */}
                 
                 <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-2 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
                   {availableTabs.map(tab => {
