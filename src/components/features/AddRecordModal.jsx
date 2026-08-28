@@ -1,6 +1,105 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, Globe, Lock, PlayCircle, Image as ImageIcon, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, ChevronLeft, ChevronRight, Globe, Lock, PlayCircle, Image as ImageIcon, Loader2, Link as LinkIcon, Calendar } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
+
+// ⭐️ 에어비앤비/항공권 스타일 커스텀 달력 컴포넌트
+const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
+  const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+
+  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  const handleDayClick = (day) => {
+    const clickedDate = new Date(year, month, day);
+    const formatted = `${clickedDate.getFullYear()}-${String(clickedDate.getMonth() + 1).padStart(2, '0')}-${String(clickedDate.getDate()).padStart(2, '0')}`;
+
+    if (!startDate || (startDate && endDate)) {
+      onChange(formatted, '');
+    } else {
+      const start = new Date(startDate);
+      if (clickedDate < start) {
+        onChange(formatted, '');
+      } else if (formatted === startDate) {
+        onChange(startDate, '');
+      } else {
+        onChange(startDate, formatted);
+      }
+    }
+  };
+
+  const isSelected = (day) => {
+    const d = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return d === startDate || d === endDate;
+  };
+
+  const isInRange = (day) => {
+    if (!startDate || !endDate) return false;
+    const d = new Date(year, month, day);
+    return d > new Date(startDate) && d < new Date(endDate);
+  };
+
+  return (
+    <div className="bg-white border border-zinc-200 p-4 rounded-2xl shadow-xl w-[280px] absolute z-[300] mt-2 left-0" onClick={e => e.stopPropagation()}>
+      <div className="flex justify-between items-center mb-4">
+        <button type="button" onClick={handlePrevMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"><ChevronLeft size={16}/></button>
+        <span className="font-black text-sm text-zinc-800">{year}년 {month + 1}월</span>
+        <button type="button" onClick={handleNextMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"><ChevronRight size={16}/></button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-2 text-zinc-400 font-bold uppercase">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div className="grid grid-cols-7 gap-y-1 text-sm">
+        {blanks.map(b => <div key={`blank-${b}`} className="p-2"/>)}
+        {days.map(day => {
+          const selected = isSelected(day);
+          const inRange = isInRange(day);
+          const isStart = startDate === `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const isEnd = endDate === `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          
+          let bgClass = "hover:bg-zinc-100";
+          let textClass = "text-zinc-700 font-medium";
+          let roundedClass = "rounded-lg";
+
+          if (selected) {
+            bgClass = "bg-indigo-500 shadow-sm";
+            textClass = "text-white font-black";
+            if (isStart && endDate) roundedClass = "rounded-l-lg rounded-r-none";
+            if (isEnd) roundedClass = "rounded-r-lg rounded-l-none";
+            if (isStart && !endDate) roundedClass = "rounded-lg";
+          } else if (inRange) {
+            bgClass = "bg-indigo-50";
+            textClass = "text-indigo-700 font-bold";
+            roundedClass = "rounded-none";
+          }
+
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => handleDayClick(day)}
+              className={`py-1.5 w-full flex items-center justify-center transition-colors ${bgClass} ${textClass} ${roundedClass}`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 flex justify-between items-center border-t border-zinc-100 pt-3">
+        <span className="text-[10px] font-bold text-zinc-400">{startDate && endDate ? '기간 설정됨' : '날짜 선택'}</span>
+        <button type="button" onClick={onClose} className="text-xs font-black text-white bg-zinc-900 px-4 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">적용</button>
+      </div>
+    </div>
+  );
+};
 
 const AddRecordModal = () => {
   const { addRecordModalOpen, setAddRecordModalOpen, tagTree, fetchAllData, showToast, setViewMode, apiFetch } = useAppStore();
@@ -9,10 +108,13 @@ const AddRecordModal = () => {
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   
-  // ⭐️ 날짜 상태 및 기간 활성화 여부
+  // ⭐️ 즉석 새 태그 관리를 위한 State 추가
+  const [newTags, setNewTags] = useState([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState('');
-  const [isDateRange, setIsDateRange] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const [imageUrl, setImageUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -31,9 +133,11 @@ const AddRecordModal = () => {
       setTitle('');
       setCategoryId('');
       setTagIds([]);
+      setNewTags([]); // 창 열 때 초기화
+      setNewTagInput('');
       setStartDate(new Date().toISOString().split('T')[0]);
       setEndDate('');
-      setIsDateRange(false); // ⭐️ 모달 열릴 때 단일 일자로 초기화
+      setShowDatePicker(false);
       setImageUrl('');
       setYoutubeUrl('');
       setContent('');
@@ -124,12 +228,12 @@ const AddRecordModal = () => {
         return id;
       }).filter(id => !isNaN(id));
 
-      // ⭐️ 기간 범위가 활성화되어 있고 종료일이 있을 때만 이어붙임
       let formattedDate = startDate.replace(/-/g, '.');
-      if (isDateRange && endDate && startDate !== endDate) {
+      if (endDate && startDate !== endDate) {
         formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
       }
 
+      // ⭐️ 백엔드로 전송할 페이로드에 즉석 생성된 태그(newTags) 추가
       const payload = {
         title: title.trim(),
         categoryName: finalCatName,
@@ -138,7 +242,8 @@ const AddRecordModal = () => {
         youtubeUrl: (isMusicCat || isUrlCat) ? youtubeUrl.trim() : '',
         content: content.trim(),
         isPublic: isPublic,
-        tagIds: numericTagIds
+        tagIds: numericTagIds,
+        newTags: newTags // <-- 여기서 백엔드로 새 태그들을 리스트로 전달합니다. (백엔드 DTO에 List<String> newTags 추가 필요)
       };
 
       const res = await apiFetch(`/me/records`, {
@@ -232,45 +337,28 @@ const AddRecordModal = () => {
               )}
             </div>
 
-            {/* ⭐️ 날짜 설정 (기본은 하나, 클릭 시 기간) */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">날짜</label>
-                <button 
-                  type="button" 
-                  onClick={() => {
-                      setIsDateRange(!isDateRange);
-                      if (isDateRange) setEndDate(''); // 기간 끄면 종료일 지우기
-                  }} 
-                  className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors"
-                >
-                  {isDateRange ? '단일 일자로 변경' : '+ 기간 설정'}
-                </button>
+            <div className="relative">
+              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">날짜 설정</label>
+              <div 
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="w-full h-[46px] bg-white border border-zinc-200 rounded-xl px-4 py-2 text-sm font-bold text-zinc-700 cursor-pointer flex items-center gap-2 shadow-sm hover:border-indigo-400 transition-colors"
+              >
+                <Calendar size={16} className="text-indigo-500" />
+                {startDate} {endDate && startDate !== endDate ? ` ~ ${endDate}` : ''}
               </div>
-              <div className="flex items-center gap-1.5 h-[46px]">
-                  <input 
-                      type="date" 
-                      value={startDate} 
-                      onChange={e=>setStartDate(e.target.value)} 
-                      className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
-                  />
-                  {isDateRange && (
-                    <>
-                      <span className="text-zinc-400 font-black">~</span>
-                      <input 
-                          type="date" 
-                          value={endDate} 
-                          onChange={e=>setEndDate(e.target.value)} 
-                          min={startDate} 
-                          className="w-full h-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm animate-in zoom-in-95 duration-200" 
-                      />
-                    </>
-                  )}
-              </div>
+              {showDatePicker && (
+                <CustomDateRangePicker 
+                  startDate={startDate} 
+                  endDate={endDate} 
+                  onChange={(s, e) => { setStartDate(s); setEndDate(e); }} 
+                  onClose={() => setShowDatePicker(false)} 
+                />
+              )}
             </div>
           </div>
 
-          {!isAddingNewCat && selectedCategoryNode && (selectedCategoryNode.children || []).length > 0 && (
+          {/* ⭐️ 태그 연결 영역 (즉석 추가 기능 포함) */}
+          {(categoryId || isAddingNewCat) && (
             <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
               <button 
                 type="button"
@@ -278,25 +366,70 @@ const AddRecordModal = () => {
                 className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-colors outline-none"
               >
                 <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
-                  태그 연결 (선택된 태그: {tagIds.length}개)
+                  태그 연결 (선택: {tagIds.length}개, 새 태그: {newTags.length}개)
                 </span>
                 <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isTagExpanded ? 'rotate-180' : ''}`} />
               </button>
               
               {isTagExpanded && (
-                <div className="p-4 border-t border-zinc-100 flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                  {selectedCategoryNode.children.map(tag => {
-                    const isSelected = tagIds.includes(tag.id);
-                    return (
-                      <button 
-                        key={tag.id} type="button"
-                        onClick={() => setTagIds(prev => isSelected ? prev.filter(id=>id!==tag.id) : [...prev, tag.id])} 
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${isSelected ? 'bg-indigo-600 text-white border border-indigo-600' : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50'}`}
-                      >
-                        #{tag.name}
-                      </button>
-                    );
-                  })}
+                <div className="p-4 border-t border-zinc-100 flex flex-col gap-5">
+                  
+                  {/* 기존 카테고리 태그 목록 */}
+                  {!isAddingNewCat && selectedCategoryNode && (selectedCategoryNode.children || []).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCategoryNode.children.map(tag => {
+                        const isSelected = tagIds.includes(tag.id);
+                        return (
+                          <button 
+                            key={tag.id} type="button"
+                            onClick={() => setTagIds(prev => isSelected ? prev.filter(id=>id!==tag.id) : [...prev, tag.id])} 
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${isSelected ? 'bg-indigo-600 text-white border border-indigo-600' : 'bg-white text-zinc-600 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                          >
+                            #{tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ⭐️ 즉석 태그 입력 영역 */}
+                  <div>
+                    <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">
+                        + 즉석 태그 만들기
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {newTags.map((tag, idx) => (
+                        <span 
+                            key={idx} 
+                            onClick={() => setNewTags(prev => prev.filter((_, i) => i !== idx))}
+                            className="group flex items-center gap-1 px-3 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold rounded-lg cursor-pointer hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-colors shadow-sm"
+                        >
+                            #{tag} <CloseIcon size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </span>
+                      ))}
+                      <input 
+                        type="text"
+                        value={newTagInput}
+                        onChange={e => setNewTagInput(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ',') {
+                                e.preventDefault();
+                                const val = newTagInput.trim().replace(/^#/, '');
+                                if (val && !newTags.includes(val)) setNewTags([...newTags, val]);
+                                setNewTagInput('');
+                            }
+                        }}
+                        onBlur={() => {
+                            const val = newTagInput.trim().replace(/^#/, '');
+                            if (val && !newTags.includes(val)) setNewTags([...newTags, val]);
+                            setNewTagInput('');
+                        }}
+                        placeholder="+ 새 태그 입력 후 Enter"
+                        className="flex-1 min-w-[150px] bg-white border border-dashed border-zinc-300 focus:border-solid focus:border-indigo-400 rounded-lg px-3 py-1.5 text-xs font-bold text-zinc-700 outline-none transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+
                 </div>
               )}
             </div>
