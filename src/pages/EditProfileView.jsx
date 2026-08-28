@@ -547,6 +547,7 @@ const EditProfileView = () => {
           </div>
         </div>
 
+        {/* ⭐️ flex-wrap을 적용하여 가로 스크롤을 없애고 다음 줄로 넘어가도록 수정됨 */}
         <div className="flex flex-wrap gap-2 mb-4 p-1">
           {['persona', ...(formData.idol?.tabOrder || [])].map((tabId, index) => {
               const tab = TABS_CONFIG[tabId];
@@ -583,7 +584,6 @@ const EditProfileView = () => {
           })}
         </div>
 
-        {/* ⭐️ 수정됨: 페르소나 탭이 아닐 때만 공개/비공개 멘트 표시 */}
         {editTab !== 'persona' && (
           <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
             <div>
