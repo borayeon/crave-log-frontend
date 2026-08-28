@@ -547,7 +547,7 @@ const EditProfileView = () => {
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-4 p-1">
+        <div className="flex flex-wrap gap-2 mb-4 p-1">
           {['persona', ...(formData.idol?.tabOrder || [])].map((tabId, index) => {
               const tab = TABS_CONFIG[tabId];
               if (!tab) return null;
