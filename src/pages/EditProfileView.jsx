@@ -547,12 +547,14 @@ const EditProfileView = () => {
           </div>
         </div>
 
-        {/* ⭐️ flex-wrap을 적용하여 가로 스크롤을 없애고 다음 줄로 넘어가도록 수정됨 */}
         <div className="flex flex-wrap gap-2 mb-4 p-1">
           {['persona', ...(formData.idol?.tabOrder || [])].map((tabId, index) => {
               const tab = TABS_CONFIG[tabId];
               if (!tab) return null;
+              
               const isPersonaTab = tabId === 'persona';
+              // ⭐️ 비공개 처리된 탭인지 확인
+              const isPrivate = !isPersonaTab && isTabPrivate(tab.id);
               
               return (
                   <button 
@@ -576,9 +578,13 @@ const EditProfileView = () => {
                       ${editTab === tab.id ? 'bg-zinc-900 text-white border-zinc-900 shadow-md' : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50'} 
                       ${draggedTabIndex === index-1 ? 'opacity-40 border-dashed border-indigo-400' : ''}
                       ${isPersonaTab ? 'mr-4 bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100 cursor-pointer shadow-sm' : ''}
+                      ${isPrivate && editTab !== tab.id ? 'border-rose-200 bg-rose-50/40 text-rose-600' : ''}
                     `}
                   >
-                    {React.cloneElement(tab.icon, { size: 14 })} {tab.label}
+                    {React.cloneElement(tab.icon, { size: 14 })} 
+                    <span>{tab.label}</span>
+                    {/* ⭐️ 비공개 탭일 경우 락(Lock) 아이콘 표시 */}
+                    {isPrivate && <Lock size={12} className={editTab === tab.id ? "text-rose-300" : "text-rose-500"} />}
                   </button>
               );
           })}
