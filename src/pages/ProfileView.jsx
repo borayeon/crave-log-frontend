@@ -74,19 +74,29 @@ const ProfileView = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const p = params.get('p') || params.get('token'); // 'token'으로 올 경우도 대비
+    const p = params.get('p') || params.get('token'); 
     if (p && CUSTOM_PERSONAS[p]) {
         setCurrentPersona(p);
     }
   }, [CUSTOM_PERSONAS]);
 
+  // ⭐️ 페르소나 순서(personaOrder)를 적용하여 정렬
+  const personaOrder = safeUser.addProfile?.personaOrder || ['all', ...Object.keys(DEFAULT_PERSONAS)];
   const displayPersonas = useMemo(() => {
     const list = [...visiblePersonas];
     if (currentPersona !== 'all' && CUSTOM_PERSONAS[currentPersona]?.isVisible === false) {
-        list.push(CUSTOM_PERSONAS[currentPersona]);
+        if (!list.find(p => p.id === currentPersona)) {
+            list.push(CUSTOM_PERSONAS[currentPersona]);
+        }
     }
+    // 사용자가 설정한 순서대로 정렬
+    list.sort((a, b) => {
+        const idxA = personaOrder.indexOf(a.id);
+        const idxB = personaOrder.indexOf(b.id);
+        return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+    });
     return list;
-  }, [visiblePersonas, currentPersona, CUSTOM_PERSONAS]);
+  }, [visiblePersonas, currentPersona, CUSTOM_PERSONAS, personaOrder]);
 
   if (isLoading) {
     return (
@@ -96,7 +106,6 @@ const ProfileView = () => {
            <Loader2 size={40} className="text-indigo-500 animate-spin relative z-10" />
         </div>
         <h2 className="text-xl md:text-2xl font-black text-zinc-800 tracking-tight mb-8">데이터를 불러오는 중입니다</h2>
-        
         <div className="bg-white/80 backdrop-blur-sm px-6 py-5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-md w-full text-center relative overflow-hidden group">
            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
            <div className="flex justify-center mb-2">
@@ -110,7 +119,6 @@ const ProfileView = () => {
 
   const isGuest = !isAdmin || isGuestMode;
 
-  // 링크 복사 시 난수 토큰(token)이 생성되어 있으면 그것을 쓰고, 없으면 기존 p(ID) 사용
   const handleCopyLink = (personaId) => {
     const baseUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
     
@@ -131,7 +139,7 @@ const ProfileView = () => {
         persona.token = token; 
     }
 
-    const finalUrl = `${baseUrl}&p=${personaId}`; // 현재 백엔드 로직에 맞춰 파라미터는 p 로 전송
+    const finalUrl = `${baseUrl}&p=${personaId}`; 
     
     navigator.clipboard.writeText(finalUrl).then(() => {
       showToast(`${persona.name} 시크릿 링크가 복사되었습니다! 🔒`);
@@ -212,25 +220,13 @@ const ProfileView = () => {
     }
   };
   
-  // ⭐️ 심층 방어 및 '주인 미리보기' 로직 수정 완료
   const availableTabs = currentOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
-        
-        // 1. [공통] 주인이든 손님이든 상관없이, 현재 선택한 페르소나에 속하지 않은 탭은 무조건 숨김 (미리보기 지원)
-        if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) {
-            return false;
-        }
-
-        // 2. [손님 전용] 일반 접근(?p=all)일 때는 비공개 설정된 탭을 무조건 숨김
-        if (isGuest && currentPersona === 'all' && isTabPrivate(tab.id)) {
-            return false;
-        }
-
-        // 3. [공통] 백엔드 데이터 레벨 확인 (Null 이거나 데이터가 아예 없으면 숨김)
+        if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) return false;
+        if (isGuest && currentPersona === 'all' && isTabPrivate(tab.id)) return false;
         if (isDataActuallyEmpty(tab.id)) return false; 
-        
         return true; 
     });
 
@@ -262,13 +258,10 @@ const ProfileView = () => {
                         </div>
                         <Copy size={16} className="text-zinc-300 group-hover:text-zinc-600 transition-colors" />
                     </button>
-
                     <div className="h-px bg-zinc-100 my-2 mx-2"></div>
-
                     {shareablePersonas.map(persona => {
                         if (persona.id === 'all') return null;
                         const isSecret = persona.isVisible === false;
-
                         return (
                           <button key={persona.id} onClick={() => handleCopyLink(persona.id)} className="w-full flex items-center justify-between p-4 rounded-2xl border border-zinc-100 hover:border-violet-300 hover:bg-violet-50/50 transition-all text-left group">
                               <div>
@@ -335,7 +328,8 @@ const ProfileView = () => {
       )}
 
       <div className="flex-1">
-          <div className="bg-white rounded-3xl p-5 md:p-10 shadow-sm relative z-30 border border-zinc-200/80">
+          {/* ⭐️ 프로필 카드 패딩 및 여백 축소 (p-5 md:p-10 -> p-5 md:p-7) */}
+          <div className="bg-white rounded-3xl p-5 md:p-7 shadow-sm relative z-30 border border-zinc-200/80">
             <div className="flex justify-between items-start mb-3 md:mb-4 w-full">
               <div className="flex-1 pr-4 flex gap-2 items-center flex-wrap">
                 {!isProfileEmpty && safeUser.status && (
@@ -380,10 +374,11 @@ const ProfileView = () => {
                 <p className="text-xs md:text-sm font-medium text-zinc-500">가입하고 나만의 명함을 만들어보세요.</p>
               </div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-1 md:mt-0">
-                <div className="flex-1 flex flex-col min-w-0 md:pr-4"> 
-                  <div className="flex flex-row gap-5 md:gap-8 items-center md:items-start">
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
+              // ⭐️ 좌우 영역 사이의 gap 축소
+              <div className="flex flex-col md:flex-row gap-5 md:gap-7 items-stretch mt-1 md:mt-0">
+                <div className="flex-1 flex flex-col min-w-0 md:pr-2"> 
+                  <div className="flex flex-row gap-4 md:gap-6 items-center md:items-start">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
                       {safeUser.profileImageUrl ? (
                           <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
@@ -393,7 +388,7 @@ const ProfileView = () => {
                       )}
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-2">
+                    <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-1.5">
                       <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{safeUser.name || '이름 없음'}</h2>
                       <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{safeUser.handle || 'handle'}</p>
                       
@@ -412,7 +407,7 @@ const ProfileView = () => {
                   </div>
 
                   {(safeUser.tags || []).length > 0 && (
-                    <div className="mt-5 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                         {safeUser.tags.map(tag => (
                           <span key={tag} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-600 text-[10px] md:text-xs font-bold rounded-lg cursor-default shadow-sm hover:border-zinc-300 transition-colors">#{tag}</span>
                         ))}
@@ -441,11 +436,11 @@ const ProfileView = () => {
                   )}
                 </div>
 
-                <div className="hidden md:block w-px bg-zinc-100 my-2 mx-4"></div>
+                <div className="hidden md:block w-px bg-zinc-100 my-2 mx-2"></div>
 
-                <div className="flex-1 flex flex-col justify-center md:pl-6 mt-3 md:mt-0">
-                  <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
-                  <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
+                <div className="flex-1 flex flex-col justify-center md:pl-4 mt-3 md:mt-0">
+                  <Quote size={24} className="text-violet-300 mb-2 md:mb-3"/>
+                  <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-2 whitespace-pre-line">
                     "{safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}"
                   </p>
                 </div>
@@ -455,17 +450,15 @@ const ProfileView = () => {
 
           {!isProfileEmpty && (
             <>
-              <div className="mt-8 md:mt-12">
-                <div className="flex items-center justify-between mb-1">
+              <div className="mt-8 md:mt-10">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
                   <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
                 </div>
                 
-                <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-3">
-                  선택한 페르소나 <strong className="text-indigo-500">({CUSTOM_PERSONAS[currentPersona]?.name})</strong> 에 맞는 데이터만 서버에서 전송받아 렌더링합니다.
-                </p>
+                {/* ⭐️ 설명란 제거 (요청 3번 반영) */}
                 
-                <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-4 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-2 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
                   {availableTabs.map(tab => {
                       const isActive = activeTab === tab.id;
                       
@@ -492,7 +485,7 @@ const ProfileView = () => {
                       <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">비공개 처리되었거나 페르소나 설정에 의해 숨겨진 항목입니다.</p>
                   </div>
               ) : (
-                  <div className="mt-4 md:mt-6 pb-10">
+                  <div className="mt-2 pb-10">
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={() => {}} />}
