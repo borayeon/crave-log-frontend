@@ -72,10 +72,9 @@ const ProfileView = () => {
 
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
 
-  // ⭐️ 주소창에서 'p' 파라미터를 읽어와 현재 페르소나로 설정
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const p = params.get('p');
+    const p = params.get('p') || params.get('token'); // 'token'으로 올 경우도 대비
     if (p && CUSTOM_PERSONAS[p]) {
         setCurrentPersona(p);
     }
@@ -111,13 +110,31 @@ const ProfileView = () => {
 
   const isGuest = !isAdmin || isGuestMode;
 
-  // ⭐️ 링크 복사 시 ?p= 형식으로 올바르게 생성되도록 수정
+  // 링크 복사 시 난수 토큰(token)이 생성되어 있으면 그것을 쓰고, 없으면 기존 p(ID) 사용
   const handleCopyLink = (personaId) => {
     const baseUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
-    const finalUrl = personaId && personaId !== 'all' ? `${baseUrl}&p=${personaId}` : baseUrl;
+    
+    if (!personaId || personaId === 'all') {
+        navigator.clipboard.writeText(baseUrl).then(() => {
+          showToast("기본 프로필 링크가 복사되었습니다! 🔗");
+          setShowShareModal(false);
+        });
+        return;
+    }
+
+    const persona = CUSTOM_PERSONAS[personaId];
+    if (!persona) return;
+
+    let token = persona.token;
+    if (!token) {
+        token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+        persona.token = token; 
+    }
+
+    const finalUrl = `${baseUrl}&p=${personaId}`; // 현재 백엔드 로직에 맞춰 파라미터는 p 로 전송
     
     navigator.clipboard.writeText(finalUrl).then(() => {
-      showToast(`${CUSTOM_PERSONAS[personaId || 'all'].name} 링크가 복사되었습니다! 🔗`);
+      showToast(`${persona.name} 시크릿 링크가 복사되었습니다! 🔒`);
       setShowShareModal(false);
     }).catch(err => {
       showToast("링크 복사에 실패했습니다.");
@@ -195,16 +212,23 @@ const ProfileView = () => {
     }
   };
   
+  // ⭐️ 심층 방어 및 '주인 미리보기' 로직 수정 완료
   const availableTabs = currentOrder
     .map(id => allTabsMap[id])
     .filter(tab => {
         if (!tab) return false;
         
-        if (isGuest) {
-            if (currentPersona === 'all' && isTabPrivate(tab.id)) return false;
-            if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) return false;
+        // 1. [공통] 주인이든 손님이든 상관없이, 현재 선택한 페르소나에 속하지 않은 탭은 무조건 숨김 (미리보기 지원)
+        if (currentPersona !== 'all' && activePersonaObj.tabs && !activePersonaObj.tabs.includes(tab.id)) {
+            return false;
         }
 
+        // 2. [손님 전용] 일반 접근(?p=all)일 때는 비공개 설정된 탭을 무조건 숨김
+        if (isGuest && currentPersona === 'all' && isTabPrivate(tab.id)) {
+            return false;
+        }
+
+        // 3. [공통] 백엔드 데이터 레벨 확인 (Null 이거나 데이터가 아예 없으면 숨김)
         if (isDataActuallyEmpty(tab.id)) return false; 
         
         return true; 
