@@ -43,6 +43,9 @@ const EditProfileView = () => {
     const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
+    
+    // 페르소나 순서 초기화 (저장된 값이 없으면 기본 페르소나 키들을 가져옴)
+    const savedPersonaOrder = safeUser.idol?.personaOrder || ['all', ...Object.keys(safeUser.idol?.personas || DEFAULT_PERSONAS)];
 
     let memoArea = safeUser.idol?.memoArea || safeUser.memoArea || { text: "", dots: [], gridSize: 15 };
     if (!memoArea.gridSize) memoArea.gridSize = 15;
@@ -63,6 +66,7 @@ const EditProfileView = () => {
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
+          personaOrder: [...new Set(savedPersonaOrder)], // 고유값 유지
           personas: safeUser.idol?.personas || JSON.parse(JSON.stringify(DEFAULT_PERSONAS)),
           businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
           qna: qnaData,
@@ -104,6 +108,7 @@ const EditProfileView = () => {
   
   const [viewHistoryItem, setViewHistoryItem] = useState(null); 
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
+  const [draggedPersonaIndex, setDraggedPersonaIndex] = useState(null);
 
   const TABS_CONFIG = {
     developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
@@ -136,6 +141,19 @@ const EditProfileView = () => {
       return newData;
     });
   };
+
+  // ⭐️ [버그 방어] 사용자가 페르소나를 새로 추가하거나 지웠을 때, 순서 배열(personaOrder)도 알아서 업데이트되도록 동기화합니다.
+  useEffect(() => {
+    if (!formData.idol?.personas) return;
+    const currentPersonaKeys = Object.keys(formData.idol.personas);
+    const currentOrder = formData.idol.personaOrder || [];
+    
+    // 새로 생긴 페르소나가 순서 배열에 없으면 맨 뒤에 추가해줍니다.
+    const missingKeys = currentPersonaKeys.filter(k => !currentOrder.includes(k));
+    if (missingKeys.length > 0) {
+        updateNested(['idol', 'personaOrder'], [...currentOrder, ...missingKeys]);
+    }
+  }, [formData.idol?.personas]);
 
   const handleCommitProfile = () => {
       const currentData = { ...formData.idol };
@@ -491,61 +509,96 @@ const EditProfileView = () => {
                     value={formData.bio || ''} 
                     onChange={e => updateNested(["bio"], e.target.value)} 
                     placeholder="나를 표현하는 한 줄 소개"
-                    rows={2}
-                    className="w-full text-sm text-zinc-700 font-bold bg-zinc-50 border border-zinc-200 focus:border-violet-400 focus:bg-white rounded-xl p-3 outline-none resize-none transition-colors"
+                    rows={4}
+                    className="w-full text-sm text-zinc-700 font-bold bg-zinc-50 border border-zinc-200 focus:border-violet-400 focus:bg-white rounded-xl p-4 outline-none resize-none transition-colors"
                 />
                 
                 <div>
                    {renderArrayInput("나의 키워드", ["tags"], "키워드 입력 후 Enter")}
                 </div>
 
-                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-200/60 mt-4">
-                    <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><LinkIcon size={14}/> 소셜 링크 관리</h4>
-                    <div className="space-y-2">
+                <div className="bg-zinc-50 rounded-2xl p-3 border border-zinc-200/60 mt-4">
+                    <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><LinkIcon size={12}/> 소셜 링크 관리</h4>
+                    <div className="space-y-1.5">
                         {(formData.links || []).map((link, idx) => (
-                            <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center bg-white p-2 rounded-xl border border-zinc-200 shadow-sm relative">
+                            <div key={idx} className="flex flex-col sm:flex-row gap-1.5 items-center bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm relative">
                                 <select 
                                     value={link.platform} 
                                     onChange={e => { const arr=[...(formData.links||[])]; arr[idx].platform=e.target.value; updateNested(["links"], arr); }} 
-                                    className="w-full sm:w-32 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:border-violet-400"
+                                    className="w-full sm:w-28 bg-zinc-50 border border-zinc-200 rounded-md px-2 py-1 text-[11px] font-bold outline-none focus:border-violet-400"
                                 >
                                     <option value="github">GitHub</option>
                                     <option value="youtube">YouTube</option>
-                                    <option value="twitch">스트리밍 (Twitch)</option>
+                                    <option value="twitch">스트리밍</option>
                                     <option value="instagram">Instagram</option>
-                                    <option value="x">X (Twitter)</option>
+                                    <option value="x">X(Twitter)</option>
                                     <option value="facebook">Facebook</option>
                                     <option value="kakao">카카오톡</option>
                                     <option value="blog">개인 블로그</option>
-                                    <option value="web">개인 웹페이지</option>
+                                    <option value="web">웹페이지</option>
                                     <option value="notion">Notion</option>
                                     <option value="other">기타</option>
                                 </select>
                                 <input 
                                     value={link.name} 
                                     onChange={e => { const arr=[...(formData.links||[])]; arr[idx].name=e.target.value; updateNested(["links"], arr); }} 
-                                    className="w-full sm:w-1/4 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-medium outline-none focus:border-violet-400" 
-                                    placeholder="이름 (예: 블로그)" 
+                                    className="w-full sm:w-1/4 bg-zinc-50 border border-zinc-200 rounded-md px-2 py-1 text-[11px] font-medium outline-none focus:border-violet-400" 
+                                    placeholder="이름(선택)" 
                                 />
                                 <input 
                                     value={link.url} 
                                     onChange={e => { const arr=[...(formData.links||[])]; arr[idx].url=e.target.value; updateNested(["links"], arr); }} 
-                                    className="w-full flex-1 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs font-medium outline-none focus:border-violet-400" 
+                                    className="w-full flex-1 bg-zinc-50 border border-zinc-200 rounded-md px-2 py-1 text-[11px] font-medium outline-none focus:border-violet-400" 
                                     placeholder="https://..." 
                                 />
-                                <button type="button" onClick={()=>{const arr=[...(formData.links||[])]; arr.splice(idx,1); updateNested(["links"], arr);}} className="p-1.5 text-rose-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg shrink-0 transition-colors">
+                                <button type="button" onClick={()=>{const arr=[...(formData.links||[])]; arr.splice(idx,1); updateNested(["links"], arr);}} className="p-1 text-rose-400 hover:bg-rose-50 hover:text-rose-600 rounded-md shrink-0 transition-colors">
                                     <Trash2 size={14}/>
                                 </button>
                             </div>
                         ))}
                     </div>
-                    <button type="button" onClick={()=>{const arr=[...(formData.links||[]), {platform:"github", name:"", url:""}]; updateNested(["links"], arr);}} className="text-[11px] font-bold text-violet-600 bg-white border border-violet-200 px-3 py-1.5 rounded-lg hover:bg-violet-50 transition-colors w-full mt-2 shadow-sm">
-                        + 링크 추가
+                    <button type="button" onClick={()=>{const arr=[...(formData.links||[]), {platform:"github", name:"", url:""}]; updateNested(["links"], arr);}} className="text-[10px] font-bold text-violet-600 bg-white border border-violet-200 px-3 py-1 rounded-md hover:bg-violet-50 transition-colors w-full mt-2 shadow-sm">
+                        + 추가
                     </button>
                 </div>
             </div>
           </div>
         </div>
+
+        {editTab === 'persona' && (
+            <div className="mb-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 animate-in fade-in">
+                <h4 className="text-xs font-black text-indigo-800 mb-3 flex items-center gap-1.5">
+                    <Layers size={14}/> 상단 페르소나 표시 순서 (드래그로 변경)
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                    {formData.idol.personaOrder.map((pId, idx) => {
+                        const pObj = pId === 'all' ? { id: 'all', name: '✨ 전체' } : (formData.idol.personas[pId] || DEFAULT_PERSONAS[pId]);
+                        if (!pObj) return null;
+                        return (
+                            <button
+                                key={pId}
+                                draggable
+                                onDragStart={(e) => { setDraggedPersonaIndex(idx); e.dataTransfer.effectAllowed = 'move'; }}
+                                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (draggedPersonaIndex === null || draggedPersonaIndex === idx) return;
+                                    const newOrder = [...formData.idol.personaOrder];
+                                    const [draggedItem] = newOrder.splice(draggedPersonaIndex, 1);
+                                    newOrder.splice(idx, 0, draggedItem);
+                                    updateNested(['idol', 'personaOrder'], newOrder);
+                                    setDraggedPersonaIndex(null);
+                                }}
+                                onDragEnd={() => setDraggedPersonaIndex(null)}
+                                className={`px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 text-[11px] font-bold rounded-xl shadow-sm cursor-grab active:cursor-grabbing transition-all hover:bg-indigo-50 ${draggedPersonaIndex === idx ? 'opacity-40 border-dashed border-indigo-400 scale-95' : ''}`}
+                            >
+                                {pObj.name}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        )}
 
         <div className="flex flex-wrap gap-2 mb-4 p-1">
           {['persona', ...(formData.idol?.tabOrder || [])].map((tabId, index) => {
@@ -553,7 +606,6 @@ const EditProfileView = () => {
               if (!tab) return null;
               
               const isPersonaTab = tabId === 'persona';
-              // ⭐️ 비공개 처리된 탭인지 확인
               const isPrivate = !isPersonaTab && isTabPrivate(tab.id);
               
               return (
@@ -583,7 +635,6 @@ const EditProfileView = () => {
                   >
                     {React.cloneElement(tab.icon, { size: 14 })} 
                     <span>{tab.label}</span>
-                    {/* ⭐️ 비공개 탭일 경우 락(Lock) 아이콘 표시 */}
                     {isPrivate && <Lock size={12} className={editTab === tab.id ? "text-rose-300" : "text-rose-500"} />}
                   </button>
               );
