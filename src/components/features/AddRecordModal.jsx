@@ -108,7 +108,7 @@ const AddRecordModal = () => {
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   
-  // ⭐️ 즉석 새 태그 관리를 위한 State 추가
+  // ⭐️ 즉석 새 태그 관리를 위한 State
   const [newTags, setNewTags] = useState([]);
   const [newTagInput, setNewTagInput] = useState('');
   
@@ -133,7 +133,7 @@ const AddRecordModal = () => {
       setTitle('');
       setCategoryId('');
       setTagIds([]);
-      setNewTags([]); // 창 열 때 초기화
+      setNewTags([]); // ⭐️ 창 열 때 초기화
       setNewTagInput('');
       setStartDate(new Date().toISOString().split('T')[0]);
       setEndDate('');
@@ -243,7 +243,7 @@ const AddRecordModal = () => {
         content: content.trim(),
         isPublic: isPublic,
         tagIds: numericTagIds,
-        newTags: newTags // <-- 여기서 백엔드로 새 태그들을 리스트로 전달합니다. (백엔드 DTO에 List<String> newTags 추가 필요)
+        newTags: newTags
       };
 
       const res = await apiFetch(`/me/records`, {
@@ -357,7 +357,7 @@ const AddRecordModal = () => {
             </div>
           </div>
 
-          {/* ⭐️ 태그 연결 영역 (즉석 추가 기능 포함) */}
+          {/* ⭐️ 태그 연결 영역 (즉석 추가 기능 포함!) */}
           {(categoryId || isAddingNewCat) && (
             <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
               <button 
@@ -374,7 +374,7 @@ const AddRecordModal = () => {
               {isTagExpanded && (
                 <div className="p-4 border-t border-zinc-100 flex flex-col gap-5">
                   
-                  {/* 기존 카테고리 태그 목록 */}
+                  {/* 1. 기존 카테고리 태그 목록 */}
                   {!isAddingNewCat && selectedCategoryNode && (selectedCategoryNode.children || []).length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedCategoryNode.children.map(tag => {
@@ -392,7 +392,7 @@ const AddRecordModal = () => {
                     </div>
                   )}
 
-                  {/* ⭐️ 즉석 태그 입력 영역 */}
+                  {/* ⭐️ 2. 즉석 태그 입력 영역 */}
                   <div>
                     <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">
                         + 즉석 태그 만들기
