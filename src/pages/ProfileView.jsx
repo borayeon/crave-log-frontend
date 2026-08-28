@@ -373,16 +373,15 @@ const ProfileView = () => {
             ) : (
               <div className="flex flex-col w-full">
                 
-                {/* ⭐️ 이전 2단 레이아웃 복구 (왼쪽: 정보, 오른쪽: 자기소개) */}
                 <div className="flex flex-col md:flex-row gap-5 md:gap-8 items-stretch w-full">
                   
-                  {/* 왼쪽: 아바타 및 기본 정보 */}
+                  {/* ⭐️ 사진 크기 확대: w-28 -> w-32, sm:w-32 -> w-36, md:w-40 -> md:w-48 */}
                   <div className="flex-1 md:flex-none md:w-[45%] flex flex-row gap-4 md:gap-5 items-center md:items-start">
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
+                    <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-48 md:h-48 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
                       {safeUser.profileImageUrl ? (
                           <img src={safeUser.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
-                          <div className="w-full h-full flex items-center justify-center text-4xl md:text-5xl font-black text-zinc-300">
+                          <div className="w-full h-full flex items-center justify-center text-5xl md:text-6xl font-black text-zinc-300">
                             {safeUser.name ? safeUser.name.charAt(0) : '?'}
                           </div>
                       )}
@@ -406,10 +405,8 @@ const ProfileView = () => {
                     </div>
                   </div>
 
-                  {/* 구분선 */}
                   <div className="hidden md:block w-px bg-zinc-100 my-1 mx-2"></div>
 
-                  {/* 오른쪽: 자기소개 (Bio) */}
                   <div className="flex-1 flex flex-col justify-center md:pl-2">
                     <Quote size={24} className="text-violet-300 mb-2 md:mb-3"/>
                     <p className="text-[13px] md:text-[14px] text-zinc-800 font-bold leading-relaxed whitespace-pre-line">
@@ -418,7 +415,6 @@ const ProfileView = () => {
                   </div>
                 </div>
 
-                {/* ⭐️ 하단: 태그와 소셜 링크 (전체 너비 사용) */}
                 {((safeUser.tags && safeUser.tags.length > 0) || (safeUser.links && safeUser.links.length > 0)) && (
                   <>
                     <div className="w-full h-px bg-zinc-100 my-5 md:my-6"></div>
