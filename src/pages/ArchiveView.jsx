@@ -400,6 +400,7 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
             )}
         </div>
 
+        {/* 우측 텍스트 정보 및 폼 영역 */}
         <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col h-full bg-white text-zinc-800 overflow-hidden relative z-10">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100 shrink-0">
                 <div className="flex items-center gap-3">
@@ -523,9 +524,13 @@ const RecordDetailModal = ({ record, onClose, isAdmin, isGuestMode, tagTree, api
                           </div>
                         )}
 
+                        {/* ⭐️ 글자 수 카운터 및 maxLength 추가 */}
                         <div>
-                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">본문</label>
-                            <textarea value={content} onChange={e=>setContent(e.target.value)} rows={5} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none resize-none transition-colors shadow-sm placeholder:text-zinc-400" />
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">본문</label>
+                                <span className="text-[10px] font-bold text-zinc-400">{content.length} / 1000자</span>
+                            </div>
+                            <textarea value={content} onChange={e=>setContent(e.target.value)} rows={5} maxLength={1000} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none resize-none transition-colors shadow-sm placeholder:text-zinc-400" />
                         </div>
                         
                         <div className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200 rounded-lg mt-2 shadow-sm">
@@ -924,7 +929,6 @@ const ArchiveView = () => {
             </div>
         )}
         
-        {/* ⭐️ 그리드 크기를 보기 좋게 복구하고(minmax 230px), 세로 늘어남 방지 옵션(items-start) 추가! */}
         <div className={isListMode 
             ? "flex flex-col gap-3 pb-10 max-w-4xl mx-auto w-full"
             : "grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-5 sm:gap-7 md:gap-8 pb-10 justify-items-center items-start w-full"
@@ -1044,7 +1048,6 @@ const ArchiveView = () => {
                   }
 
                   return (
-                    // ⭐️ 원본 비율(max-w-[260px]) 복구
                     <div key={item.id} onClick={() => !isEditing && setSelectedRecord(item)} className={`group relative w-full max-w-[260px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${!isEditing ? 'hover:-translate-y-1' : ''}`}>
                       <div className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[5px] sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'}`}>
                         <img src={thumbnailUrl} alt={item.title} className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${!isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''}`} />
@@ -1069,7 +1072,6 @@ const ArchiveView = () => {
 
                 // 2. 일반 카드 (URL 및 이미지 뷰)
                 return (
-                  // ⭐️ 원본 비율(max-w-[260px]) 복구
                   <div key={item.id} onClick={() => { 
                       if (isEditing) return;
                       if (item.isUrlItem && item.youtubeUrl) {

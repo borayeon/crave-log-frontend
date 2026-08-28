@@ -108,7 +108,6 @@ const AddRecordModal = () => {
   const [categoryId, setCategoryId] = useState('');
   const [tagIds, setTagIds] = useState([]);
   
-  // ⭐️ 즉석 새 태그 관리를 위한 State
   const [newTags, setNewTags] = useState([]);
   const [newTagInput, setNewTagInput] = useState('');
   
@@ -133,7 +132,7 @@ const AddRecordModal = () => {
       setTitle('');
       setCategoryId('');
       setTagIds([]);
-      setNewTags([]); // ⭐️ 창 열 때 초기화
+      setNewTags([]); 
       setNewTagInput('');
       setStartDate(new Date().toISOString().split('T')[0]);
       setEndDate('');
@@ -233,7 +232,6 @@ const AddRecordModal = () => {
         formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
       }
 
-      // ⭐️ 백엔드로 전송할 페이로드에 즉석 생성된 태그(newTags) 추가
       const payload = {
         title: title.trim(),
         categoryName: finalCatName,
@@ -357,7 +355,6 @@ const AddRecordModal = () => {
             </div>
           </div>
 
-          {/* ⭐️ 태그 연결 영역 (즉석 추가 기능 포함!) */}
           {(categoryId || isAddingNewCat) && (
             <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
               <button 
@@ -373,8 +370,6 @@ const AddRecordModal = () => {
               
               {isTagExpanded && (
                 <div className="p-4 border-t border-zinc-100 flex flex-col gap-5">
-                  
-                  {/* 1. 기존 카테고리 태그 목록 */}
                   {!isAddingNewCat && selectedCategoryNode && (selectedCategoryNode.children || []).length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedCategoryNode.children.map(tag => {
@@ -392,7 +387,6 @@ const AddRecordModal = () => {
                     </div>
                   )}
 
-                  {/* ⭐️ 2. 즉석 태그 입력 영역 */}
                   <div>
                     <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">
                         + 즉석 태그 만들기
@@ -509,14 +503,19 @@ const AddRecordModal = () => {
             </div>
           )}
 
+          {/* ⭐️ 글자 수 카운터 및 maxLength 추가 */}
           <div>
-            <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">간단한 메모 (선택)</label>
+            <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">간단한 메모 (선택)</label>
+                <span className="text-[10px] font-bold text-zinc-400">{content.length} / 1000자</span>
+            </div>
             <textarea 
               value={content} 
               onChange={e => setContent(e.target.value)} 
               rows={4} 
+              maxLength={1000}
               placeholder="이 기록에 대해 남기고 싶은 이야기를 적어주세요."
-              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all shadow-sm" 
+              className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all shadow-sm placeholder:text-zinc-400" 
             />
           </div>
 
