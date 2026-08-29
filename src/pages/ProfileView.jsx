@@ -36,6 +36,9 @@ const ProfileView = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   
   const [currentPersona, setCurrentPersona] = useState('all');
+  
+  // ⭐️ 자기소개 더보기/접기 상태 관리
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
 
   const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
 
@@ -95,6 +98,29 @@ const ProfileView = () => {
     });
     return list;
   }, [visiblePersonas, currentPersona, CUSTOM_PERSONAS, personaOrder]);
+
+  // ⭐️ 자기소개 길이 제한 처리 로직 (최대 150자 또는 최대 5줄)
+  const { isLongBio, displayBio } = useMemo(() => {
+    const bioText = safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.';
+    const BIO_MAX_LENGTH = 150;
+    const BIO_MAX_LINES = 5;
+    
+    const lines = bioText.split('\n');
+    const isLong = bioText.length > BIO_MAX_LENGTH || lines.length > BIO_MAX_LINES;
+
+    let truncated = bioText;
+    if (isLong && !isBioExpanded) {
+      if (lines.length > BIO_MAX_LINES) {
+        truncated = lines.slice(0, BIO_MAX_LINES).join('\n');
+      }
+      if (truncated.length > BIO_MAX_LENGTH) {
+        truncated = truncated.slice(0, BIO_MAX_LENGTH);
+      }
+      truncated += '...';
+    }
+
+    return { isLongBio: isLong, displayBio: truncated };
+  }, [safeUser.bio, isBioExpanded]);
 
   if (isLoading) {
     return (
@@ -375,7 +401,7 @@ const ProfileView = () => {
                 
                 <div className="flex flex-col md:flex-row gap-5 md:gap-8 items-stretch w-full">
                   
-                  {/* ⭐️ 사진 크기 확대: w-28 -> w-32, sm:w-32 -> w-36, md:w-40 -> md:w-48 */}
+                  {/* 왼쪽: 아바타 및 기본 정보 */}
                   <div className="flex-1 md:flex-none md:w-[45%] flex flex-row gap-4 md:gap-5 items-center md:items-start">
                     <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-48 md:h-48 shrink-0 bg-zinc-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-zinc-200 shadow-inner">
                       {safeUser.profileImageUrl ? (
@@ -407,11 +433,22 @@ const ProfileView = () => {
 
                   <div className="hidden md:block w-px bg-zinc-100 my-1 mx-2"></div>
 
-                  <div className="flex-1 flex flex-col justify-center md:pl-2">
-                    <Quote size={24} className="text-violet-300 mb-2 md:mb-3"/>
-                    <p className="text-[13px] md:text-[14px] text-zinc-800 font-bold leading-relaxed whitespace-pre-line">
-                      {safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.'}
-                    </p>
+                  {/* ⭐️ 오른쪽: 자기소개 (더보기 기능 적용) */}
+                  <div className="flex-1 flex flex-col justify-center md:pl-2 relative">
+                    <Quote size={24} className="text-violet-300 mb-2 md:mb-3 shrink-0"/>
+                    <div className="relative">
+                      <p className="text-[13px] md:text-[14px] text-zinc-800 font-bold leading-relaxed whitespace-pre-line break-keep">
+                        {displayBio}
+                      </p>
+                      {isLongBio && (
+                        <button
+                          onClick={() => setIsBioExpanded(!isBioExpanded)}
+                          className="mt-3 text-[11px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg transition-colors flex items-center justify-center w-max shadow-sm border border-indigo-100"
+                        >
+                          {isBioExpanded ? '접기 ▲' : '더보기 ▼'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
