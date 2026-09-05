@@ -17,7 +17,7 @@ CraveLog는 사용자가 자신의 직무(Developer, Career) 정보와 개인적
 > 배포 주소를 입력하세요.
 
 ```text
-https://your-domain.com
+https://https://www.cravelog.me/
 ```
 
 ---
