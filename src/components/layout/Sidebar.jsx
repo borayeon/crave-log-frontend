@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Network, History, Sparkles, Rocket, BookOpen, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAppStore } from '../../store/AppStore';
+import { useAppStore } from '../../store/AppStore'; // 경로는 기존 설정대로 유지하세요
 
 const Sidebar = () => {
-  const { viewMode, setViewMode, user, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
+  // ⭐️ 1. 상태 스토어에서 currentUser를 추가로 가져옵니다.
+  const { viewMode, setViewMode, currentUser, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
   
   // ⭐️ 내용량 대폭 추가 (뱃지, 배경 워터마크 아이콘, 해시태그 기능)
   const bannerCards = [
@@ -147,13 +148,10 @@ const Sidebar = () => {
                       key={idx} 
                       className={`absolute inset-0 p-5 rounded-[1.5rem] border shadow-sm overflow-hidden transition-all duration-500 ease-in-out bg-gradient-to-br flex flex-col ${card.bg} ${card.border} ${idx === bannerIdx ? 'opacity-100 translate-x-0 z-10' : idx < bannerIdx ? 'opacity-0 -translate-x-full z-0' : 'opacity-0 translate-x-full z-0'}`}
                     >
-                      {/* 데코레이션 효과들 */}
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl pointer-events-none"></div>
                       {card.bgIcon}
                       
-                      {/* ⭐️ 구조 개편: 윗부분과 아랫부분을 분리하여 공간을 완벽하게 채움 */}
                       <div className="relative z-10 flex flex-col h-full">
-                        {/* 상단: 뱃지와 아이콘 */}
                         <div className="flex justify-between items-start mb-auto">
                           <div className="px-2.5 py-1.5 bg-white/70 backdrop-blur-md rounded-lg border border-white/60 text-[9px] font-black text-zinc-600 uppercase tracking-widest shadow-sm">
                             {card.badge}
@@ -163,7 +161,6 @@ const Sidebar = () => {
                           </div>
                         </div>
 
-                        {/* 하단: 해시태그와 텍스트 설명 */}
                         <div className="mt-auto">
                           <div className="flex flex-wrap gap-1.5 mb-3">
                             {card.features.map((feature, fIdx) => (
@@ -180,7 +177,6 @@ const Sidebar = () => {
                           </p>
                         </div>
                       </div>
-
                     </div>
                   ))}
                 </div>
@@ -205,19 +201,23 @@ const Sidebar = () => {
           {/* Bottom Profile / Login Area */}
           <div className="p-4 shrink-0">
             {isAdmin ? (
-              <div className={`rounded-3xl flex items-center gap-3 transition-all duration-300 overflow-hidden ${isSidebarOpen ? 'p-4 bg-white shadow-sm border border-zinc-200/80' : 'p-2 bg-transparent group-hover:bg-white group-hover:shadow-sm group-hover:border group-hover:border-zinc-200/80 group-hover:p-4'}`}>
+              // ⭐️ 2. 기존 user 대신 currentUser를 사용하고, 클릭 시 내 프로필로 돌아가는 액션을 추가했습니다.
+              <div 
+                onClick={resetToMyProfile} 
+                className={`rounded-3xl flex items-center gap-3 transition-all duration-300 overflow-hidden cursor-pointer ${isSidebarOpen ? 'p-4 bg-white shadow-sm border border-zinc-200/80 hover:border-indigo-200 hover:shadow-md' : 'p-2 bg-transparent group-hover:bg-white group-hover:shadow-sm group-hover:border group-hover:border-zinc-200/80 group-hover:p-4 hover:border-indigo-200'}`}
+              >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-rose-400 p-[2px] shrink-0">
                   <div className="w-full h-full rounded-full flex items-center justify-center font-black text-sm bg-white text-zinc-900 overflow-hidden">
-                     {user?.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
+                     {currentUser?.profileImageUrl ? (
+                        <img src={currentUser.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
                     ) : (
-                        <span className="text-zinc-900">{user?.name?.charAt(0) || '?'}</span>
+                        <span className="text-zinc-900">{currentUser?.name?.charAt(0) || '?'}</span>
                     )}
                   </div>
                 </div>
                 <div className={`flex-1 min-w-0 text-left transition-opacity duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                  <h4 className="text-sm font-bold truncate text-zinc-900">{user?.name}</h4>
-                  <p className="text-[10px] truncate text-zinc-400">@{user?.handle}</p>
+                  <h4 className="text-sm font-bold truncate text-zinc-900 group-hover:text-indigo-600 transition-colors">{currentUser?.name}</h4>
+                  <p className="text-[10px] truncate text-zinc-400">@{currentUser?.handle}</p>
                 </div>
               </div>
             ) : (

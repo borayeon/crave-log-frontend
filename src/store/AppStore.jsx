@@ -86,6 +86,9 @@ export const AppProvider = ({ children }) => {
 
   // 초기에는 "손님 프로필"을 실제 데이터로 취급하지 않도록 한다.
   const [user, setUser] = useState(null);
+  
+  // ⭐️ 1. 진짜 내 계정 데이터를 고정하기 위한 새로운 상태 추가
+  const [currentUser, setCurrentUser] = useState(null); 
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
@@ -238,6 +241,7 @@ export const AppProvider = ({ children }) => {
           setIsAdmin(false);
           setIsGuestMode(true);
           setVisitedHandle(null);
+          setCurrentUser(null); // ⭐️ 2. 인증 만료 시 내 정보도 비움
 
           // 중요:
           // 손님 데이터로 바꾸지 않고 공개 프로필을 다시 가져온다.
@@ -251,17 +255,18 @@ export const AppProvider = ({ children }) => {
         // ==================================================
         if (profileRes?.ok) {
           const profileData = await profileRes.json();
-
           console.log('프로필 조회 성공:', profileData);
-
           setUser(profileData);
 
+          const hasToken = !!localStorage.getItem('accessToken');
+          setIsAdmin(hasToken); 
+
+          // ⭐️ 3. 현재 조회 모드가 '내 프로필'일 때만 currentUser 상태를 업데이트
           if (requestMode === 'me') {
-            setIsAdmin(true);
-            setIsGuestMode(false);
+            setIsGuestMode(false); 
+            setCurrentUser(profileData); 
           } else {
-            setIsAdmin(false);
-            setIsGuestMode(true);
+            setIsGuestMode(true);  
           }
         }
 
@@ -384,6 +389,9 @@ export const AppProvider = ({ children }) => {
     setVisitedHandle(null);
     setIsGuestMode(true);
     setViewMode('profile');
+    
+    // ⭐️ 4. 로그아웃 시 내 고정 정보도 완벽하게 날려줍니다
+    setCurrentUser(null);
 
     window.history.replaceState(
       {},
@@ -523,6 +531,10 @@ export const AppProvider = ({ children }) => {
 
         user,
         setUser,
+        
+        // ⭐️ 5. Provider Value로 하위 컴포넌트에 공급
+        currentUser,
+        setCurrentUser,
 
         isAdmin,
         setIsAdmin,
