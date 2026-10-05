@@ -12,7 +12,7 @@ import BusinessCard from '../components/profile/tabs/BusinessCard';
 import Mandalart from '../components/profile/tabs/Mandalart';
 import { 
   DeveloperTab, CareerTab, AddProfileTab, QnaTab, HobbyTab, 
-  QuotesTab, MemoTab, ArtTab 
+  QuotesTab, MemoTab, ArtTab, Developer2Tab
 } from '../components/profile/ViewTabs';
 
 const LOADING_TIPS = [
@@ -37,7 +37,7 @@ const ProfileView = () => {
   
   const [currentPersona, setCurrentPersona] = useState('all');
   
-  // ⭐️ 자기소개 더보기/접기 상태 관리
+  // 자기소개 더보기/접기 상태 관리
   const [isBioExpanded, setIsBioExpanded] = useState(false);
 
   const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
@@ -99,7 +99,7 @@ const ProfileView = () => {
     return list;
   }, [visiblePersonas, currentPersona, CUSTOM_PERSONAS, personaOrder]);
 
-  // ⭐️ 자기소개 길이 제한 처리 로직 (최대 150자 또는 최대 5줄)
+  // 자기소개 길이 제한 처리 로직 (최대 150자 또는 최대 5줄)
   const { isLongBio, displayBio } = useMemo(() => {
     const bioText = safeUser.bio || '나를 표현하는 한 줄 소개가 들어갑니다.';
     const BIO_MAX_LENGTH = 150;
@@ -194,6 +194,7 @@ const ProfileView = () => {
 
   const allTabsMap = {
     developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
+    developer2: { id: 'developer2', icon: <Terminal strokeWidth={2}/>, label: 'Resume', color: 'bg-zinc-800 text-zinc-100 border-zinc-700' },
     career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
     addProfile: { id: 'addProfile', icon: <UserPlus strokeWidth={2}/>, label: 'Add Profile', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
     businessCard: { id: 'businessCard', icon: <CreditCard strokeWidth={2}/>, label: 'Business Card', color: 'bg-emerald-50/80 text-emerald-500 border-emerald-100' },
@@ -222,7 +223,7 @@ const ProfileView = () => {
       return String(val).toLowerCase() === 'false' || String(val) === '0';
   };
 
-  const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
+  const defaultOrder = ['developer', 'developer2', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
   const savedOrder = safeUser.addProfile?.tabOrder || [];
   const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
 
@@ -230,7 +231,9 @@ const ProfileView = () => {
 
   const isDataActuallyEmpty = (tabId) => {
     switch(tabId) {
-      case 'developer': return !safeUser.developer || (!safeUser.developer.about && (!safeUser.developer.projects || safeUser.developer.projects.length === 0));
+      case 'developer':
+      case 'developer2': 
+        return !safeUser.developer || (!safeUser.developer.about && (!safeUser.developer.projects || safeUser.developer.projects.length === 0));
       case 'career': return !safeUser.career || (!safeUser.career.targetJob && (!safeUser.career.strengths || safeUser.career.strengths.length === 0));
       case 'businessCard': return !safeUser.addProfile?.businessCard || !safeUser.addProfile.businessCard.email;
       case 'qna': return !safeUser.addProfile?.qna || safeUser.addProfile.qna.length === 0;
@@ -525,6 +528,7 @@ const ProfileView = () => {
               ) : (
                   <div className="mt-2 pb-10">
                       {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
+                      {activeTab === 'developer2' && availableTabs.some(t => t.id === 'developer2') && <Developer2Tab user={safeUser} />}
                       {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
                       {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={() => {}} />}
                       {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (

@@ -3,7 +3,7 @@ import {
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  Layers 
+  Layers, Terminal // ⭐️ Terminal 아이콘 추가 (이력서 탭용)
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -13,11 +13,11 @@ import Mandalart from '../components/profile/tabs/Mandalart';
 import { 
   DeveloperEditTab, CareerEditTab, AddProfileEditTab, BusinessCardEditTab, 
   QnaEditTab, HobbyEditTab, QuotesEditTab, MemoEditTab, ArtEditTab,
-  PersonaEditTab 
+  PersonaEditTab, ResumeEditTab // ⭐️ ResumeEditTab 불러오기
 } from '../components/profile/tabs/EditTabs';
 
 export const DEFAULT_PERSONAS = {
-  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
+  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'developer2', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
   social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
   dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true },
   fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true },
@@ -31,7 +31,7 @@ const EditProfileView = () => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || safeUser.addProfile?.qna || []);
     
-    let parsedPrivacy = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
+    let parsedPrivacy = { developer: false, developer2: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
@@ -40,11 +40,11 @@ const EditProfileView = () => {
         }
     }
 
-    const defaultOrder = ['developer', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
+    // ⭐️ 기본 탭 순서 배열에 developer2(이력서) 추가
+    const defaultOrder = ['developer', 'developer2', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
     
-    // 페르소나 순서 초기화 (저장된 값이 없으면 기본 페르소나 키들을 가져옴)
     const savedPersonaOrder = safeUser.idol?.personaOrder || ['all', ...Object.keys(safeUser.idol?.personas || DEFAULT_PERSONAS)];
 
     let memoArea = safeUser.idol?.memoArea || safeUser.memoArea || { text: "", dots: [], gridSize: 15 };
@@ -60,13 +60,13 @@ const EditProfileView = () => {
       ...safeUser,
       profileImageUrl: safeUser.profileImageUrl || '',
       privacy: parsedPrivacy,
-      developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "" },
+      developer: safeUser.developer || { techStack: {}, projects: [], learning: [], about: "", experiences: [], educations: [], openSources: [], presentations: [], articles: [] },
       career: safeUser.career || { targetJob: "", techStack: [], interests: [], strengths: [], careerGoals: {} },
       
       idol: { 
           ...(safeUser.idol || {}),
           tabOrder: mergedOrder,
-          personaOrder: [...new Set(savedPersonaOrder)], // 고유값 유지
+          personaOrder: [...new Set(savedPersonaOrder)], 
           personas: safeUser.idol?.personas || JSON.parse(JSON.stringify(DEFAULT_PERSONAS)),
           businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
           qna: qnaData,
@@ -110,8 +110,10 @@ const EditProfileView = () => {
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
   const [draggedPersonaIndex, setDraggedPersonaIndex] = useState(null);
 
+  // ⭐️ TABS_CONFIG에 이력서 탭(developer2) 추가
   const TABS_CONFIG = {
     developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
+    developer2: { id: 'developer2', label: 'Resume', icon: <Terminal size={16}/> },
     career: { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
     addProfile: { id: 'addProfile', label: 'Add Profile', icon: <UserPlus size={16}/> },
     businessCard: { id: 'businessCard', label: 'Business Card', icon: <CreditCard size={16}/> },
@@ -142,13 +144,11 @@ const EditProfileView = () => {
     });
   };
 
-  // ⭐️ [버그 방어] 사용자가 페르소나를 새로 추가하거나 지웠을 때, 순서 배열(personaOrder)도 알아서 업데이트되도록 동기화합니다.
   useEffect(() => {
     if (!formData.idol?.personas) return;
     const currentPersonaKeys = Object.keys(formData.idol.personas);
     const currentOrder = formData.idol.personaOrder || [];
     
-    // 새로 생긴 페르소나가 순서 배열에 없으면 맨 뒤에 추가해줍니다.
     const missingKeys = currentPersonaKeys.filter(k => !currentOrder.includes(k));
     if (missingKeys.length > 0) {
         updateNested(['idol', 'personaOrder'], [...currentOrder, ...missingKeys]);
@@ -666,6 +666,10 @@ const EditProfileView = () => {
           {editTab === 'persona' && <PersonaEditTab formData={formData} updateNested={updateNested} DEFAULT_PERSONAS={DEFAULT_PERSONAS} TABS_CONFIG={TABS_CONFIG} />}
           
           {editTab === 'developer' && <DeveloperEditTab formData={formData} updateNested={updateNested} renderStringArrayInput={renderStringArrayInput} />}
+          
+          {/* ⭐️ 이력서 탭 편집 폼 렌더링 연결 */}
+          {editTab === 'developer2' && <ResumeEditTab formData={formData} updateNested={updateNested} />}
+          
           {editTab === 'career' && <CareerEditTab formData={formData} updateNested={updateNested} renderArrayInput={renderArrayInput} />}
           {editTab === 'addProfile' && <AddProfileEditTab formData={formData} updateNested={updateNested} renderInput={renderInput} renderArrayInput={renderArrayInput} isExtraImageUploading={isExtraImageUploading} handleExtraImageUpload={handleExtraImageUpload} handleCommitProfile={handleCommitProfile} setViewHistoryItem={setViewHistoryItem} />}
           {editTab === 'businessCard' && <BusinessCardEditTab formData={formData} updateNested={updateNested} renderInput={renderInput} />}

@@ -3,8 +3,8 @@ import {
   Code, Briefcase, Trash2, Terminal, ExternalLink, Plus, 
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
-  CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser,
-  Layers, Check, Rocket, Eye, Lock
+  CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser, 
+  Layers, Check, Rocket, Eye, Lock, GraduationCap, Mic, LayoutList 
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 
@@ -678,3 +678,227 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
       </div>
     )
  }
+
+export const ResumeEditTab = ({ formData, updateNested }) => {
+  const devData = formData.developer || {};
+  
+  const addArrayItem = (arrayName, emptyItem) => {
+    const arr = [...(devData[arrayName] || []), emptyItem];
+    updateNested(["developer", arrayName], arr);
+  };
+
+  const removeArrayItem = (arrayName, idx) => {
+    const arr = [...(devData[arrayName] || [])];
+    arr.splice(idx, 1);
+    updateNested(["developer", arrayName], arr);
+  };
+
+  const updateItemField = (arrayName, idx, field, value) => {
+    const arr = [...(devData[arrayName] || [])];
+    arr[idx] = { ...arr[idx], [field]: value };
+    updateNested(["developer", arrayName], arr);
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in">
+      
+      <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 mb-6">
+         <p className="text-xs font-bold text-indigo-800">
+           💡 <strong>Introduce, Project, Skill</strong> 항목은 <span className="underline">기존 Developer 탭</span>에서 입력한 데이터를 공유하여 자동으로 표시됩니다!
+         </p>
+      </div>
+
+      {/* 1. 경력 (Experience) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+            <Briefcase className="text-indigo-500" size={16} /> 경력 (Experience)
+          </h3>
+          <button 
+            type="button"
+            onClick={() => addArrayItem('experiences', { period: '', company: '', role: '', bullets: '' })}
+            className="text-[11px] md:text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm"
+          >
+            <Plus size={14} /> 경력 추가
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {(devData.experiences || []).map((exp, idx) => (
+            <div key={idx} className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl relative group">
+              <button type="button" onClick={() => removeArrayItem('experiences', idx)} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 transition-colors bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-10">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">근무 기간</label>
+                  <input type="text" value={exp.period || ''} onChange={(e) => updateItemField('experiences', idx, 'period', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-indigo-400 transition-colors" placeholder="예: 2021.02 ~ 현재" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">회사명</label>
+                  <input type="text" value={exp.company || ''} onChange={(e) => updateItemField('experiences', idx, 'company', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-indigo-400 transition-colors" placeholder="예: 네이버 (NAVER)" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">직무 및 역할</label>
+                  <input type="text" value={exp.role || ''} onChange={(e) => updateItemField('experiences', idx, 'role', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-indigo-400 transition-colors" placeholder="예: 쇼핑 서비스 백엔드 개발자" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">주요 업무 및 성과 (엔터로 구분)</label>
+                  <textarea value={exp.bullets || ''} onChange={(e) => updateItemField('experiences', idx, 'bullets', e.target.value)} rows={4} className="w-full text-[13px] p-3 rounded-xl border border-zinc-200 bg-white outline-none resize-none focus:border-indigo-400 transition-colors" placeholder="쇼핑 앱 주요 API 개발&#13;&#10;대규모 트래픽 최적화" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(devData.experiences || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">등록된 경력이 없습니다.</p>}
+        </div>
+      </div>
+
+      {/* 2. 오픈소스 (Open Source) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+            <Terminal className="text-orange-500" size={16} /> 오픈소스 (Open Source)
+          </h3>
+          <button type="button" onClick={() => addArrayItem('openSources', { name: '', bullets: '' })} className="text-[11px] md:text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm"><Plus size={14} /> 오픈소스 추가</button>
+        </div>
+        <div className="space-y-4">
+          {(devData.openSources || []).map((os, idx) => (
+            <div key={idx} className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl relative">
+              <button type="button" onClick={() => removeArrayItem('openSources', idx)} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+              <div className="grid grid-cols-1 gap-4 mr-10">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">오픈소스/프로젝트 명</label>
+                  <input type="text" value={os.name || ''} onChange={(e) => updateItemField('openSources', idx, 'name', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-orange-400" placeholder="예: yowu-devtools" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">상세 내용 (엔터로 구분, HTML 링크 허용)</label>
+                  <textarea value={os.bullets || ''} onChange={(e) => updateItemField('openSources', idx, 'bullets', e.target.value)} rows={3} className="w-full text-[13px] p-3 rounded-xl border border-zinc-200 bg-white outline-none resize-none focus:border-orange-400" placeholder="기여 내용 및 링크 작성" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(devData.openSources || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">등록된 항목이 없습니다.</p>}
+        </div>
+      </div>
+
+      {/* 3. 발표 (Presentation) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+            <Mic className="text-purple-500" size={16} /> 발표 (Presentation)
+          </h3>
+          <button type="button" onClick={() => addArrayItem('presentations', { period: '', title: '', subtitle: '', bullets: '' })} className="text-[11px] md:text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm"><Plus size={14} /> 발표 추가</button>
+        </div>
+        <div className="space-y-4">
+          {(devData.presentations || []).map((pt, idx) => (
+            <div key={idx} className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl relative">
+              <button type="button" onClick={() => removeArrayItem('presentations', idx)} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-10">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">발표 시기</label>
+                  <input type="text" value={pt.period || ''} onChange={(e) => updateItemField('presentations', idx, 'period', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-purple-400" placeholder="예: 2025. 10" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">발표 제목</label>
+                  <input type="text" value={pt.title || ''} onChange={(e) => updateItemField('presentations', idx, 'title', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-purple-400" placeholder="예: AI 시대 살아남는 개발자" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">행사명 또는 부제</label>
+                  <input type="text" value={pt.subtitle || ''} onChange={(e) => updateItemField('presentations', idx, 'subtitle', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-purple-400" placeholder="예: 퇴근 후 밋업" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">발표 상세 내용 및 링크 (엔터로 구분)</label>
+                  <textarea value={pt.bullets || ''} onChange={(e) => updateItemField('presentations', idx, 'bullets', e.target.value)} rows={3} className="w-full text-[13px] p-3 rounded-xl border border-zinc-200 bg-white outline-none resize-none focus:border-purple-400" placeholder="상세 내용 작성" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(devData.presentations || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">등록된 항목이 없습니다.</p>}
+        </div>
+      </div>
+
+      {/* 4. 아티클 (Article) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+            <FileText className="text-blue-500" size={16} /> 작성 글 (Article)
+          </h3>
+          <button type="button" onClick={() => addArrayItem('articles', { date: '', title: '', url: '' })} className="text-[11px] md:text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm"><Plus size={14} /> 글 추가</button>
+        </div>
+        <div className="space-y-4">
+          {(devData.articles || []).map((art, idx) => (
+            <div key={idx} className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center gap-3 relative pr-12">
+              <input type="text" value={art.date || ''} onChange={(e) => updateItemField('articles', idx, 'date', e.target.value)} className="w-24 text-xs p-2 rounded-lg border border-zinc-200 bg-white outline-none focus:border-blue-400 text-center font-bold" placeholder="2026.03.17" />
+              <input type="text" value={art.title || ''} onChange={(e) => updateItemField('articles', idx, 'title', e.target.value)} className="flex-1 text-sm p-2 rounded-lg border border-zinc-200 bg-white outline-none focus:border-blue-400 font-medium" placeholder="글 제목 (예: 다국어 도메인 구축기)" />
+              <button type="button" onClick={() => removeArrayItem('articles', idx)} className="absolute right-4 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+            </div>
+          ))}
+          {(devData.articles || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">등록된 항목이 없습니다.</p>}
+        </div>
+      </div>
+
+      {/* 5. 학력 (Education) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+            <GraduationCap className="text-emerald-500" size={16} /> 학력 (Education)
+          </h3>
+          <button type="button" onClick={() => addArrayItem('educations', { period: '', school: '', major: '' })} className="text-[11px] md:text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm"><Plus size={14} /> 학력 추가</button>
+        </div>
+        <div className="space-y-4">
+          {(devData.educations || []).map((edu, idx) => (
+            <div key={idx} className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl relative">
+              <button type="button" onClick={() => removeArrayItem('educations', idx)} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-10">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">재학 기간</label>
+                  <input type="text" value={edu.period || ''} onChange={(e) => updateItemField('educations', idx, 'period', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-emerald-400 transition-colors" placeholder="예: 2010. 03 ~ 2016. 08" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">학교명</label>
+                  <input type="text" value={edu.school || ''} onChange={(e) => updateItemField('educations', idx, 'school', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-emerald-400 transition-colors" placeholder="예: 가톨릭대학교" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">전공 및 학위</label>
+                  <input type="text" value={edu.major || ''} onChange={(e) => updateItemField('educations', idx, 'major', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-emerald-400 transition-colors" placeholder="예: 컴퓨터공학 학사 졸업" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(devData.educations || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">등록된 항목이 없습니다.</p>}
+        </div>
+      </div>
+
+      {/* 6. 기타 (ETC) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+            <LayoutList className="text-zinc-600" size={16} /> 기타 이력 (ETC)
+          </h3>
+          <button type="button" onClick={() => addArrayItem('etcs', { period: '', title: '', subtitle: '' })} className="text-[11px] md:text-xs font-bold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm"><Plus size={14} /> 기타 추가</button>
+        </div>
+        <div className="space-y-4">
+          {(devData.etcs || []).map((etc, idx) => (
+            <div key={idx} className="p-5 bg-zinc-50 border border-zinc-200 rounded-2xl relative">
+              <button type="button" onClick={() => removeArrayItem('etcs', idx)} className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mr-10">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">활동 기간</label>
+                  <input type="text" value={etc.period || ''} onChange={(e) => updateItemField('etcs', idx, 'period', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-zinc-400 transition-colors" placeholder="예: 2025. 09 ~ 2025. 12" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">활동명</label>
+                  <input type="text" value={etc.title || ''} onChange={(e) => updateItemField('etcs', idx, 'title', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-zinc-400 transition-colors" placeholder="예: NAVER Boostcamp 코드 리뷰어" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-zinc-500 mb-1">상세 역할</label>
+                  <input type="text" value={etc.subtitle || ''} onChange={(e) => updateItemField('etcs', idx, 'subtitle', e.target.value)} className="w-full text-sm p-2.5 rounded-xl border border-zinc-200 bg-white outline-none focus:border-zinc-400 transition-colors" placeholder="예: Web (BE/FE) Code Reviewer" />
+                </div>
+              </div>
+            </div>
+          ))}
+          {(devData.etcs || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">등록된 항목이 없습니다.</p>}
+        </div>
+      </div>
+
+    </div>
+  );
+};
