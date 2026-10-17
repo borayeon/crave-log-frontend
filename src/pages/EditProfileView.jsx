@@ -3,7 +3,7 @@ import {
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  Layers, Terminal 
+  Layers, Terminal, Globe, Users, KeyRound, ShieldCheck 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -126,9 +126,17 @@ const EditProfileView = () => {
     persona: { id: 'persona', label: 'Persona Set', icon: <Layers size={16}/> }
   };
 
+  // ⭐️ 4단계 공개 범위 레벨 조회 헬퍼 (0: 전체공개, 1: 팔로워공개, 2: 비밀번호 잠금, 4: 비공개)
+  const getTabLevel = (tabId) => {
+    const val = formData.privacy?.[tabId];
+    if (val === undefined || val === null) return 0;
+    if (val === true || val === 'true') return 0;
+    if (val === false || val === 'false') return 4;
+    return Number(val);
+  };
+
   const isTabPrivate = (tabId) => {
-      const val = formData.privacy?.[tabId];
-      return String(val).toLowerCase() === 'false' || String(val) === '0';
+    return getTabLevel(tabId) === 4;
   };
 
   const updateNested = (path, value) => {
@@ -606,7 +614,8 @@ const EditProfileView = () => {
               if (!tab) return null;
               
               const isPersonaTab = tabId === 'persona';
-              const isPrivate = !isPersonaTab && isTabPrivate(tab.id);
+              const level = !isPersonaTab ? getTabLevel(tab.id) : 0;
+              const isPrivate = level === 4;
               
               return (
                   <button 
@@ -631,34 +640,94 @@ const EditProfileView = () => {
                       ${draggedTabIndex === index-1 ? 'opacity-40 border-dashed border-indigo-400' : ''}
                       ${isPersonaTab ? 'mr-4 bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100 cursor-pointer shadow-sm' : ''}
                       ${isPrivate && editTab !== tab.id ? 'border-rose-200 bg-rose-50/40 text-rose-600' : ''}
+                      ${level === 1 && editTab !== tab.id ? 'border-emerald-200 bg-emerald-50/40 text-emerald-700' : ''}
+                      ${level === 2 && editTab !== tab.id ? 'border-amber-200 bg-amber-50/40 text-amber-700' : ''}
                     `}
                   >
                     {React.cloneElement(tab.icon, { size: 14 })} 
                     <span>{tab.label}</span>
-                    {isPrivate && <Lock size={12} className={editTab === tab.id ? "text-rose-300" : "text-rose-500"} />}
+                    {!isPersonaTab && (
+                      <>
+                        {level === 1 && <Users size={12} className={editTab === tab.id ? "text-emerald-300" : "text-emerald-500"} title="1단계: 팔로워 공개" />}
+                        {level === 2 && <KeyRound size={12} className={editTab === tab.id ? "text-amber-300" : "text-amber-500"} title="2단계: 비밀번호 잠금" />}
+                        {level === 4 && <Lock size={12} className={editTab === tab.id ? "text-rose-300" : "text-rose-500"} title="4단계: 비공개" />}
+                      </>
+                    )}
                   </button>
               );
           })}
         </div>
 
+        {/* ⭐️ 서브 탭 4단계 공개 범위 제어 패널 */}
         {editTab !== 'persona' && (
-          <div className="mb-6 p-4 bg-white border border-zinc-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
-            <div>
-              <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2">
-                {!isTabPrivate(editTab) ? <Eye size={16} className="text-violet-500"/> : <Lock size={16} className="text-rose-500"/>}
-                이 탭을 방문자에게 공개하시겠습니까?
-              </h3>
-              <p className="text-[11px] font-medium text-zinc-500 mt-1">비공개 처리된 탭은 본인에게만 보이며 공유된 링크에서는 숨겨집니다.</p>
+          <div className="mb-6 p-4 sm:p-5 bg-white border border-zinc-200 rounded-2xl shadow-sm animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-3 border-b border-zinc-100">
+              <div>
+                <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2">
+                  <ShieldCheck size={17} className="text-indigo-600" />
+                  [{TABS_CONFIG[editTab]?.label}] 탭 공개 범위 설정
+                </h3>
+                <p className="text-[11px] font-medium text-zinc-500 mt-0.5">
+                  이 서브 탭의 열람 권한을 4단계 보안 레벨로 제어합니다.
+                </p>
+              </div>
+              <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-700 w-max shrink-0">
+                {getTabLevel(editTab) === 0 && '🌐 0단계 전체 공개 (누구나)'}
+                {getTabLevel(editTab) === 1 && '👥 1단계 팔로워 공개 (팔로워만)'}
+                {getTabLevel(editTab) === 2 && '🔐 2단계 비밀번호 잠금 (PIN)'}
+                {getTabLevel(editTab) === 4 && '🔒 4단계 나만 보기 (비공개)'}
+              </span>
             </div>
-            <button 
-              onClick={() => {
-                  const currentlyPrivate = isTabPrivate(editTab);
-                  updateNested(['privacy', editTab], currentlyPrivate ? true : false);
-              }}
-              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!isTabPrivate(editTab) ? 'bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100' : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'}`}
-            >
-              {!isTabPrivate(editTab) ? '공개 중 (클릭하여 숨기기)' : '비공개됨 (클릭하여 공개)'}
-            </button>
+
+            {/* 4단계 선택 탭 버튼 그리드 */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { level: 0, label: '전체 공개', desc: '누구나 자유롭게', icon: Globe, activeBg: 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500' },
+                { level: 1, label: '팔로워 공개', desc: '팔로워만 열람', icon: Users, activeBg: 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500' },
+                { level: 2, label: '비밀번호 잠금', desc: 'PIN 번호 설정', icon: KeyRound, activeBg: 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' },
+                { level: 4, label: '나만 보기', desc: '비공개 (완전 숨김)', icon: Lock, activeBg: 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isSelected = getTabLevel(editTab) === item.level;
+                return (
+                  <button
+                    key={item.level}
+                    type="button"
+                    onClick={() => updateNested(['privacy', editTab], item.level)}
+                    className={`p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+                      isSelected 
+                        ? `${item.activeBg} font-black shadow-xs` 
+                        : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                    }`}
+                  >
+                    <Icon size={16} className={isSelected ? '' : 'text-zinc-400'} />
+                    <span className="text-[11px] font-black">{item.label}</span>
+                    <span className="text-[9px] text-zinc-400 font-medium">{item.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 2단계 선택 시 비밀번호(PIN) 설정 인풋 */}
+            {getTabLevel(editTab) === 2 && (
+              <div className="mt-3 p-3 bg-amber-50/80 border border-amber-200 rounded-xl animate-in fade-in duration-200">
+                <label className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5 mb-1.5">
+                  <KeyRound size={13} className="text-amber-600" />
+                  [{TABS_CONFIG[editTab]?.label}] 탭 열람 비밀번호 (Passcode) 설정 <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.idol?.tabPasscodes?.[editTab] || ''}
+                  onChange={(e) => updateNested(['idol', 'tabPasscodes', editTab], e.target.value)}
+                  placeholder="숫자나 영문 4자리 이상 (예: 1234)"
+                  maxLength={20}
+                  className="w-full bg-white border border-amber-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-300 rounded-lg px-3 py-2 text-xs font-bold text-zinc-800 outline-none transition-all shadow-2xs"
+                />
+                <p className="text-[10px] text-amber-800 font-medium mt-1">
+                  💡 비인가 방문자가 이 탭을 클릭하면 위 비밀번호를 입력해야 내용이 잠금 해제됩니다.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
