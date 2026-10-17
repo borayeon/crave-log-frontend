@@ -72,16 +72,28 @@ const AppContext = createContext();
 export const useAppStore = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
-  // ⭐️ URL 파라미터(?view=access_control) 직접 접근 지원
+  // ⭐️ URL 파라미터(?view=...) 및 게스트/로그인 상태에 따른 초기 뷰 결정
   const getInitialViewMode = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const v = params.get('view');
-      if (v && ['profile', 'archive', 'timeline', 'access_control', 'search', 'account_settings'].includes(v)) {
+      if (v && ['landing', 'profile', 'archive', 'timeline', 'access_control', 'search', 'account_settings'].includes(v)) {
         return v;
       }
+      // 공유 핸들 파라미터(?u=...)가 명시된 경우 프로필 뷰로 직행
+      const sharedHandle = params.get('u');
+      if (sharedHandle) {
+        return 'profile';
+      }
+      // 로그인된 회원일 경우 본인 프로필 뷰로 직행
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        return 'profile';
+      }
+      // 비로그인 일반 방문자는 랜딩 페이지를 기본 제공
+      return 'landing';
     }
-    return 'profile';
+    return 'landing';
   };
 
   const [viewMode, setViewMode] = useState(getInitialViewMode);

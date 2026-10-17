@@ -3,8 +3,18 @@ import { User, Network, History, Sparkles, Rocket, BookOpen, Share2, ChevronLeft
 import { useAppStore } from '../../store/AppStore'; // 경로는 기존 설정대로 유지하세요
 
 const Sidebar = () => {
-  // ⭐️ 1. 상태 스토어에서 currentUser를 추가로 가져옵니다.
-  const { viewMode, setViewMode, currentUser, isSidebarOpen, isAdmin, setLoginModalOpen, visitedHandle, resetToMyProfile } = useAppStore();
+  // ⭐️ 1. 상태 스토어에서 currentUser, visitUserProfile을 가져옵니다.
+  const { 
+    viewMode, 
+    setViewMode, 
+    currentUser, 
+    isSidebarOpen, 
+    isAdmin, 
+    setLoginModalOpen, 
+    visitedHandle, 
+    resetToMyProfile,
+    visitUserProfile 
+  } = useAppStore();
   
   // ⭐️ 내용량 대폭 추가 (뱃지, 배경 워터마크 아이콘, 해시태그 기능)
   const bannerCards = [
@@ -63,6 +73,7 @@ const Sidebar = () => {
   };
 
   const navItems = [
+    { id: 'landing', icon: <Sparkles size={20} />, label: '홈 / 소개', desc: 'CraveLog 시작하기' },
     { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
     { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
     { id: 'timeline', icon: <History size={20} />, label: '타임라인', desc: '시간순 기록장' },
@@ -82,12 +93,9 @@ const Sidebar = () => {
           
           {/* 로고 영역 */}
           <div 
-            onClick={() => {
-              if (visitedHandle) resetToMyProfile();
-              setViewMode('profile');
-            }}
+            onClick={() => setViewMode('landing')}
             className="h-20 flex items-center px-5 gap-3 mt-2 shrink-0 cursor-pointer group/logo"
-            title="홈으로 가기"
+            title="CraveLog 홈 / 소개로 이동"
           >
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-white text-indigo-600 border border-zinc-200 shrink-0 group-hover/logo:bg-indigo-50 transition-colors">
               <Sparkles size={18} className="group-hover/logo:scale-110 transition-transform" />
@@ -95,6 +103,28 @@ const Sidebar = () => {
             <h1 className={`text-xl font-black tracking-tight text-zinc-900 transition-all duration-300 whitespace-nowrap group-hover/logo:text-indigo-600 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               CraveLog.
             </h1>
+          </div>
+
+          {/* 개발자 계정 바로가기 배너 버튼 */}
+          <div className="px-3 mb-2 shrink-0">
+            <button
+              onClick={() => visitUserProfile('taeya00')}
+              className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-violet-500/10 to-rose-500/10 hover:from-indigo-500/20 hover:to-rose-500/20 border border-indigo-200/80 hover:border-indigo-400 text-indigo-900 transition-all shadow-sm group/dev text-left active:scale-98"
+              title="개발자 계정(@taeya00) 바로가기"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover/dev:scale-110 transition-transform">
+                  <Sparkles size={15} />
+                </div>
+                <div className={`transition-opacity duration-300 whitespace-nowrap overflow-hidden ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <p className="text-xs font-black truncate text-indigo-950">개발자 프로필</p>
+                  <p className="text-[10px] text-indigo-600/80 font-mono truncate">@taeya00 바로가기</p>
+                </div>
+              </div>
+              <div className={`transition-opacity duration-300 pr-1 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                <ChevronRight size={14} className="text-indigo-500 group-hover/dev:translate-x-1 transition-transform" />
+              </div>
+            </button>
           </div>
 
           {/* Navigation */}

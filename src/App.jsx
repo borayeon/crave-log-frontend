@@ -8,6 +8,7 @@ import AddRecordModal from './components/features/AddRecordModal';
 import Sidebar from './components/layout/Sidebar';
 import TopNavBar from './components/layout/TopNavBar';
 import MobileBottomNav from './components/layout/MobileBottomNav';
+import LandingView from './pages/LandingView';
 import ProfileView from './pages/ProfileView';
 import EditProfileView from './pages/EditProfileView';
 import ArchiveView from './pages/ArchiveView';
@@ -64,6 +65,7 @@ const AppContent = () => {
          <div className="flex-1 overflow-y-auto flex flex-col">
            {/* 콘텐츠들이 렌더링되는 영역 (flex-1을 주어 콘텐츠가 짧아도 푸터를 맨 밑으로 밀어냅니다) */}
            <div className="flex-1">
+             {viewMode === 'landing' && <LandingView />}
              {viewMode === 'profile' && <ProfileView />}
              {viewMode === 'edit_profile' && <EditProfileView />}
              {viewMode === 'archive' && <ArchiveView />}
@@ -72,8 +74,8 @@ const AppContent = () => {
              {viewMode === 'account_settings' && <AccountSettingsView />}
              {viewMode === 'access_control' && <AccessControlView />}
              
-             {/* ⭐️ 404 에러 페이지 로직 추가: 위에서 정의한 뷰가 아닐 때 렌더링됩니다 */}
-             {!['profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings', 'access_control'].includes(viewMode) && (
+             {/* ⭐️ 404 에러 페이지 로직: 위에서 정의한 뷰가 아닐 때 렌더링됩니다 */}
+             {!['landing', 'profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings', 'access_control'].includes(viewMode) && (
                <NotFoundView />
              )}
            </div>
