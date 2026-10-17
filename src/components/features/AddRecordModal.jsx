@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, ChevronLeft, ChevronRight, Globe, Lock, PlayCircle, Image as ImageIcon, Loader2, Link as LinkIcon, Calendar } from 'lucide-react';
+import { Sparkles, X as CloseIcon, Folder, Plus, ChevronDown, ChevronLeft, ChevronRight, Globe, Lock, PlayCircle, Image as ImageIcon, Loader2, Link as LinkIcon, Calendar, Users, KeyRound, ShieldCheck } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 // ⭐️ 에어비앤비/항공권 스타일 커스텀 달력 컴포넌트
@@ -118,7 +118,11 @@ const AddRecordModal = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [content, setContent] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
+  
+  // ⭐️ 4단계 공개 범위 레벨 (0: 전체공개, 1: 팔로워공개, 2: 비밀번호 잠금, 4: 나만보기)
+  const [visibilityLevel, setVisibilityLevel] = useState(0);
+  const [passcode, setPasscode] = useState('');
+  
   const [isTagExpanded, setIsTagExpanded] = useState(false);
   
   const [isAddingNewCat, setIsAddingNewCat] = useState(false);
@@ -140,7 +144,8 @@ const AddRecordModal = () => {
       setImageUrl('');
       setYoutubeUrl('');
       setContent('');
-      setIsPublic(true);
+      setVisibilityLevel(0);
+      setPasscode('');
       setIsTagExpanded(false);
       setIsAddingNewCat(false);
       setNewCatName('');
@@ -232,6 +237,11 @@ const AddRecordModal = () => {
         formattedDate += ` ~ ${endDate.replace(/-/g, '.')}`;
       }
 
+      if (visibilityLevel === 2 && !passcode.trim()) {
+        showToast('비밀 공개(2단계) 시 열람 비밀번호를 입력해주세요.');
+        return;
+      }
+
       const payload = {
         title: title.trim(),
         categoryName: finalCatName,
@@ -239,7 +249,9 @@ const AddRecordModal = () => {
         imageUrl: imageUrl.trim() || (!(isMusicCat || isUrlCat) ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop' : ''),
         youtubeUrl: (isMusicCat || isUrlCat) ? youtubeUrl.trim() : '',
         content: content.trim(),
-        isPublic: isPublic,
+        isPublic: visibilityLevel === 0,
+        visibilityLevel: visibilityLevel,
+        passcode: visibilityLevel === 2 ? passcode.trim() : null,
         tagIds: numericTagIds,
         newTags: newTags
       };
@@ -512,58 +524,99 @@ const AddRecordModal = () => {
             <textarea 
               value={content} 
               onChange={e => setContent(e.target.value)} 
-              rows={4} 
+              rows={3} 
               maxLength={1000}
               placeholder="이 기록에 대해 남기고 싶은 이야기를 적어주세요."
               className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all shadow-sm placeholder:text-zinc-400" 
             />
           </div>
 
-        </div>
-
-        <footer className="px-6 py-5 border-t border-zinc-100 bg-white shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center justify-between w-full sm:w-auto gap-4 p-4 sm:p-0 bg-zinc-50 sm:bg-transparent rounded-xl border sm:border-none border-zinc-200">
-            <div>
-              <h4 className="text-sm font-bold text-zinc-800 flex items-center gap-1.5 sm:hidden mb-1">
-                 {isPublic ? <Globe size={16} className="text-indigo-500"/> : <Lock size={16} className="text-rose-500"/>}
-                 {isPublic ? '전체 공개' : '나만 보기 (비공개)'}
-              </h4>
-              <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest hidden sm:block">공개 설정</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <button 
-                type="button" 
-                onClick={() => setIsPublic(!isPublic)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isPublic ? 'bg-indigo-500' : 'bg-zinc-300'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-              <span className={`text-xs font-bold flex items-center gap-1 hidden sm:flex ${isPublic ? 'text-indigo-600' : 'text-zinc-500'}`}>
-                {isPublic ? <><Globe size={12}/> 전체 공개</> : <><Lock size={12}/> 나만 보기</>}
+          {/* ⭐️ 4단계 공개 범위 설정 섹션 */}
+          <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-black text-zinc-700 uppercase tracking-widest flex items-center gap-1.5">
+                <ShieldCheck size={16} className="text-indigo-600" />
+                공개 범위 설정
+              </label>
+              <span className="text-[11px] font-bold text-zinc-500">
+                {visibilityLevel === 0 && '🌐 전체 공개 (누구나 열람 가능)'}
+                {visibilityLevel === 1 && '👥 팔로워 공개 (팔로워만 열람)'}
+                {visibilityLevel === 2 && '🔐 비밀번호 잠금 (PIN 입력 필요)'}
+                {visibilityLevel === 4 && '🔒 나만 보기 (비공개)'}
               </span>
             </div>
+
+            {/* 4단계 선택 탭 버튼 그리드 */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { level: 0, label: '전체 공개', desc: '누구나', icon: Globe, activeBg: 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500' },
+                { level: 1, label: '팔로워 공개', desc: '팔로워만', icon: Users, activeBg: 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500' },
+                { level: 2, label: '비밀번호 잠금', desc: 'PIN 설정', icon: KeyRound, activeBg: 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' },
+                { level: 4, label: '나만 보기', desc: '비공개', icon: Lock, activeBg: 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isSelected = visibilityLevel === item.level;
+                return (
+                  <button
+                    key={item.level}
+                    type="button"
+                    onClick={() => setVisibilityLevel(item.level)}
+                    className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+                      isSelected 
+                        ? `${item.activeBg} shadow-xs font-black` 
+                        : 'bg-zinc-50/70 border-zinc-200 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                    }`}
+                  >
+                    <Icon size={16} className={isSelected ? '' : 'text-zinc-400'} />
+                    <span className="text-[11px] font-black">{item.label}</span>
+                    <span className="text-[9px] text-zinc-400 font-medium">{item.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 2단계 비밀번호 입력창 (visibilityLevel === 2일 때만 표시) */}
+            {visibilityLevel === 2 && (
+              <div className="mt-3 p-3 bg-amber-50/70 border border-amber-200/90 rounded-xl animate-in fade-in duration-200">
+                <label className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5 mb-1.5">
+                  <KeyRound size={13} className="text-amber-600" />
+                  열람 비밀번호 (Passcode) 입력 <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={passcode}
+                  onChange={(e) => setPasscode(e.target.value)}
+                  placeholder="접근용 비밀번호 (예: 1234)"
+                  maxLength={20}
+                  className="w-full bg-white border border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 rounded-lg px-3 py-2 text-xs font-bold text-zinc-800 outline-none transition-all shadow-2xs"
+                />
+                <p className="text-[10px] text-amber-800 font-medium mt-1">
+                  💡 비인가 방문자에게는 잠금 카드로 노출되며, 위 비밀번호를 입력해야 내용이 열람됩니다.
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="w-full sm:w-auto flex gap-2">
-            <button 
-              onClick={() => !isLoading && setAddRecordModalOpen(false)} 
-              className="flex-1 sm:flex-none px-6 py-3 bg-zinc-100 text-zinc-600 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-colors"
-            >
-              취소
-            </button>
-            <button 
-              onClick={handleSave} 
-              disabled={isLoading}
-              className={`flex-1 sm:flex-none px-8 py-3 rounded-xl font-black text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
-                isLoading ? 'bg-indigo-400 text-white/80 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5'
-              }`}
-            >
-              {isLoading && <Loader2 size={16} className="animate-spin" />}
-              {isLoading ? '저장 중...' : <Plus size={16} />}
-              {isLoading ? '저장 중...' : '보관함에 저장하기'}
-            </button>
-          </div>
+        </div>
+
+        <footer className="px-6 py-4 border-t border-zinc-100 bg-white shrink-0 flex items-center justify-end gap-2.5">
+          <button 
+            onClick={() => !isLoading && setAddRecordModalOpen(false)} 
+            className="px-5 py-2.5 bg-zinc-100 text-zinc-600 rounded-xl font-bold text-xs sm:text-sm hover:bg-zinc-200 transition-colors cursor-pointer"
+          >
+            취소
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={isLoading}
+            className={`px-7 py-2.5 rounded-xl font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
+              isLoading ? 'bg-indigo-400 text-white/80 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg'
+            }`}
+          >
+            {isLoading && <Loader2 size={15} className="animate-spin" />}
+            {isLoading ? '저장 중...' : <Plus size={15} />}
+            {isLoading ? '저장 중...' : '보관함에 저장하기'}
+          </button>
         </footer>
 
       </div>

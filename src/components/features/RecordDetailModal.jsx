@@ -3,7 +3,7 @@ import {
   X as CloseIcon, AlertTriangle, Edit2, Trash2, Calendar, 
   ChevronDown, Globe, Lock, Link as LinkIcon, ExternalLink, 
   Quote, Image as ImageIcon, Loader2, Heart, MessageCircle, 
-  Send, Bookmark 
+  Send, Bookmark, Users, KeyRound, ShieldCheck 
 } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 import CustomDateRangePicker from '../common/CustomDateRangePicker';
@@ -34,7 +34,11 @@ const RecordDetailModal = ({
   
   const [youtubeUrl, setYoutubeUrl] = useState(''); 
   const [content, setContent] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
+  
+  // ⭐️ 4단계 공개 범위 레벨 (0: 전체공개, 1: 팔로워공개, 2: 비밀번호 잠금, 4: 나만보기)
+  const [visibilityLevel, setVisibilityLevel] = useState(0);
+  const [passcode, setPasscode] = useState('');
+  
   const [isTagExpanded, setIsTagExpanded] = useState(true);
   const [imageInputType, setImageInputType] = useState('file');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +81,11 @@ const RecordDetailModal = ({
       setImageFile(null);
       setYoutubeUrl(record.youtubeUrl || ''); 
       setContent(record.content || '');
-      setIsPublic(record.isPublic ?? true);
+      const currentLevel = record.visibilityLevel !== undefined && record.visibilityLevel !== null
+        ? record.visibilityLevel
+        : (record.isPublic ?? true ? 0 : 4);
+      setVisibilityLevel(currentLevel);
+      setPasscode(record.passcode || '');
       setIsTagExpanded(true);
 
       const recordCategory = record.category || record.categoryName || '';
@@ -110,6 +118,12 @@ const RecordDetailModal = ({
       showToast('제목과 카테고리는 필수 입력 사항입니다.');
       return;
     }
+
+    if (visibilityLevel === 2 && !passcode.trim()) {
+      showToast('비밀 공개(2단계) 시 열람 비밀번호를 입력해주세요.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const selectedCategory = tagTree.find(c => String(c.id) === String(categoryId));
@@ -138,7 +152,9 @@ const RecordDetailModal = ({
         imageUrl: finalImageUrl?.trim(),
         youtubeUrl: (selectedCategory?.type === 'MUSIC' || selectedCategory?.type === 'URL' || selectedCategory?.name?.includes('음악') || selectedCategory?.name?.includes('URL')) ? youtubeUrl.trim() : '',
         content: content.trim(),
-        isPublic: isPublic,
+        isPublic: visibilityLevel === 0,
+        visibilityLevel: visibilityLevel,
+        passcode: visibilityLevel === 2 ? passcode.trim() : null,
         tagIds: numericTagIds
       };
 
@@ -434,16 +450,66 @@ const RecordDetailModal = ({
                   <textarea value={content} onChange={e => setContent(e.target.value)} rows={5} className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:bg-white focus:border-indigo-400 outline-none resize-none transition-colors shadow-sm placeholder:text-zinc-400" />
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200 rounded-lg mt-2 shadow-sm">
-                  <div>
-                    <h4 className="text-[11px] font-bold text-zinc-700 flex items-center gap-1.5">
-                      {isPublic ? <Globe size={14} className="text-indigo-500" /> : <Lock size={14} className="text-rose-500" />}
-                      {isPublic ? '전체 공개' : '나만 보기 (비공개)'}
-                    </h4>
+                {/* ⭐️ 4단계 공개 범위 설정 섹션 */}
+                <div className="bg-white border border-zinc-200 rounded-xl p-3.5 mt-2 shadow-xs">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <label className="text-[10px] font-black text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <ShieldCheck size={14} className="text-indigo-600" />
+                      공개 범위 설정
+                    </label>
+                    <span className="text-[10px] font-bold text-zinc-500">
+                      {visibilityLevel === 0 && '🌐 전체 공개'}
+                      {visibilityLevel === 1 && '👥 팔로워 공개'}
+                      {visibilityLevel === 2 && '🔐 비밀번호 잠금'}
+                      {visibilityLevel === 4 && '🔒 나만 보기'}
+                    </span>
                   </div>
-                  <button type="button" onClick={() => setIsPublic(!isPublic)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none shadow-inner ${isPublic ? 'bg-indigo-500' : 'bg-zinc-300'}`}>
-                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${isPublic ? 'translate-x-5' : 'translate-x-1'}`} />
-                  </button>
+
+                  {/* 4단계 버튼 그리드 */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {[
+                      { level: 0, label: '전체 공개', icon: Globe, activeBg: 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500' },
+                      { level: 1, label: '팔로워 공개', icon: Users, activeBg: 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500' },
+                      { level: 2, label: '비밀번호 잠금', icon: KeyRound, activeBg: 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' },
+                      { level: 4, label: '나만 보기', icon: Lock, activeBg: 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      const isSelected = visibilityLevel === item.level;
+                      return (
+                        <button
+                          key={item.level}
+                          type="button"
+                          onClick={() => setVisibilityLevel(item.level)}
+                          className={`px-2 py-2 rounded-lg border text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+                            isSelected 
+                              ? `${item.activeBg} font-black shadow-xs` 
+                              : 'bg-zinc-50/70 border-zinc-200 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                          }`}
+                        >
+                          <Icon size={14} className={isSelected ? '' : 'text-zinc-400'} />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 2단계 비밀번호 입력창 */}
+                  {visibilityLevel === 2 && (
+                    <div className="mt-2.5 p-2.5 bg-amber-50/80 border border-amber-200/90 rounded-lg animate-in fade-in duration-200">
+                      <label className="text-[10px] font-bold text-amber-900 flex items-center gap-1 mb-1">
+                        <KeyRound size={12} className="text-amber-600" />
+                        열람 비밀번호 (Passcode) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={passcode}
+                        onChange={(e) => setPasscode(e.target.value)}
+                        placeholder="숫자 또는 영문 (예: 1234)"
+                        maxLength={20}
+                        className="w-full bg-white border border-amber-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-200 rounded-md px-2.5 py-1.5 text-xs font-bold text-zinc-800 outline-none transition-all shadow-2xs"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
