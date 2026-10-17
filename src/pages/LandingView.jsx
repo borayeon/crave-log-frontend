@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Sparkles, ArrowRight, Search, User, ShieldCheck, 
+  Sparkles, ArrowRight, User, ShieldCheck, 
   Layers, Lock, Compass, ExternalLink, Globe, 
   Rocket, Zap, CheckCircle2, Code2, Laptop, 
   Share2, History, Network, Heart, Terminal, 
-  ChevronRight, ArrowUpRight, Flame
+  ChevronRight, ArrowUpRight
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -12,25 +12,10 @@ const LandingView = () => {
   const { 
     visitUserProfile, 
     setLoginModalOpen, 
-    searchUsers, 
     setViewMode, 
     isAdmin, 
-    user,
-    showToast 
+    user 
   } = useAppStore();
-
-  const [localQuery, setLocalQuery] = useState('');
-
-  const handleSearchSubmit = (e) => {
-    if (e) e.preventDefault();
-    if (!localQuery || !localQuery.trim()) {
-      showToast('검색어를 입력해 주세요.');
-      return;
-    }
-    searchUsers(localQuery.trim());
-  };
-
-  const trendingTags = ['Spring Boot', 'React', 'Java', 'Fullstack', 'Frontend', 'DevOps'];
 
   return (
     <div className="min-h-full pb-24 md:pb-16 text-zinc-800 animate-in fade-in duration-500">
@@ -38,47 +23,52 @@ const LandingView = () => {
       {/* ========================================================= */}
       {/* 1. HERO SECTION */}
       {/* ========================================================= */}
-      <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
-        {/* Background glow effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-tr from-indigo-500/10 via-violet-500/15 to-rose-400/10 blur-3xl pointer-events-none -z-10 rounded-full" />
-        <div className="absolute top-20 right-10 w-72 h-72 bg-indigo-500/5 blur-2xl pointer-events-none -z-10 rounded-full" />
+      <section className="relative overflow-hidden pt-10 pb-14 md:pt-16 md:pb-20 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
+        {/* Ambient subtle glow background */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-80 bg-gradient-to-tr from-indigo-500/10 via-violet-500/12 to-rose-400/10 blur-3xl pointer-events-none -z-10 rounded-full" />
+        <div className="absolute top-24 right-1/4 w-60 h-60 bg-indigo-500/5 blur-2xl pointer-events-none -z-10 rounded-full" />
         
         <div className="text-center max-w-3xl mx-auto">
-          {/* Eyebrow Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-indigo-200/80 shadow-sm text-xs font-black text-indigo-600 mb-6 backdrop-blur-md hover:border-indigo-300 transition-all cursor-default">
-            <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-ping" />
-            <Sparkles size={13} className="text-indigo-500" />
-            <span>The Next-Gen Multimodal Identity & Tech Archive</span>
+          {/* Eyebrow Pill */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-50/90 via-white to-violet-50/90 border border-indigo-200/70 shadow-xs mb-8 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse" />
+            <span className="text-[11px] font-black tracking-wider text-indigo-900 uppercase">
+              Next-Gen Multi-Persona Identity
+            </span>
           </div>
 
-          {/* Grand Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-zinc-950 leading-[1.15] mb-6">
-            모든 성장과 영감의 기록, <br />
+          {/* Grand Headline with refined typographic hierarchy */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-zinc-950 tracking-[-0.03em] leading-[1.24] sm:leading-[1.18] mb-6 break-keep">
+            모든 성장과 영감의 기록, <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-rose-500 bg-clip-text text-transparent">
               CraveLog
             </span>
             에서 온전히 하나로.
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-base sm:text-lg font-medium text-zinc-600 leading-relaxed max-w-2xl mx-auto mb-9 break-keep">
+          {/* Subtitle with High-End Styling */}
+          <p className="text-base sm:text-lg text-zinc-600 font-medium leading-relaxed max-w-2xl mx-auto mb-10 break-keep">
             개발자 이력서부터 프로젝트 아카이브, 소중한 회고와 라이프스타일까지.
             <br className="hidden sm:inline" />
-            멀티 페르소나와 4단계 프라이버시 보호로 나만의 독창적인 취향 공간을 완성하세요.
+            <span className="text-zinc-900 font-bold">멀티 페르소나</span>와{' '}
+            <span className="text-indigo-600 font-bold">4단계 프라이버시 보호</span>로 나만의 독창적인 취향 공간을 완성하세요.
           </p>
 
           {/* Call to Actions (CTA) */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 mb-10">
             {/* Primary CTA: Developer Account Shortcut */}
             <button
               onClick={() => visitUserProfile('taeya00')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 hover:from-indigo-500 hover:to-violet-600 text-white font-black text-sm transition-all shadow-xl shadow-indigo-600/25 flex items-center justify-center gap-2.5 group active:scale-95"
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black text-sm sm:text-base transition-all shadow-xl shadow-zinc-900/15 flex items-center justify-center gap-2.5 group active:scale-95 border border-zinc-800"
             >
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white">
-                <Code2 size={14} />
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+                <Code2 size={15} />
               </div>
-              <span>개발자 계정 바로가기 (@taeya00)</span>
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <span>개발자 계정 바로가기</span>
+              <span className="px-2 py-0.5 rounded-lg bg-zinc-800 text-indigo-300 text-xs font-mono font-bold">
+                @taeya00
+              </span>
+              <ArrowRight size={16} className="text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
             </button>
 
             {/* Secondary CTA: Get Started or My Profile */}
@@ -90,54 +80,27 @@ const LandingView = () => {
                   setLoginModalOpen(true);
                 }
               }}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white hover:bg-zinc-50 border border-zinc-200/90 text-zinc-800 font-black text-sm transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 active:scale-95"
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white hover:bg-zinc-50 border border-zinc-200/90 text-zinc-800 font-black text-sm sm:text-base transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2.5 active:scale-95"
             >
               <Sparkles size={16} className="text-indigo-500" />
-              <span>{isAdmin ? '내 프로필로 이동' : 'CraveLog 시작하기'}</span>
+              <span>{isAdmin ? '내 프로필 대시보드' : 'CraveLog 시작하기'}</span>
             </button>
           </div>
 
-          {/* Integrated Search Box in Hero */}
-          <form 
-            onSubmit={handleSearchSubmit}
-            className="w-full max-w-xl mx-auto relative flex items-center shadow-lg shadow-zinc-200/50 rounded-2xl bg-white border border-zinc-200/80 p-1.5 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100/60 transition-all"
-          >
-            <div className="pl-3.5 pr-2 text-zinc-400">
-              <Search size={18} />
+          {/* Core Feature Quick Highlights (Clean minimal badges instead of keyword search) */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 text-xs font-bold text-zinc-500">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/70 border border-zinc-200/60 shadow-xs backdrop-blur-sm">
+              <CheckCircle2 size={13} className="text-emerald-500" />
+              <span>멀티 페르소나 프로필</span>
             </div>
-            <input
-              type="text"
-              value={localQuery}
-              onChange={(e) => setLocalQuery(e.target.value)}
-              placeholder="궁금한 사용자나 기술 키워드를 검색해보세요..."
-              className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-bold text-zinc-800 placeholder:text-zinc-400 py-2.5"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-indigo-600 text-white text-xs font-black transition-colors shrink-0"
-            >
-              검색
-            </button>
-          </form>
-
-          {/* Quick Trending Tags */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3.5 text-[11px] font-bold text-zinc-500">
-            <span className="text-zinc-400 flex items-center gap-1">
-              <Flame size={12} className="text-rose-500" /> 추천 키워드:
-            </span>
-            {trendingTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => {
-                  setLocalQuery(tag);
-                  searchUsers(tag);
-                }}
-                className="px-2.5 py-0.5 rounded-lg bg-white/70 border border-zinc-200/60 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-              >
-                #{tag}
-              </button>
-            ))}
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/70 border border-zinc-200/60 shadow-xs backdrop-blur-sm">
+              <CheckCircle2 size={13} className="text-indigo-500" />
+              <span>4단계 스마트 접근 보호</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/70 border border-zinc-200/60 shadow-xs backdrop-blur-sm">
+              <CheckCircle2 size={13} className="text-violet-500" />
+              <span>살아있는 지식 아카이브</span>
+            </div>
           </div>
         </div>
       </section>
