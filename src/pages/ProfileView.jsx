@@ -10,6 +10,7 @@ import { useAppStore } from '../store/AppStore';
 
 import BusinessCard from '../components/profile/tabs/BusinessCard';
 import Mandalart from '../components/profile/tabs/Mandalart';
+import VisitStatsModal from '../components/features/VisitStatsModal';
 import { 
   DeveloperTab, CareerTab, AddProfileTab, QnaTab, HobbyTab, 
   QuotesTab, MemoTab, ArtTab, Developer2Tab
@@ -34,6 +35,7 @@ const ProfileView = () => {
   const [activeTab, setActiveTab] = useState(null); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showVisitStatsModal, setShowVisitStatsModal] = useState(false);
   
   const [currentPersona, setCurrentPersona] = useState('all');
   
@@ -266,6 +268,13 @@ const ProfileView = () => {
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
       
+      {showVisitStatsModal && (
+        <VisitStatsModal 
+          handle={safeUser.handle}
+          onClose={() => setShowVisitStatsModal(false)}
+        />
+      )}
+
       {showShareModal && (
         <div className="fixed inset-0 z-[400] bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -363,6 +372,30 @@ const ProfileView = () => {
                       <Sparkles size={13} className="text-yellow-500" />
                       <span className="text-[10px] md:text-[11px] font-bold tracking-wider">{safeUser.status}</span>
                   </div>
+                )}
+
+                {/* ⭐️ 방문자 수 (Today / Total) 카운터 배지 */}
+                {!isProfileEmpty && (
+                  <button 
+                    onClick={() => setShowVisitStatsModal(true)}
+                    className="inline-flex items-center gap-1.5 bg-zinc-50 hover:bg-indigo-50/60 border border-zinc-200 hover:border-indigo-200 text-zinc-700 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm transition-all cursor-pointer group"
+                    title="클릭하여 7일간 방문자 통계 분석 보기"
+                  >
+                    <span className="flex items-center gap-1 text-[10px] md:text-[11px] font-black text-indigo-600">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      TODAY
+                    </span>
+                    <span className="text-[10px] md:text-[11px] font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                      {(safeUser.todayVisits || 0).toLocaleString()}
+                    </span>
+                    <span className="text-zinc-300 text-[10px]">•</span>
+                    <span className="text-[10px] md:text-[11px] font-bold text-zinc-400">
+                      TOTAL
+                    </span>
+                    <span className="text-[10px] md:text-[11px] font-black text-zinc-700">
+                      {(safeUser.totalVisits || 0).toLocaleString()}
+                    </span>
+                  </button>
                 )}
                 
                 {isGuest && currentPersona !== 'all' && (
