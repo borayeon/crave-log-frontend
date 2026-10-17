@@ -5,7 +5,50 @@ import {
 } from 'lucide-react';
 import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE, getYoutubeId, getDomain } from '../../../utils/mediaUtils';
 
-const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord }) => {
+const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlockSecret, onFollowHost }) => {
+  if (item.isLocked) {
+    const isFollowerLocked = item.lockType === 'FOLLOWER';
+    return (
+      <div className="relative pl-6 md:pl-8 group">
+        <div className="absolute w-3 h-3 bg-zinc-300 border-[3px] border-zinc-400 rounded-full -left-[5px] top-6 z-10" />
+        <div className="bg-zinc-50 border border-dashed border-zinc-300 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row gap-4 items-center">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-200/70 flex items-center justify-center shrink-0">
+            <Lock size={20} className={isFollowerLocked ? 'text-indigo-600' : 'text-amber-600'} />
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded ${isFollowerLocked ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
+                {isFollowerLocked ? '1단계: 팔로워 공개' : '2단계: 비밀 공개'}
+              </span>
+              <span className="text-[11px] font-bold text-zinc-400">{item.date}</span>
+            </div>
+            <h4 className="text-sm font-black text-zinc-800 truncate mb-1">{item.title}</h4>
+            <p className="text-xs text-zinc-500 line-clamp-1">{item.content}</p>
+          </div>
+          {isFollowerLocked ? (
+            onFollowHost && (
+              <button
+                onClick={onFollowHost}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
+              >
+                팔로우 요청
+              </button>
+            )
+          ) : (
+            onUnlockSecret && (
+              <button
+                onClick={() => onUnlockSecret(item)}
+                className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
+              >
+                PIN 입력
+              </button>
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const matchedCat = safeTagTree.find(
     (c) => c.name === item.category || String(c.id) === String(item.categoryId)
   );

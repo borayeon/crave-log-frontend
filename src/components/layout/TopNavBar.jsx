@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, Activity } from 'lucide-react';
+import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, ShieldCheck } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const TopNavBar = () => {
@@ -21,7 +21,7 @@ const TopNavBar = () => {
     timeline: '타임라인 (Timeline)', 
     search: '검색 결과 (Search)',
     account_settings: '계정 설정 (Settings)',
-    analytics: '플랫폼 분석 (Analytics)'
+    access_control: '공개 권한 & 팔로우'
   };
 
   const handleSearchSubmit = () => {
@@ -145,12 +145,12 @@ const TopNavBar = () => {
                       <User size={16} className="text-zinc-400" /> 마이페이지
                     </button>
 
-                    {/* 📊 개발자/운영자용 플랫폼 분석 대시보드 */}
+                    {/* 🔒 사용자 전용 공개 권한 & 팔로우 관리 */}
                     <button 
-                      onClick={() => { setViewMode('analytics'); setIsUserMenuOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-50/60 transition text-left"
+                      onClick={() => { setViewMode('access_control'); setIsUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                     >
-                      <Activity size={16} className="text-indigo-600" /> 플랫폼 분석 대시보드
+                      <ShieldCheck size={16} className="text-indigo-600" /> 공개 권한 & 팔로우
                     </button>
 
                     {canEdit && (

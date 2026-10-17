@@ -5,12 +5,14 @@ import EmptyState from '../components/common/EmptyState';
 import RecordDetailModal from '../components/features/RecordDetailModal';
 import TimelineCategoryExplorer from '../components/features/timeline/TimelineCategoryExplorer';
 import TimelineItemCard from '../components/features/timeline/TimelineItemCard';
+import PasscodeModal from '../components/features/PasscodeModal';
 
 const TimelineView = () => {
   const { 
     records, 
     tagTree, 
     isAdmin, 
+    hostUser,
     setLoginModalOpen, 
     showToast, 
     fetchAllData, 
@@ -22,8 +24,24 @@ const TimelineView = () => {
   } = useAppStore();
   
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [passcodeTargetRecord, setPasscodeTargetRecord] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState({ type: 'all', value: '전체', id: 'all' });
+
+  const handleUnlockSecret = (record) => {
+    setPasscodeTargetRecord(record);
+  };
+
+  const handleFollowHost = async () => {
+    if (!hostUser?.handle) return;
+    try {
+      await apiFetch(`/api/v1/users/${hostUser.handle}/follow`, { method: 'POST' });
+      showToast(`${hostUser.nickname || hostUser.handle}님을 팔로우했습니다. 타임라인을 새로고침합니다.`, 'success');
+      await fetchAllData(true);
+    } catch (err) {
+      showToast(err.message || '팔로우에 실패했습니다.', 'error');
+    }
+  };
   const [expandedFolders, setExpandedFolders] = useState({});
   
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -274,6 +292,16 @@ const TimelineView = () => {
         />
       )}
 
+      {passcodeTargetRecord && (
+        <PasscodeModal
+          record={passcodeTargetRecord}
+          onClose={() => setPasscodeTargetRecord(null)}
+          onSuccess={(unlockedRecord) => {
+            setSelectedRecord(unlockedRecord);
+          }}
+        />
+      )}
+
       <header className="px-6 md:px-10 py-4 md:py-8 shrink-0 flex justify-end items-end border-b border-zinc-200/50"> 
         {isAdmin && !isGuestMode && (
           <button 
@@ -338,6 +366,8 @@ const TimelineView = () => {
                 isEditing={isEditing}
                 safeTagTree={safeTagTree}
                 onSelectRecord={setSelectedRecord}
+                onUnlockSecret={handleUnlockSecret}
+                onFollowHost={handleFollowHost}
               />
             ))}
           </div>

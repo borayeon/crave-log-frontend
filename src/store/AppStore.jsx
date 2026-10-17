@@ -72,16 +72,13 @@ const AppContext = createContext();
 export const useAppStore = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
-  // ⭐️ URL 파라미터(?view=analytics) 또는 경로(/analytics) 직접 접근 지원
+  // ⭐️ URL 파라미터(?view=access_control) 직접 접근 지원
   const getInitialViewMode = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const v = params.get('view');
-      if (v && ['profile', 'archive', 'timeline', 'analytics', 'search', 'account_settings'].includes(v)) {
+      if (v && ['profile', 'archive', 'timeline', 'access_control', 'search', 'account_settings'].includes(v)) {
         return v;
-      }
-      if (window.location.pathname === '/analytics') {
-        return 'analytics';
       }
     }
     return 'profile';

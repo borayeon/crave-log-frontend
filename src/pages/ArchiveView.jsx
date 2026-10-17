@@ -6,6 +6,7 @@ import {
 import { useAppStore } from '../store/AppStore';
 import RecordDetailModal from '../components/features/RecordDetailModal';
 import ArchiveRecordCard from '../components/features/archive/ArchiveRecordCard';
+import PasscodeModal from '../components/features/PasscodeModal';
 import { DEFAULT_IMAGE, getYoutubeId, getDomain } from '../utils/mediaUtils';
 
 const ArchiveView = () => {
@@ -19,11 +20,14 @@ const ArchiveView = () => {
     showToast, 
     isGuestMode, 
     searchQuery, 
-    isLoading 
+    isLoading,
+    visitedHandle,
+    setLoginModalOpen
   } = useAppStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [passcodeModalRecord, setPasscodeModalRecord] = useState(null);
   
   const [activeCategory, setActiveCategory] = useState('전체');
   const [activeTag, setActiveTag] = useState('전체');
@@ -212,6 +216,30 @@ const ArchiveView = () => {
 
   const isListMode = isCurrentCategoryMusic && musicViewMode === 'list';
 
+  const handleUnlockSuccess = (unlocked) => {
+    setCustomOrderedRecords(prev => prev.map(r => String(r.id) === String(unlocked.id) ? unlocked : r));
+  };
+
+  const handleFollowHost = async () => {
+    if (!isAdmin) {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (visitedHandle) {
+      try {
+        const res = await apiFetch(`/users/${visitedHandle}/follow`, { method: 'POST' });
+        if (res?.ok) {
+          showToast(`@${visitedHandle}님을 팔로우했습니다! 이제 팔로워 공개 기록을 열람할 수 있습니다. 🎉`);
+          await fetchAllData(true);
+        } else {
+          showToast('팔로우 처리에 실패했습니다.');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
   if (isLoading && (!records || records.length === 0)) {
     return (
       <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
@@ -224,6 +252,16 @@ const ArchiveView = () => {
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-24 md:pb-0 bg-[#F8FAFC] relative w-full">
+      
+      {passcodeModalRecord && (
+        <PasscodeModal
+          recordId={passcodeModalRecord.id}
+          recordTitle={passcodeModalRecord.title}
+          onClose={() => setPasscodeModalRecord(null)}
+          onSuccess={handleUnlockSuccess}
+        />
+      )}
+
       {confirmDeleteId && (
         <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-4">
           <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full text-center">
@@ -384,6 +422,8 @@ const ArchiveView = () => {
               draggedIndex={draggedIndex}
               onSelectRecord={setSelectedRecord}
               onConfirmDelete={setConfirmDeleteId}
+              onUnlockSecret={setPasscodeModalRecord}
+              onFollowHost={handleFollowHost}
             />
           ))}
         </div>

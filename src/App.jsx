@@ -14,7 +14,7 @@ import ArchiveView from './pages/ArchiveView';
 import TimelineView from './pages/TimelineView';
 import SearchView from './pages/SearchView';
 import AccountSettingsView from './pages/AccountSettingsView';
-import PlatformAnalyticsView from './pages/PlatformAnalyticsView';
+import AccessControlView from './pages/AccessControlView';
 import Footer from './components/Footer'; 
 import NotFoundView from './pages/NotFoundView'; // ⭐️ 404 페이지 임포트 유지
 import { trackPlatformVisit } from './utils/analyticsTracker';
@@ -65,10 +65,10 @@ const AppContent = () => {
              {viewMode === 'timeline' && <TimelineView />}
              {viewMode === 'search' && <SearchView />}
              {viewMode === 'account_settings' && <AccountSettingsView />}
-             {viewMode === 'analytics' && <PlatformAnalyticsView />}
+             {viewMode === 'access_control' && <AccessControlView />}
              
              {/* ⭐️ 404 에러 페이지 로직 추가: 위에서 정의한 뷰가 아닐 때 렌더링됩니다 */}
-             {!['profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings', 'analytics'].includes(viewMode) && (
+             {!['profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings', 'access_control'].includes(viewMode) && (
                <NotFoundView />
              )}
            </div>

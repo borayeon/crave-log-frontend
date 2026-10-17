@@ -3,7 +3,7 @@ import {
   Edit2, Share2, Rocket, User, Sparkles, MapPin, GraduationCap, 
   ChevronRight, Loader2, History, X as CloseIcon, Lock, Copy, Heart,
   Link, Terminal, PlayCircle, Camera, Hash, Users, Tv, MessageCircle, Globe,
-  Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid
+  Code, Briefcase, UserPlus, UserCheck, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid
 } from 'lucide-react';
 
 import { useAppStore } from '../store/AppStore';
@@ -31,13 +31,18 @@ const DEFAULT_PERSONAS = {
 };
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading } = useAppStore();
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch } = useAppStore();
+
   const [activeTab, setActiveTab] = useState(null); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showVisitStatsModal, setShowVisitStatsModal] = useState(false);
   
   const [currentPersona, setCurrentPersona] = useState('all');
+  
+  // 팔로우 상태 관리
+  const [followStatus, setFollowStatus] = useState({ isFollowing: false, followerCount: 0, followingCount: 0 });
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
   
   // 자기소개 더보기/접기 상태 관리
   const [isBioExpanded, setIsBioExpanded] = useState(false);
@@ -125,6 +130,51 @@ const ProfileView = () => {
   }, [safeUser.bio, isBioExpanded]);
 
   const isGuest = !isAdmin || isGuestMode;
+
+  useEffect(() => {
+    if (!safeUser.handle) return;
+    apiFetch(`/users/${safeUser.handle}/follow-status`)
+      .then(res => res?.ok && res.json())
+      .then(data => data && setFollowStatus(data))
+      .catch(() => {});
+  }, [safeUser.handle, apiFetch]);
+
+  const handleToggleFollow = async () => {
+    if (!isAdmin) {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (!safeUser.handle) return;
+
+    try {
+      setIsFollowLoading(true);
+      if (followStatus.isFollowing) {
+        const res = await apiFetch(`/users/${safeUser.handle}/follow`, { method: 'DELETE' });
+        if (res?.ok) {
+          setFollowStatus(prev => ({
+            ...prev,
+            isFollowing: false,
+            followerCount: Math.max(0, prev.followerCount - 1),
+          }));
+          showToast(`@${safeUser.handle} 팔로우를 취소했습니다.`);
+        }
+      } else {
+        const res = await apiFetch(`/users/${safeUser.handle}/follow`, { method: 'POST' });
+        if (res?.ok) {
+          setFollowStatus(prev => ({
+            ...prev,
+            isFollowing: true,
+            followerCount: prev.followerCount + 1,
+          }));
+          showToast(`@${safeUser.handle}님을 팔로우했습니다! 🎉`);
+        }
+      }
+    } catch (err) {
+      console.error('Follow toggle error:', err);
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
 
   const handleCopyLink = (personaId) => {
     const baseUrl = `${window.location.origin}${window.location.pathname}?u=${user?.handle || ''}`;
@@ -408,7 +458,23 @@ const ProfileView = () => {
                 )}
               </div>
               
-              <div className="flex justify-end gap-1.5 shrink-0">
+              <div className="flex justify-end items-center gap-1.5 shrink-0">
+                {/* ⭐️ 타 사용자 프로필 열람 시 팔로우/팔로잉 버튼 */}
+                {isGuest && safeUser.handle && (
+                  <button 
+                    onClick={handleToggleFollow} 
+                    disabled={isFollowLoading}
+                    className={`h-7 md:h-8 px-3 rounded-full text-[10px] md:text-[11px] font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                      followStatus.isFollowing 
+                        ? 'bg-zinc-100 text-zinc-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-zinc-200' 
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    }`}
+                  >
+                    {followStatus.isFollowing ? <UserCheck size={13} /> : <UserPlus size={13} />}
+                    {followStatus.isFollowing ? '팔로잉' : '팔로우'}
+                  </button>
+                )}
+
                 {!isProfileEmpty && (
                   <button onClick={() => setShowShareModal(true)} className="w-7 h-7 md:w-8 md:h-8 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title="공유">
                       <Share2 size={13} />

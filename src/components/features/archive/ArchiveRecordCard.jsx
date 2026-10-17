@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   PlayCircle, Disc, Lock, Trash2, GripVertical, 
-  ChevronUp, ChevronDown, Link as LinkIcon, ExternalLink, Quote 
+  ChevronUp, ChevronDown, Link as LinkIcon, ExternalLink, Quote,
+  KeyRound, Users, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE } from '../../../utils/mediaUtils';
 
@@ -22,9 +23,82 @@ const ArchiveRecordCard = ({
   handleDrop,
   draggedIndex,
   onSelectRecord,
-  onConfirmDelete
+  onConfirmDelete,
+  onUnlockSecret,
+  onFollowHost
 }) => {
-  // 1. 음악 레코드판 UI
+
+  // 🛡️ 1. 접근 보안 잠금 카드 (팔로워 공개 또는 비밀 공개로 잠겨있는 경우)
+  if (item.isLocked) {
+    const isSecret = item.lockType === 'SECRET';
+    const isFollowerLock = item.lockType === 'FOLLOWER';
+
+    return (
+      <div 
+        className="aspect-[3/4] w-full max-w-[260px] mx-auto rounded-xl sm:rounded-[1.5rem] overflow-hidden shadow-sm border border-zinc-200/80 bg-gradient-to-b from-zinc-50 to-white flex flex-col justify-between p-5 text-center relative group hover:border-indigo-300 hover:shadow-md transition-all"
+      >
+        {/* 상단 뱃지 */}
+        <div className="flex justify-between items-center w-full">
+          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm ${
+            isSecret ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
+          }`}>
+            {isSecret ? <KeyRound size={12} /> : <Users size={12} />}
+            {isSecret ? '2단계 비밀공개' : '1단계 팔로워공개'}
+          </span>
+          <span className="p-1 rounded-full bg-zinc-200/60 text-zinc-500">
+            <Lock size={12} />
+          </span>
+        </div>
+
+        {/* 중앙 잠금 아이콘 및 안내 */}
+        <div className="flex flex-col items-center justify-center my-auto py-2">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md mb-3 border transition-transform group-hover:scale-105 ${
+            isSecret 
+              ? 'bg-amber-50 text-amber-600 border-amber-200/80' 
+              : 'bg-indigo-50 text-indigo-600 border-indigo-200/80'
+          }`}>
+            {isSecret ? <KeyRound size={26} /> : <Lock size={26} />}
+          </div>
+
+          <h3 className="text-sm sm:text-base font-black text-zinc-800 line-clamp-2 px-1 mb-1">
+            {item.title}
+          </h3>
+          <p className="text-[11px] text-zinc-400 font-bold break-keep">
+            {isSecret 
+              ? '비밀번호(PIN)를 입력하여 잠금을 해제하세요.' 
+              : '작성자를 팔로우하면 기록을 열람할 수 있습니다.'}
+          </p>
+        </div>
+
+        {/* 하단 잠금 해제 액션 버튼 */}
+        <div className="w-full pt-2">
+          {isSecret ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onUnlockSecret) onUnlockSecret(item);
+              }}
+              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1.5"
+            >
+              <KeyRound size={13} /> 비밀번호 입력
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onFollowHost) onFollowHost(item);
+              }}
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1.5"
+            >
+              <Users size={13} /> 팔로우하고 보기
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 2. 음악 레코드판 UI
   if (item.isMusic) {
     const thumbnailUrl = item.videoId
       ? `https://img.youtube.com/vi/${item.videoId}/hqdefault.jpg`
@@ -79,72 +153,70 @@ const ArchiveRecordCard = ({
                     setEditingRankId(item.id);
                     setRankInputValue(index + 1);
                   }}
-                  className="text-sm sm:text-base font-black text-zinc-400 italic group-hover:text-indigo-600 transition-colors cursor-pointer px-1.5 py-0.5 hover:bg-zinc-50 rounded"
-                  title="클릭하여 순위 직접 변경"
+                  className={`text-sm sm:text-base font-black px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                    index === 0
+                      ? 'text-amber-500'
+                      : index === 1
+                      ? 'text-zinc-400'
+                      : index === 2
+                      ? 'text-amber-700'
+                      : 'text-zinc-300 group-hover:text-zinc-600'
+                  } hover:bg-indigo-50 hover:text-indigo-600`}
                 >
                   {index + 1}
                 </span>
               )}
             </div>
-            {!isEditing && (
-              <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+
+            {isEditing && (
+              <div className="flex flex-col gap-0.5 shrink-0">
                 <button
-                  onClick={(e) => handleMoveItem(e, index, 'up')}
+                  type="button"
                   disabled={index === 0}
-                  className="p-0.5 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 hover:bg-zinc-100 rounded"
-                  title="위로 이동"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveItem(index, 'up');
+                  }}
+                  className="p-1 hover:bg-indigo-50 rounded text-zinc-400 hover:text-indigo-600 disabled:opacity-20"
                 >
-                  <ChevronUp size={12} />
+                  <ChevronUp size={14} />
                 </button>
                 <button
-                  onClick={(e) => handleMoveItem(e, index, 'down')}
+                  type="button"
                   disabled={index === totalCount - 1}
-                  className="p-0.5 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 hover:bg-zinc-100 rounded"
-                  title="아래로 이동"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveItem(index, 'down');
+                  }}
+                  className="p-1 hover:bg-indigo-50 rounded text-zinc-400 hover:text-indigo-600 disabled:opacity-20"
                 >
-                  <ChevronDown size={12} />
+                  <ChevronDown size={14} />
                 </button>
               </div>
             )}
           </div>
 
-          <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden border border-zinc-100 ml-1">
-            <img
-              src={thumbnailUrl}
-              alt={item.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-900/80 rounded-full flex items-center justify-center backdrop-blur-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-              <PlayCircle size={14} className="text-white/90 translate-x-[1px]" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-zinc-900 shrink-0 relative shadow-inner">
+            <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+              <PlayCircle className="text-white drop-shadow" size={20} />
             </div>
           </div>
 
-          <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="text-sm sm:text-base font-black text-zinc-900 truncate group-hover:text-indigo-600 transition-colors">
-                {item.title}
-              </h3>
-              {!item.isPublic && !isEditing && <Lock size={12} className="text-rose-400 shrink-0" />}
-            </div>
-            {item.content && (
-              <p className="text-xs text-zinc-500 truncate font-medium">{item.content}</p>
-            )}
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="text-sm sm:text-base font-black text-zinc-800 truncate group-hover:text-indigo-600 transition-colors">
+              {item.title}
+            </h3>
+            <p className="text-[10px] sm:text-xs font-bold text-red-500 flex items-center gap-1 mt-0.5">
+              <Disc size={12} /> Record
+            </p>
           </div>
 
-          <div className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 ml-4">
-            <span className="text-[10px] font-bold text-zinc-400">{item.date}</span>
-            <div className="flex gap-1.5">
-              {(item.tags || []).slice(0, 2).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-1.5 py-0.5 bg-zinc-50 border border-zinc-100 rounded-md text-[9px] font-bold text-zinc-500"
-                >
-                  #{tag}
-                </span>
-              ))}
+          {!item.isPublic && (
+            <div className="p-1.5 sm:p-2 bg-zinc-100 text-rose-500 rounded-lg shrink-0">
+              <Lock size={14} />
             </div>
-          </div>
+          )}
 
           {isEditing && (
             <button
@@ -152,7 +224,7 @@ const ArchiveRecordCard = ({
                 e.stopPropagation();
                 onConfirmDelete(item.id);
               }}
-              className="p-2 sm:p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-colors ml-2 shrink-0"
+              className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition shrink-0"
             >
               <Trash2 size={16} />
             </button>
@@ -164,39 +236,19 @@ const ArchiveRecordCard = ({
     return (
       <div
         onClick={() => !isEditing && onSelectRecord(item)}
-        className={`group relative w-full max-w-[260px] mx-auto flex flex-col items-center justify-start cursor-pointer animate-in fade-in transition-all duration-500 ease-out ${
-          !isEditing ? 'hover:-translate-y-1' : ''
+        className={`group relative aspect-[3/4] w-full max-w-[260px] mx-auto rounded-xl sm:rounded-[1.5rem] p-4 sm:p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-500 ease-out transform ${
+          !isEditing
+            ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-2xl hover:z-10 bg-white border border-zinc-200/80 shadow-sm'
+            : 'bg-white border border-zinc-200/80'
         }`}
       >
-        <div
-          className={`relative w-full aspect-square rounded-full overflow-hidden shadow-xl border-[5px] sm:border-[6px] border-zinc-900 transition-transform duration-500 ease-out ${
-            isEditing
-              ? 'opacity-80 scale-100'
-              : 'group-hover:scale-105 group-hover:shadow-2xl group-hover:border-zinc-800'
-          }`}
-        >
-          <img
-            src={thumbnailUrl}
-            alt={item.title}
-            className={`w-full h-full object-cover scale-125 transition-transform duration-700 ease-out ${
-              !isEditing ? 'group-hover:rotate-12 group-hover:scale-150' : ''
-            }`}
-          />
-          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 bg-zinc-900 rounded-full border-[3px] border-zinc-700 flex items-center justify-center shadow-inner">
-            <PlayCircle size={24} className="text-white/80 translate-x-[1px]" />
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center shrink-0">
+          <div className="absolute inset-0 rounded-full bg-zinc-950 shadow-xl border-4 border-zinc-800 flex items-center justify-center group-hover:rotate-45 transition-transform duration-700 ease-out">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-white/20 shadow-inner">
+              <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
+            </div>
+            <div className="absolute w-4 h-4 rounded-full bg-zinc-900 border-2 border-zinc-700"></div>
           </div>
-          {isEditing && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onConfirmDelete(item.id);
-              }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 p-3 bg-rose-500 text-white rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all animate-in zoom-in-50"
-            >
-              <Trash2 size={20} />
-            </button>
-          )}
         </div>
         <div className="mt-4 sm:mt-5 text-center px-2 w-full">
           <h3 className="text-sm sm:text-base font-black text-zinc-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">
@@ -215,7 +267,7 @@ const ArchiveRecordCard = ({
     );
   }
 
-  // 2. 일반 카드 (URL 및 이미지 뷰)
+  // 3. 일반 카드 (URL 및 이미지 뷰)
   return (
     <div
       onClick={() => {
@@ -278,8 +330,8 @@ const ArchiveRecordCard = ({
             {item.title}
           </h3>
           {item.content && (
-            <p className="text-[10px] sm:text-sm md:text-base font-medium text-zinc-500 line-clamp-3 sm:line-clamp-4 leading-relaxed px-3">
-              "{item.content}"
+            <p className="text-xs sm:text-sm text-zinc-500 font-medium line-clamp-3 leading-relaxed px-2">
+              {item.content}
             </p>
           )}
         </div>
@@ -287,16 +339,10 @@ const ArchiveRecordCard = ({
         <>
           <div className="relative w-full flex-1 overflow-hidden bg-zinc-100">
             <img
-              src={item.image}
-              onError={(e) => {
-                e.target.src = DEFAULT_IMAGE;
-              }}
+              src={item.image || DEFAULT_IMAGE}
               alt={item.title}
-              className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
-                isEditing ? 'opacity-80 scale-100' : 'group-hover:scale-105'
-              }`}
+              className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300" />
             <div className="absolute top-3 sm:top-4 left-3 sm:left-4 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/90 backdrop-blur-md text-indigo-600 text-[9px] sm:text-[11px] font-black rounded-lg shadow-sm uppercase tracking-wider">
               {item.category}
             </div>
@@ -321,6 +367,7 @@ const ArchiveRecordCard = ({
         </>
       )}
 
+      {/* 비공개/잠금 인디케이터 */}
       {!item.isPublic && (
         <div className="absolute top-3 sm:top-4 right-3 sm:right-4 p-1.5 sm:p-2 bg-zinc-900/80 backdrop-blur-md text-rose-400 rounded-full shadow-sm z-20">
           <Lock size={12} />
