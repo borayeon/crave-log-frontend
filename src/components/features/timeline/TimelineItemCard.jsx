@@ -4,6 +4,7 @@ import {
   ExternalLink, Quote 
 } from 'lucide-react';
 import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE, getYoutubeId, getDomain } from '../../../utils/mediaUtils';
+import { trackOutboundClick } from '../../../utils/analyticsTracker';
 
 const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlockSecret, onFollowHost }) => {
   if (item.isLocked) {
@@ -72,6 +73,7 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
     if (isEditing) return;
     // URL 아이템 클릭 시 새 창 열기
     if (item.isUrlItem && item.youtubeUrl) {
+      trackOutboundClick(item.youtubeUrl, item.title);
       window.open(item.youtubeUrl, '_blank', 'noopener,noreferrer');
       return;
     }

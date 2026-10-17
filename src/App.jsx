@@ -17,10 +17,15 @@ import AccountSettingsView from './pages/AccountSettingsView';
 import AccessControlView from './pages/AccessControlView';
 import Footer from './components/Footer'; 
 import NotFoundView from './pages/NotFoundView'; // ⭐️ 404 페이지 임포트 유지
-import { trackPlatformVisit } from './utils/analyticsTracker';
+import { trackPlatformVisit, initGoogleAnalytics } from './utils/analyticsTracker';
 
 const AppContent = () => {
   const { viewMode, isLoading } = useAppStore();
+
+  // ⭐️ GA4 초기화 (측정 ID가 환경변수에 있을 시 자동 주입)
+  useEffect(() => {
+    initGoogleAnalytics();
+  }, []);
 
   // ⭐️ 플랫폼 전체 트래픽 비콘 자동 전송 (화면 이동 시 비동기 집계)
   useEffect(() => {

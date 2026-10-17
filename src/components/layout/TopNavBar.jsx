@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, ShieldCheck } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
+import { trackSearchEvent } from '../../utils/analyticsTracker';
 
 const TopNavBar = () => {
   const { 
@@ -25,6 +26,9 @@ const TopNavBar = () => {
   };
 
   const handleSearchSubmit = () => {
+    if (searchQuery && searchQuery.trim()) {
+      trackSearchEvent(searchQuery.trim());
+    }
     searchUsers(searchQuery);
     setViewMode('search');
     setIsMobileSearchOpen(false); 

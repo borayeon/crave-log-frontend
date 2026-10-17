@@ -8,6 +8,7 @@ import {
 import { useAppStore } from '../../store/AppStore';
 import CustomDateRangePicker from '../common/CustomDateRangePicker';
 import { DEFAULT_IMAGE, getYoutubeId, getDomain } from '../../utils/mediaUtils';
+import { trackOutboundClick } from '../../utils/analyticsTracker';
 
 const RecordDetailModal = ({ 
   record, 
@@ -277,7 +278,13 @@ const RecordDetailModal = ({
                 <div className="mt-8 flex flex-col items-center justify-center gap-6 bg-white/50 p-5 md:p-6 rounded-[2rem] backdrop-blur-md border border-white/50 z-10 shadow-sm">
                   <div className="flex flex-col items-center text-center">
                     <p className="text-zinc-500 font-bold text-sm mb-3">아래 버튼을 눌러 웹사이트로 이동하세요.</p>
-                    <a href={record.youtubeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-full transition-colors shadow-sm font-black text-base md:text-lg">
+                    <a 
+                      href={record.youtubeUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={() => trackOutboundClick(record.youtubeUrl, record.title)}
+                      className="inline-flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-full transition-colors shadow-sm font-black text-base md:text-lg"
+                    >
                       <ExternalLink size={20} /> 웹사이트 방문하기
                     </a>
                   </div>
