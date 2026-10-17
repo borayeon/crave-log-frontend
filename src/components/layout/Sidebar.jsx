@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Network, History, Sparkles, Rocket, BookOpen, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Network, History, Sparkles, Rocket, BookOpen, Share2, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore'; // 경로는 기존 설정대로 유지하세요
 
 const Sidebar = () => {
@@ -66,6 +66,7 @@ const Sidebar = () => {
     { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
     { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
     { id: 'timeline', icon: <History size={20} />, label: '타임라인', desc: '시간순 기록장' },
+    { id: 'analytics', icon: <Activity size={20} />, label: '플랫폼 분석', desc: '실시간 트래픽 대시보드' },
   ];
 
   return (

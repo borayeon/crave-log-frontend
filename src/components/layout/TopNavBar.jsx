@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings } from 'lucide-react';
+import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, Activity } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const TopNavBar = () => {
@@ -20,7 +20,8 @@ const TopNavBar = () => {
     archive: '컬렉션 (Collection)', 
     timeline: '타임라인 (Timeline)', 
     search: '검색 결과 (Search)',
-    account_settings: '계정 설정 (Settings)'
+    account_settings: '계정 설정 (Settings)',
+    analytics: '플랫폼 분석 (Analytics)'
   };
 
   const handleSearchSubmit = () => {
@@ -135,13 +136,21 @@ const TopNavBar = () => {
                   {/* 드롭다운 외부 영역 클릭 시 닫히도록 하는 투명 배경 */}
                   <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)}></div>
                   
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-zinc-100 rounded-2xl shadow-xl overflow-hidden py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-zinc-100 rounded-2xl shadow-xl overflow-hidden py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     
                     <button 
                       onClick={() => { handleGoToProfile(); setIsUserMenuOpen(false); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                     >
                       <User size={16} className="text-zinc-400" /> 마이페이지
+                    </button>
+
+                    {/* 📊 개발자/운영자용 플랫폼 분석 대시보드 */}
+                    <button 
+                      onClick={() => { setViewMode('analytics'); setIsUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-indigo-600 hover:bg-indigo-50/60 transition text-left"
+                    >
+                      <Activity size={16} className="text-indigo-600" /> 플랫폼 분석 대시보드
                     </button>
 
                     {canEdit && (

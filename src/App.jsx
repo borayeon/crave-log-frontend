@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppProvider, useAppStore } from './store/AppStore';
 import { Sparkles, Loader2 } from 'lucide-react'; 
 
@@ -14,11 +14,20 @@ import ArchiveView from './pages/ArchiveView';
 import TimelineView from './pages/TimelineView';
 import SearchView from './pages/SearchView';
 import AccountSettingsView from './pages/AccountSettingsView';
+import PlatformAnalyticsView from './pages/PlatformAnalyticsView';
 import Footer from './components/Footer'; 
 import NotFoundView from './pages/NotFoundView'; // ⭐️ 404 페이지 임포트 유지
+import { trackPlatformVisit } from './utils/analyticsTracker';
 
 const AppContent = () => {
   const { viewMode, isLoading } = useAppStore();
+
+  // ⭐️ 플랫폼 전체 트래픽 비콘 자동 전송 (화면 이동 시 비동기 집계)
+  useEffect(() => {
+    if (!isLoading && viewMode) {
+      trackPlatformVisit(viewMode);
+    }
+  }, [viewMode, isLoading]);
 
   // 🚨 전역 로딩 화면: 데이터가 모두 준비되기 전까지는 사이드바나 네비게이션을 아예 그리지 않습니다!
   if (isLoading) {
@@ -56,9 +65,10 @@ const AppContent = () => {
              {viewMode === 'timeline' && <TimelineView />}
              {viewMode === 'search' && <SearchView />}
              {viewMode === 'account_settings' && <AccountSettingsView />}
+             {viewMode === 'analytics' && <PlatformAnalyticsView />}
              
              {/* ⭐️ 404 에러 페이지 로직 추가: 위에서 정의한 뷰가 아닐 때 렌더링됩니다 */}
-             {!['profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings'].includes(viewMode) && (
+             {!['profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings', 'analytics'].includes(viewMode) && (
                <NotFoundView />
              )}
            </div>
