@@ -319,6 +319,12 @@ export const AppProvider = ({ children }) => {
   // -------------------------------------------------------
   const visitUserProfile = useCallback(
     async (targetHandle) => {
+      // ⭐️ 관리자(Admin) 계정 프로필 접근 원천 방어
+      if (targetHandle === 'admin_craver' || targetHandle?.toLowerCase().includes('admin')) {
+        showToast('존재하지 않는 사용자입니다.');
+        return;
+      }
+
       setVisitedHandle(targetHandle);
       setIsGuestMode(true);
       setViewMode('profile');
@@ -332,7 +338,7 @@ export const AppProvider = ({ children }) => {
 
       await fetchAllData(false, targetHandle);
     },
-    [fetchAllData]
+    [fetchAllData, showToast]
   );
 
   // -------------------------------------------------------
@@ -372,7 +378,12 @@ export const AppProvider = ({ children }) => {
         if (res?.ok) {
           const data = await res.json();
 
-          setSearchResults(data);
+          // ⭐️ 관리자 계정 프론트엔드 방어 필터링 (ROLE_ADMIN 및 admin_craver 원천 제외)
+          const filteredResults = Array.isArray(data)
+            ? data.filter(u => u.handle !== 'admin_craver' && !u.handle?.toLowerCase().includes('admin'))
+            : [];
+
+          setSearchResults(filteredResults);
           setSearchQuery(keyword.trim());
           setViewMode('search');
         } else {
