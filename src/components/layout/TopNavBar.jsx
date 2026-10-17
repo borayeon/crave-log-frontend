@@ -100,17 +100,6 @@ const TopNavBar = () => {
       {/* 우측 메뉴 영역 */}
       <div className="flex items-center justify-end gap-2 md:gap-3 flex-1">
         
-        {/* 개발자 계정 바로가기 배너 버튼 (상단바) */}
-        <button
-          onClick={() => visitUserProfile('taeya00')}
-          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 border border-indigo-200/80 hover:border-indigo-400 text-indigo-700 text-xs font-black transition-all shadow-sm active:scale-95 group shrink-0"
-          title="개발자 계정(@taeya00) 바로가기"
-        >
-          <Sparkles size={13} className="text-indigo-500 group-hover:rotate-12 transition-transform" />
-          <span>개발자 프로필</span>
-          <span className="text-[10px] text-indigo-500/80 font-mono">@taeya00</span>
-        </button>
-
         {/* 검색창 (데스크톱) */}
         <div className="hidden sm:flex items-center relative w-full max-w-[200px] md:max-w-[240px] lg:max-w-[280px]">
           <button onClick={handleSearchSubmit} className="absolute left-2.5 p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-zinc-200/50 rounded-full transition-colors z-10" title="검색하기">
