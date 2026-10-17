@@ -3,7 +3,7 @@ import {
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  Layers, Terminal // ⭐️ Terminal 아이콘 추가 (이력서 탭용)
+  Layers, Terminal 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -13,7 +13,7 @@ import Mandalart from '../components/profile/tabs/Mandalart';
 import { 
   DeveloperEditTab, CareerEditTab, AddProfileEditTab, BusinessCardEditTab, 
   QnaEditTab, HobbyEditTab, QuotesEditTab, MemoEditTab, ArtEditTab,
-  PersonaEditTab, ResumeEditTab // ⭐️ ResumeEditTab 불러오기
+  PersonaEditTab, ResumeEditTab
 } from '../components/profile/tabs/EditTabs';
 
 export const DEFAULT_PERSONAS = {
@@ -40,7 +40,7 @@ const EditProfileView = () => {
         }
     }
 
-    // ⭐️ 기본 탭 순서 배열에 developer2(이력서) 추가
+    // 기본 탭 순서 배열에 developer2(이력서) 추가
     const defaultOrder = ['developer', 'developer2', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
     const savedOrder = safeUser.idol?.tabOrder || [];
     const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
@@ -110,7 +110,7 @@ const EditProfileView = () => {
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
   const [draggedPersonaIndex, setDraggedPersonaIndex] = useState(null);
 
-  // ⭐️ TABS_CONFIG에 이력서 탭(developer2) 추가
+  // TABS_CONFIG에 이력서 탭(developer2) 추가
   const TABS_CONFIG = {
     developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
     developer2: { id: 'developer2', label: 'Resume', icon: <Terminal size={16}/> },
@@ -667,7 +667,7 @@ const EditProfileView = () => {
           
           {editTab === 'developer' && <DeveloperEditTab formData={formData} updateNested={updateNested} renderStringArrayInput={renderStringArrayInput} />}
           
-          {/* ⭐️ 이력서 탭 편집 폼 렌더링 연결 */}
+          {/* 이력서 탭 편집 폼 렌더링 연결 */}
           {editTab === 'developer2' && <ResumeEditTab formData={formData} updateNested={updateNested} />}
           
           {editTab === 'career' && <CareerEditTab formData={formData} updateNested={updateNested} renderArrayInput={renderArrayInput} />}

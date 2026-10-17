@@ -122,25 +122,6 @@ const ProfileView = () => {
     return { isLongBio: isLong, displayBio: truncated };
   }, [safeUser.bio, isBioExpanded]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-[80vh] flex flex-col items-center justify-center bg-[#F8FAFC] px-6 animate-in fade-in duration-500">
-        <div className="relative flex items-center justify-center mb-8">
-           <div className="absolute inset-0 bg-indigo-200/50 rounded-full blur-2xl animate-pulse"></div>
-           <Loader2 size={40} className="text-indigo-500 animate-spin relative z-10" />
-        </div>
-        <h2 className="text-xl md:text-2xl font-black text-zinc-800 tracking-tight mb-8">데이터를 불러오는 중입니다</h2>
-        <div className="bg-white/80 backdrop-blur-sm px-6 py-5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-md w-full text-center relative overflow-hidden group">
-           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
-           <div className="flex justify-center mb-2">
-              <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">CraveLog Tips</span>
-           </div>
-           <p className="text-[13px] text-zinc-600 font-bold leading-relaxed">{randomTip}</p>
-        </div>
-      </div>
-    );
-  }
-
   const isGuest = !isAdmin || isGuestMode;
 
   const handleCopyLink = (personaId) => {
@@ -168,7 +149,7 @@ const ProfileView = () => {
     navigator.clipboard.writeText(finalUrl).then(() => {
       showToast(`${persona.name} 시크릿 링크가 복사되었습니다! 🔒`);
       setShowShareModal(false);
-    }).catch(err => {
+    }).catch(_err => {
       showToast("링크 복사에 실패했습니다.");
     });
   };
@@ -210,7 +191,7 @@ const ProfileView = () => {
       let p = { developer: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
-              try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch(e) {}
+              try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch {}
           } else if (typeof safeUser.privacy === 'object') {
               p = { ...p, ...safeUser.privacy };
           }
@@ -262,6 +243,25 @@ const ProfileView = () => {
       setActiveTab(availableTabs.length > 0 ? availableTabs[0].id : null);
     }
   }, [availableTabs, activeTab]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-[80vh] flex flex-col items-center justify-center bg-[#F8FAFC] px-6 animate-in fade-in duration-500">
+        <div className="relative flex items-center justify-center mb-8">
+           <div className="absolute inset-0 bg-indigo-200/50 rounded-full blur-2xl animate-pulse"></div>
+           <Loader2 size={40} className="text-indigo-500 animate-spin relative z-10" />
+        </div>
+        <h2 className="text-xl md:text-2xl font-black text-zinc-800 tracking-tight mb-8">데이터를 불러오는 중입니다</h2>
+        <div className="bg-white/80 backdrop-blur-sm px-6 py-5 rounded-2xl border border-zinc-200/80 shadow-sm max-w-md w-full text-center relative overflow-hidden group">
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
+           <div className="flex justify-center mb-2">
+              <span className="bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg">CraveLog Tips</span>
+           </div>
+           <p className="text-[13px] text-zinc-600 font-bold leading-relaxed">{randomTip}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1000px] mx-auto w-full pb-10 relative animate-in fade-in duration-300 px-4 md:px-8 pt-6 md:pt-10 flex flex-col min-h-screen">
