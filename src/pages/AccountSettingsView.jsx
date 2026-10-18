@@ -64,14 +64,15 @@ const AccountSettingsView = () => {
       });
 
       if (res.ok) {
-        showToast("계정이 영구적으로 삭제되었습니다. 그동안 이용해주셔서 감사합니다.");
+        showToast("계정이 영구적으로 삭제되었습니다. 그동안 이용해주셔서 감사합니다. 👋");
         handleLogout(); 
       } else {
-        showToast("비밀번호가 일치하지 않습니다.");
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.message || "비밀번호가 일치하지 않습니다.");
         setShowDeleteConfirm(false);
       }
     } catch (err) {
-      showToast("서버 오류가 발생했습니다.");
+      showToast("탈퇴 처리 중 서버 오류가 발생했습니다.");
     }
   };
 

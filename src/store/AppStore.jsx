@@ -170,34 +170,36 @@ export const AppProvider = ({ children }) => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      for (let i = 0; i < retries; i++) {
+      // ⭐️ POST, PUT, DELETE, PATCH 등 데이터 변경 요청은 재시도하지 않고 1회만 실행 (중복 실행 방지)
+      const method = (options.method || 'GET').toUpperCase();
+      const actualRetries = options.retries !== undefined 
+        ? options.retries 
+        : (method === 'GET' ? retries : 1);
+
+      for (let i = 0; i < actualRetries; i++) {
         try {
           const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
             headers,
           });
 
-          // 정상 응답 또는 인증 실패 응답은
-          // 호출부에서 직접 처리할 수 있도록 그대로 반환
+          // 정상 응답이거나 클라이언트 에러(4xx)인 경우 즉시 반환 (재시도 불필요)
           if (
             response.ok ||
-            response.status === 401 ||
-            response.status === 403
+            response.status < 500 ||
+            actualRetries === 1 ||
+            i === actualRetries - 1
           ) {
-            return response;
-          }
-
-          if (i === retries - 1) {
             return response;
           }
         } catch (error) {
           console.error(
-            `API 요청 실패 (${i + 1}/${retries}):`,
+            `API 요청 실패 (${i + 1}/${actualRetries}):`,
             endpoint,
             error
           );
 
-          if (i === retries - 1) {
+          if (i === actualRetries - 1) {
             throw error;
           }
         }
