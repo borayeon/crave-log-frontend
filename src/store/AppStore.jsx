@@ -211,13 +211,15 @@ export const AppProvider = ({ children }) => {
       }
 
       // --------------------------------------------
-      // 3. 비로그인 사용자
+      // 3. 비로그인 사용자 (방문 대상 없음)
       // --------------------------------------------
       else {
-        targetUrlBase = `/users/${MAIN_HOST_HANDLE}`;
-        requestMode = 'guest';
-
+        setUser(null);
+        setRecords([]);
+        setTagTree([]);
         setIsGuestMode(true);
+        setIsLoading(false);
+        return;
       }
 
       try {
@@ -501,7 +503,12 @@ export const AppProvider = ({ children }) => {
         );
 
         if (!cancelled) {
-          await fetchAllData(false, MAIN_HOST_HANDLE);
+          setIsAdmin(false);
+          setIsGuestMode(true);
+          setUser(null);
+          setRecords([]);
+          setTagTree([]);
+          setIsLoading(false);
         }
 
         return;
@@ -532,13 +539,10 @@ export const AppProvider = ({ children }) => {
       } else {
         setIsAdmin(false);
         setIsGuestMode(true);
-
-        if (!cancelled) {
-          await fetchAllData(
-            false,
-            MAIN_HOST_HANDLE
-          );
-        }
+        setUser(null);
+        setRecords([]);
+        setTagTree([]);
+        setIsLoading(false);
       }
     };
 

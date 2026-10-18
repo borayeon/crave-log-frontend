@@ -29,12 +29,32 @@ const MobileBottomNav = () => {
             <span className="text-[9px] font-bold">프로필</span>
         </button>
         
-        <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'archive' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}>
+        <button 
+          onClick={() => {
+            if (!isAdmin && !visitedHandle) {
+              setLoginModalOpen(true);
+              showToast('로그인이 필요한 서비스입니다. 🔒');
+              return;
+            }
+            setViewMode('archive');
+          }} 
+          className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'archive' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}
+        >
             <Network size={18} />
             <span className="text-[9px] font-bold">컬렉션</span>
         </button>
 
-        <button onClick={() => setViewMode('timeline')} className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'timeline' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}>
+        <button 
+          onClick={() => {
+            if (!isAdmin && !visitedHandle) {
+              setLoginModalOpen(true);
+              showToast('로그인이 필요한 서비스입니다. 🔒');
+              return;
+            }
+            setViewMode('timeline');
+          }} 
+          className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'timeline' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}
+        >
             <History size={18} />
             <span className="text-[9px] font-bold">타임라인</span>
         </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Sparkles, Edit2, X as CloseIcon, Plus, LayoutGrid, 
-  ListMusic, Hash, AlertTriangle, Loader2 
+  ListMusic, Hash, AlertTriangle, Loader2, Lock 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import RecordDetailModal from '../components/features/RecordDetailModal';
@@ -22,7 +22,8 @@ const ArchiveView = () => {
     searchQuery, 
     isLoading,
     visitedHandle,
-    setLoginModalOpen
+    setLoginModalOpen,
+    setViewMode
   } = useAppStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -42,8 +43,10 @@ const ArchiveView = () => {
   const [rankInputValue, setRankInputValue] = useState('');
 
   useEffect(() => {
-    fetchAllData(true); 
-  }, [fetchAllData]);
+    if (isAdmin || visitedHandle) {
+      fetchAllData(true); 
+    }
+  }, [fetchAllData, isAdmin, visitedHandle]);
 
   useEffect(() => {
     if (isGuestMode) setIsEditing(false);
@@ -246,6 +249,41 @@ const ArchiveView = () => {
         <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
         <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
         <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
+      </div>
+    );
+  }
+
+  // ⭐️ 비로그인 상태이면서 특정 사용자의 프로필을 방문 중이지 않은 경우: 로그인 요구 화면 렌더링
+  if (!isAdmin && !visitedHandle) {
+    return (
+      <div className="max-w-md mx-auto w-full min-h-[70vh] flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-300">
+        <div className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-5 shadow-inner">
+          <Lock size={30} />
+        </div>
+        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg mb-2">
+          로그인 필요
+        </span>
+        <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight mb-2">
+          로그인이 필요한 페이지입니다
+        </h2>
+        <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed mb-6 max-w-sm">
+          나만의 소중한 기록과 컬렉션을 관리하시려면 먼저 CraveLog에 로그인해주세요.
+        </p>
+        <div className="flex items-center gap-3 w-full justify-center">
+          <button
+            onClick={() => setLoginModalOpen(true)}
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center gap-2"
+          >
+            <Lock size={14} />
+            <span>로그인하기</span>
+          </button>
+          <button
+            onClick={() => setViewMode('landing')}
+            className="px-5 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer"
+          >
+            홈(소개)으로 이동
+          </button>
+        </div>
       </div>
     );
   }

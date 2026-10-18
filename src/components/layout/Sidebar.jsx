@@ -117,7 +117,7 @@ const Sidebar = () => {
                     <button 
                     key={item.id} 
                     onClick={() => {
-                      if (item.id === 'profile' && !isAdmin && !visitedHandle) {
+                      if (['profile', 'archive', 'timeline'].includes(item.id) && !isAdmin && !visitedHandle) {
                         setLoginModalOpen(true);
                         showToast('로그인이 필요한 서비스입니다. 🔒');
                         return;
