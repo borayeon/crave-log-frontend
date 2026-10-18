@@ -96,7 +96,11 @@ export const AppProvider = ({ children }) => {
     return 'landing';
   };
 
-  const [viewMode, setViewMode] = useState(getInitialViewMode);
+  const [viewMode, _setViewMode] = useState(getInitialViewMode);
+  const [visitedHandle, setVisitedHandle] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isGuestMode, setIsGuestMode] = useState(false);
+
   const [toastMessage, setToastMessage] = useState('');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
@@ -114,9 +118,35 @@ export const AppProvider = ({ children }) => {
   // ⭐️ 1. 진짜 내 계정 데이터를 고정하기 위한 새로운 상태 추가
   const [currentUser, setCurrentUser] = useState(null); 
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isGuestMode, setIsGuestMode] = useState(false);
-  const [visitedHandle, setVisitedHandle] = useState(null);
+  // ⭐️ 통합 네비게이션 함수 (화면 전환 시 URL 찌꺼기 완벽 청소 및 상태 동기화)
+  const setViewMode = useCallback((newMode, options = {}) => {
+    _setViewMode(newMode);
+
+    if (newMode === 'landing') {
+      // ⭐️ 홈으로 갈 때는 방문 중이던 사용자 상태와 주소창의 ?u=, ?p= 파라미터를 완전히 제거
+      setVisitedHandle(null);
+      const token = localStorage.getItem('accessToken');
+      setIsGuestMode(!token);
+      if (!token) {
+        setUser(null);
+        setRecords([]);
+        setTagTree([]);
+      }
+      window.history.pushState({}, '', window.location.pathname);
+    } else if (newMode === 'profile') {
+      if (!options.keepHandle && !options.handle && !visitedHandle) {
+        window.history.pushState({}, '', window.location.pathname);
+      }
+    } else {
+      if (!visitedHandle && window.location.search.includes('u=')) {
+        window.history.pushState({}, '', window.location.pathname);
+      }
+    }
+  }, [visitedHandle]);
+
+  const goToLanding = useCallback(() => {
+    setViewMode('landing');
+  }, [setViewMode]);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
@@ -341,9 +371,9 @@ export const AppProvider = ({ children }) => {
 
       setVisitedHandle(targetHandle);
       setIsGuestMode(true);
-      setViewMode('profile');
+      _setViewMode('profile');
 
-      // ⭐️ 핵심 수정 부분: 기존 URL의 ?p= 파라미터가 날아가지 않도록 안전하게 합칩니다.
+      // ⭐️ URL에 ?u= 파라미터 안전하게 반영
       const searchParams = new URLSearchParams(window.location.search);
       searchParams.set('u', targetHandle);
       const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
@@ -369,9 +399,10 @@ export const AppProvider = ({ children }) => {
 
       setVisitedHandle(null);
       setIsGuestMode(false);
-      setViewMode('profile');
+      _setViewMode('profile');
 
-      window.history.replaceState(
+      // ⭐️ URL에서 ?u= 및 ?p= 등 쿼리스트링 깨끗이 제거
+      window.history.pushState(
         {},
         document.title,
         window.location.pathname
@@ -432,13 +463,15 @@ export const AppProvider = ({ children }) => {
     setIsAdmin(false);
     setVisitedHandle(null);
     setIsGuestMode(true);
-    setViewMode('landing');
+    _setViewMode('landing');
     
     // ⭐️ 로그아웃 시 내 고정 정보 및 프로필 상태 비움
     setCurrentUser(null);
     setUser(null);
+    setRecords([]);
+    setTagTree([]);
 
-    window.history.replaceState(
+    window.history.pushState(
       {},
       document.title,
       window.location.pathname
@@ -553,11 +586,49 @@ export const AppProvider = ({ children }) => {
     };
   }, [fetchAllData, visitUserProfile, showToast]);
 
+  // ⭐️ 브라우저 뒤로가기 / 앞으로가기(popstate) 실시간 URL 및 뷰 상태 동기화
+  useEffect(() => {
+    const handlePopState = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const u = searchParams.get('u');
+      const v = searchParams.get('view');
+      const token = localStorage.getItem('accessToken');
+
+      if (u) {
+        setVisitedHandle(u);
+        setIsGuestMode(true);
+        _setViewMode(v || 'profile');
+        await fetchAllData(true, u);
+      } else {
+        setVisitedHandle(null);
+        if (token) {
+          setIsAdmin(true);
+          setIsGuestMode(false);
+          _setViewMode(v || 'profile');
+          await fetchAllData(true, '');
+        } else {
+          setIsAdmin(false);
+          setIsGuestMode(true);
+          setUser(null);
+          setRecords([]);
+          setTagTree([]);
+          _setViewMode(v && v !== 'profile' ? v : 'landing');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [fetchAllData]);
+
   return (
     <AppContext.Provider
       value={{
         viewMode,
         setViewMode,
+        goToLanding,
 
         toastMessage,
         showToast,
