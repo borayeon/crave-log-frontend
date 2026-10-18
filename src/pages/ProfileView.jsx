@@ -24,11 +24,11 @@ const LOADING_TIPS = [
 ];
 
 const DEFAULT_PERSONAS = {
-  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'developer2', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true, visibilityLevel: 0, passcode: '' }
+  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'developer2', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true }
 };
 
 const ProfileView = () => {
@@ -84,7 +84,7 @@ const ProfileView = () => {
   const CUSTOM_PERSONAS = useMemo(() => {
     const p = safeUser.addProfile?.personas || DEFAULT_PERSONAS;
     return {
-      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true, visibilityLevel: 0 },
+      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true, visibilityLevel: 0, isActive: true },
       ...p
     };
   }, [safeUser.addProfile?.personas]);
@@ -114,9 +114,11 @@ const ProfileView = () => {
     }
   };
 
+  // ⭐️ 비활성화된 페르소나는 프로필에서 완전히 제외 (소유자 본인 및 게스트 모두에게 숨김)
   // 4단계(나만 보기) 비공개 페르소나는 게스트에게 기본적으로 숨김
   const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => {
     if (p.id === 'all') return true;
+    if (p.isActive === false) return false;
     const level = getPersonaLevel(p);
     if (isGuest && level === 4) return false;
     return true;
@@ -125,7 +127,7 @@ const ProfileView = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const p = params.get('p') || params.get('token'); 
-    if (p && CUSTOM_PERSONAS[p]) {
+    if (p && CUSTOM_PERSONAS[p] && CUSTOM_PERSONAS[p].isActive !== false) {
         setCurrentPersona(p);
     }
   }, [CUSTOM_PERSONAS]);
@@ -133,9 +135,12 @@ const ProfileView = () => {
   const personaOrder = safeUser.addProfile?.personaOrder || ['all', ...Object.keys(DEFAULT_PERSONAS)];
   const displayPersonas = useMemo(() => {
     const list = [...visiblePersonas];
-    if (currentPersona !== 'all' && getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 4) {
-        if (!list.find(p => p.id === currentPersona)) {
-            list.push(CUSTOM_PERSONAS[currentPersona]);
+    if (currentPersona !== 'all') {
+        const pObj = CUSTOM_PERSONAS[currentPersona];
+        if (pObj && pObj.isActive !== false && getPersonaLevel(pObj) === 4) {
+            if (!list.find(p => p.id === currentPersona)) {
+                list.push(pObj);
+            }
         }
     }
     list.sort((a, b) => {
@@ -249,7 +254,8 @@ const ProfileView = () => {
     });
   };
 
-  const shareablePersonas = !isGuest ? Object.values(CUSTOM_PERSONAS) : visiblePersonas;
+  const shareablePersonas = (!isGuest ? Object.values(CUSTOM_PERSONAS) : visiblePersonas)
+    .filter(p => p.id === 'all' || p.isActive !== false);
   const isProfileEmpty = (!safeUser.name || safeUser.name === "손님") && (safeUser.tags || []).length === 0;
 
   const getPlatformIcon = (platform) => {

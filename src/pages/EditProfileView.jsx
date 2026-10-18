@@ -17,11 +17,11 @@ import {
 } from '../components/profile/tabs/EditTabs';
 
 export const DEFAULT_PERSONAS = {
-  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'developer2', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true, visibilityLevel: 0, passcode: '' },
-  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true, visibilityLevel: 0, passcode: '' }
+  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'developer2', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true },
+  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true, visibilityLevel: 0, passcode: '', isActive: true }
 };
 
 const EditProfileView = () => {
@@ -642,8 +642,12 @@ const EditProfileView = () => {
                     <Layers size={14}/> 상단 페르소나 표시 순서 (드래그로 변경)
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                    {formData.idol.personaOrder.map((pId, idx) => {
-                        const pObj = pId === 'all' ? { id: 'all', name: '✨ 전체' } : (formData.idol.personas[pId] || DEFAULT_PERSONAS[pId]);
+                    {(formData.idol.personaOrder || []).filter(pId => {
+                        if (pId === 'all') return true;
+                        const pObj = formData.idol?.personas?.[pId] || DEFAULT_PERSONAS[pId];
+                        return pObj?.isActive !== false;
+                    }).map((pId, idx, activeList) => {
+                        const pObj = pId === 'all' ? { id: 'all', name: '✨ 전체' } : (formData.idol?.personas?.[pId] || DEFAULT_PERSONAS[pId]);
                         if (!pObj) return null;
                         return (
                             <button
@@ -654,10 +658,12 @@ const EditProfileView = () => {
                                 onDrop={(e) => {
                                     e.preventDefault();
                                     if (draggedPersonaIndex === null || draggedPersonaIndex === idx) return;
-                                    const newOrder = [...formData.idol.personaOrder];
-                                    const [draggedItem] = newOrder.splice(draggedPersonaIndex, 1);
-                                    newOrder.splice(idx, 0, draggedItem);
-                                    updateNested(['idol', 'personaOrder'], newOrder);
+                                    const newActiveList = [...activeList];
+                                    const [draggedItem] = newActiveList.splice(draggedPersonaIndex, 1);
+                                    newActiveList.splice(idx, 0, draggedItem);
+                                    
+                                    const inactiveItems = (formData.idol.personaOrder || []).filter(id => !newActiveList.includes(id));
+                                    updateNested(['idol', 'personaOrder'], [...newActiveList, ...inactiveItems]);
                                     setDraggedPersonaIndex(null);
                                 }}
                                 onDragEnd={() => setDraggedPersonaIndex(null)}

@@ -5,7 +5,7 @@ import {
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
   CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser, 
   Layers, Check, Rocket, Eye, Lock, GraduationCap, Mic, LayoutList,
-  Globe, Users, KeyRound, ShieldCheck
+  Globe, Users, KeyRound, ShieldCheck, EyeOff
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 
@@ -617,21 +617,61 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
       { level: 2, label: '비밀번호 잠금', desc: 'PIN 설정', icon: KeyRound, activeBg: 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' },
       { level: 4, label: '나만 보기', desc: '비공개', icon: Lock, activeBg: 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' },
     ];
+
+    const personaKeys = Object.keys(DEFAULT_PERSONAS).filter(k => k !== 'all');
+    
+    // 활성화된 페르소나와 비활성화된 페르소나 구분
+    const activePersonaKeys = personaKeys.filter(k => {
+      const pData = userPersonas[k] || DEFAULT_PERSONAS[k];
+      return pData.isActive !== false;
+    });
+
+    const inactivePersonaKeys = personaKeys.filter(k => {
+      const pData = userPersonas[k] || DEFAULT_PERSONAS[k];
+      return pData.isActive === false;
+    });
+
+    // 페르소나 비활성화 핸들러
+    const handleDeactivate = (pKey) => {
+      if (activePersonaKeys.length <= 1) {
+        alert('최소 1개 이상의 페르소나는 활성화 상태로 유지되어야 합니다.');
+        return;
+      }
+      const pData = userPersonas[pKey] || DEFAULT_PERSONAS[pKey];
+      if (window.confirm(`'${pData.name}' 페르소나를 비활성화하시겠습니까?\n\n(프로필 상단 탭에서 완전히 숨겨지며, 언제든 하단의 '비활성화된 페르소나' 목록에서 다시 켤 수 있습니다.)`)) {
+        updateNested(["idol", "personas", pKey, "isActive"], false);
+      }
+    };
+
+    // 페르소나 다시 활성화 핸들러
+    const handleActivate = (pKey) => {
+      updateNested(["idol", "personas", pKey, "isActive"], true);
+    };
  
     return (
       <div className="space-y-6 animate-in fade-in">
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
-             <div className="flex items-center gap-2 mb-2">
-                <Layers size={16} className="text-indigo-500"/>
-                <h3 className="text-base font-black text-zinc-900">멀티 페르소나 편집</h3>
+             <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                   <Layers size={16} className="text-indigo-500"/>
+                   <h3 className="text-base font-black text-zinc-900">멀티 페르소나 편집</h3>
+                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      활성 {activePersonaKeys.length}개
+                   </span>
+                </div>
+                {inactivePersonaKeys.length > 0 && (
+                   <span className="text-[11px] font-bold text-zinc-400">
+                      비활성화 {inactivePersonaKeys.length}개
+                   </span>
+                )}
              </div>
              <p className="text-[11px] md:text-xs text-zinc-500 font-medium mb-6">
-                각 페르소나의 <strong>4단계 공개 범위(전체 공개 / 팔로워 공개 / 비밀번호 잠금 / 나만 보기)</strong>를 지정하고, 해당 페르소나에서 노출할 서브 탭을 자유롭게 구성해보세요.
+                각 페르소나의 <strong>4단계 공개 범위(전체 / 팔로워 / PIN / 나만보기)</strong>를 설정하고, 사용하지 않는 페르소나는 <strong>[비활성화]</strong>하여 프로필에서 깔끔하게 숨길 수 있습니다.
              </p>
  
+             {/* ⭐️ 활성화된 페르소나 카드 그리드 */}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {Object.keys(DEFAULT_PERSONAS).map(pKey => {
-                    if(pKey === 'all') return null;
+                {activePersonaKeys.map(pKey => {
                     const pData = userPersonas[pKey] || DEFAULT_PERSONAS[pKey];
                     const currentLevel = pData.visibilityLevel !== undefined && pData.visibilityLevel !== null 
                         ? Number(pData.visibilityLevel) 
@@ -644,7 +684,7 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
 
                     return (
                         <div key={pKey} className={`border rounded-2xl p-5 shadow-sm transition-colors focus-within:bg-white focus-within:border-indigo-300 ${currentLevel === 4 ? 'bg-zinc-100/50 border-zinc-200 opacity-80' : 'bg-zinc-50 border-zinc-200'}`}>
-                            {/* 상단: 페르소나 이름 & 현재 보안 레벨 배지 */}
+                            {/* 상단: 페르소나 이름 & 보안 레벨 배지 & 비활성화 버튼 */}
                             <div className="flex justify-between items-start mb-1.5 gap-2">
                                 <input 
                                     value={pData.name} 
@@ -652,17 +692,28 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
                                     className="flex-1 bg-transparent text-sm font-black text-zinc-800 outline-none border-b border-transparent focus:border-indigo-300"
                                     placeholder="페르소나 이름"
                                 />
-                                <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-2xs ${
-                                    currentLevel === 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
-                                    currentLevel === 1 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                    currentLevel === 2 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                                    'bg-rose-50 text-rose-700 border border-rose-200'
-                                }`}>
-                                    {currentLevel === 0 && <><Globe size={11} /> 전체 공개</>}
-                                    {currentLevel === 1 && <><Users size={11} /> 팔로워 전용</>}
-                                    {currentLevel === 2 && <><KeyRound size={11} /> PIN 잠금</>}
-                                    {currentLevel === 4 && <><Lock size={11} /> 나만 보기</>}
-                                </span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-2xs ${
+                                        currentLevel === 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+                                        currentLevel === 1 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                        currentLevel === 2 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                        'bg-rose-50 text-rose-700 border border-rose-200'
+                                    }`}>
+                                        {currentLevel === 0 && <><Globe size={11} /> 전체</>}
+                                        {currentLevel === 1 && <><Users size={11} /> 팔로워</>}
+                                        {currentLevel === 2 && <><KeyRound size={11} /> PIN</>}
+                                        {currentLevel === 4 && <><Lock size={11} /> 나만보기</>}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeactivate(pKey)}
+                                        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-zinc-200 bg-white text-zinc-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 text-[10px] font-bold transition-all active:scale-95 shadow-2xs cursor-pointer"
+                                        title="이 페르소나를 비활성화하고 프로필에서 숨깁니다 (언제든 다시 켤 수 있습니다)"
+                                    >
+                                        <EyeOff size={11} />
+                                        <span>비활성화</span>
+                                    </button>
+                                </div>
                             </div>
 
                             {/* 간단한 설명 입력 */}
@@ -752,13 +803,54 @@ export const PersonaEditTab = ({ formData, updateNested, DEFAULT_PERSONAS, TABS_
                                 </div>
                             </div>
                         </div>
-                    )
+                    );
                 })}
              </div>
+
+             {/* ⭐️ 비활성화된 페르소나 섹션 */}
+             {inactivePersonaKeys.length > 0 && (
+                <div className="mt-8 p-5 bg-zinc-50 border border-dashed border-zinc-300 rounded-3xl animate-in fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-4">
+                        <div className="flex items-center gap-2">
+                            <EyeOff size={15} className="text-zinc-500" />
+                            <h4 className="text-xs font-black text-zinc-800">
+                                비활성화된 페르소나 ({inactivePersonaKeys.length}개)
+                            </h4>
+                        </div>
+                        <span className="text-[10px] font-medium text-zinc-400">
+                            언제든 [+ 활성화]를 누르면 프로필 상단 스티커와 편집 뷰에 복원됩니다
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {inactivePersonaKeys.map(pKey => {
+                            const pData = userPersonas[pKey] || DEFAULT_PERSONAS[pKey];
+                            return (
+                                <div key={pKey} className="bg-white border border-zinc-200/90 rounded-2xl p-4 shadow-2xs flex items-center justify-between gap-3 hover:border-zinc-300 transition-colors">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-black text-zinc-800 truncate mb-0.5">{pData.name}</p>
+                                        <p className="text-[10px] font-medium text-zinc-400 truncate">
+                                            {pData.desc || '간단한 설명 없음'} · 탭 {pData.tabs?.length || 0}개
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleActivate(pKey)}
+                                        className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200/80 text-[10px] font-black transition-all shadow-2xs active:scale-95 cursor-pointer"
+                                    >
+                                        <Plus size={12} />
+                                        <span>활성화</span>
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+             )}
           </div>
       </div>
-    )
- }
+    );
+ };
 
 export const ResumeEditTab = ({ formData, updateNested }) => {
   const devData = formData.developer || {};
