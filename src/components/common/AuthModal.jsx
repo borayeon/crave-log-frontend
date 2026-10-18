@@ -3,7 +3,7 @@ import { Mail, ArrowLeft, KeyRound, User as UserIcon, AtSign, Sparkles, CheckCir
 import { useAppStore, API_BASE_URL } from '../../store/AppStore';
 
 const AuthModal = () => {
-  const { loginModalOpen, setLoginModalOpen, showToast, setIsAdmin, fetchAllData, setViewMode } = useAppStore();
+  const { loginModalOpen, setLoginModalOpen, showToast, setIsAdmin, fetchAllData, setViewMode, setOnboardingModalOpen } = useAppStore();
   
   // 상태 관리: EMAIL_CHECK -> PASSWORD_INPUT -> SIGNUP / FIND_PW_CODE -> FIND_PW_RESET
   const [step, setStep] = useState('EMAIL_CHECK'); 
@@ -113,10 +113,34 @@ const AuthModal = () => {
         body: JSON.stringify({ email, password, name, handle })
       });
       if (res.ok) {
+          // ⭐️ 가입 완료 후 즉시 자동 로그인 진행 -> 온보딩 페르소나 모달 오픈!
+          try {
+            const loginRes = await fetch(`${API_BASE_URL}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+            if (loginRes.ok) {
+              const data = await loginRes.json();
+              localStorage.setItem('accessToken', data.token);
+              setIsAdmin(true);
+              await fetchAllData();
+              resetAndClose();
+              setOnboardingModalOpen(true);
+              showToast("회원가입이 완료되었습니다! 시작 선택지를 골라보세요. 🎉");
+              return;
+            }
+          } catch (autoLoginErr) {
+            console.error("Auto login error after signup:", autoLoginErr);
+          }
+
           showToast("가입이 완료되었습니다! 로그인해주세요. 🎉");
           setStep('PASSWORD_INPUT');
           setPassword(''); setPasswordConfirm('');
-      } else showToast("회원가입에 실패했습니다.");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.message || "회원가입에 실패했습니다.");
+      }
     } catch (e) { showToast("오류가 발생했습니다."); } finally { setIsLoading(false); }
   };
 

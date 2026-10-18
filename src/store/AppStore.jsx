@@ -103,6 +103,7 @@ export const AppProvider = ({ children }) => {
 
   const [toastMessage, setToastMessage] = useState('');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [onboardingModalOpen, setOnboardingModalOpen] = useState(false);
   const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -667,6 +668,9 @@ export const AppProvider = ({ children }) => {
 
         loginModalOpen,
         setLoginModalOpen,
+
+        onboardingModalOpen,
+        setOnboardingModalOpen,
 
         addRecordModalOpen,
         setAddRecordModalOpen,

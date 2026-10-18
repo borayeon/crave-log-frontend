@@ -4,6 +4,7 @@ import { Sparkles, Loader2 } from 'lucide-react';
 
 import Toast from './components/common/Toast';
 import AuthModal from './components/common/AuthModal';
+import OnboardingPersonaModal from './components/common/OnboardingPersonaModal';
 import AddRecordModal from './components/features/AddRecordModal';
 import Sidebar from './components/layout/Sidebar';
 import TopNavBar from './components/layout/TopNavBar';
@@ -55,6 +56,7 @@ const AppContent = () => {
     <div className="flex h-screen w-full overflow-hidden transition-colors duration-700 font-sans bg-[#F8FAFC]">
       <Toast />
       <AuthModal />
+      <OnboardingPersonaModal />
       <AddRecordModal />
       <Sidebar />
 

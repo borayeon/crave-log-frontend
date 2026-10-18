@@ -25,7 +25,7 @@ export const DEFAULT_PERSONAS = {
 };
 
 const EditProfileView = () => {
-  const { setViewMode, user, showToast, fetchAllData, apiFetch } = useAppStore();
+  const { setViewMode, user, showToast, fetchAllData, apiFetch, setOnboardingModalOpen } = useAppStore();
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
@@ -734,6 +734,17 @@ const EditProfileView = () => {
               </span>
             </button>
           )}
+
+          {/* ⭐️ 시작 프리셋 / 온보딩 페르소나 선택 버튼 */}
+          <button
+            type="button"
+            onClick={() => setOnboardingModalOpen(true)}
+            className="shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-black transition-all whitespace-nowrap border border-zinc-200 bg-white text-zinc-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/50 shadow-2xs group active:scale-95"
+            title="시작 목적에 맞는 페르소나별 서브 탭 세트를 일괄 구성합니다"
+          >
+            <Sparkles size={13} className="text-amber-500 group-hover:rotate-12 transition-transform" />
+            <span>시작 프리셋</span>
+          </button>
         </div>
 
         {/* ⭐️ 서브 탭 4단계 공개 범위 제어 패널 & 탭 비활성화 버튼 */}

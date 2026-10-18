@@ -32,7 +32,7 @@ const DEFAULT_PERSONAS = {
 };
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch, visitedHandle } = useAppStore();
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch, visitedHandle, setOnboardingModalOpen } = useAppStore();
 
   const [activeTab, setActiveTab] = useState(null); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
@@ -544,9 +544,19 @@ const ProfileView = () => {
                   </button>
                 )}
                 {isAdmin && !isGuestMode ? (
-                  <button onClick={() => setViewMode('edit_profile')} className="w-7 h-7 md:w-8 md:h-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
-                    <Edit2 size={13} />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      onClick={() => setOnboardingModalOpen(true)} 
+                      className="h-7 md:h-8 px-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full text-[10px] md:text-[11px] font-black transition flex items-center gap-1 border border-indigo-200/80 shadow-2xs active:scale-95" 
+                      title="시작 페르소나 선택 및 서브 탭 프리셋 구성"
+                    >
+                      <Sparkles size={11} className="text-indigo-500" />
+                      <span>프리셋</span>
+                    </button>
+                    <button onClick={() => setViewMode('edit_profile')} className="w-7 h-7 md:w-8 md:h-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex items-center justify-center transition shadow-sm" title="프로필 설정">
+                      <Edit2 size={13} />
+                    </button>
+                  </div>
                 ) : !isAdmin ? (
                    <button onClick={() => setLoginModalOpen(true)} className="px-3 h-7 md:h-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-[10px] md:text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm">
                     <Rocket size={11} /> 시작하기
