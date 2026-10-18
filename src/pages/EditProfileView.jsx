@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import { 
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  Layers, Terminal, Globe, Users, KeyRound, ShieldCheck 
+  Layers, Terminal, Globe, Users, KeyRound, ShieldCheck, Plus, EyeOff 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -40,10 +39,38 @@ const EditProfileView = () => {
         }
     }
 
-    // 기본 탭 순서 배열에 developer2(이력서) 추가
+    // 기본 탭 순서 목록
     const defaultOrder = ['developer', 'developer2', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
-    const savedOrder = safeUser.idol?.tabOrder || [];
-    const mergedOrder = [...new Set([...savedOrder, ...defaultOrder])];
+    const savedOrder = safeUser.idol?.tabOrder || safeUser.addProfile?.tabOrder;
+    
+    let initialTabOrder;
+    if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+      // 기존에 저장된 순서가 있는 경우 해당 탭들만 활성화 (미사용 탭 강제 병합 제거)
+      initialTabOrder = savedOrder.filter(id => defaultOrder.includes(id));
+      if (initialTabOrder.length === 0) {
+        initialTabOrder = ['developer', 'addProfile'];
+      }
+    } else {
+      // 저장된 tabOrder가 없는 경우 (구버전 유저 데이터 보존 or 신규 회원 기본값)
+      const activeTabsWithData = [];
+      if (safeUser.developer && (safeUser.developer.about || (safeUser.developer.projects && safeUser.developer.projects.length > 0))) activeTabsWithData.push('developer');
+      if (safeUser.career && (safeUser.career.targetJob || (safeUser.career.strengths && safeUser.career.strengths.length > 0))) activeTabsWithData.push('career');
+      if (safeUser.addProfile && (safeUser.addProfile.mbti || safeUser.addProfile.motto)) activeTabsWithData.push('addProfile');
+      if (safeUser.addProfile?.businessCard?.email || safeUser.idol?.businessCard?.email) activeTabsWithData.push('businessCard');
+      if (safeUser.addProfile?.qna?.length || safeUser.idol?.qna?.length || safeUser.qna?.length) activeTabsWithData.push('qna');
+      if (safeUser.addProfile?.hobby?.title || safeUser.idol?.hobby?.title) activeTabsWithData.push('hobby');
+      if (safeUser.addProfile?.vision?.core || safeUser.idol?.vision?.core) activeTabsWithData.push('vision');
+      if (safeUser.addProfile?.quotes?.length || safeUser.idol?.quotes?.length) activeTabsWithData.push('quotes');
+      if (safeUser.addProfile?.memoArea?.text || safeUser.idol?.memoArea?.text) activeTabsWithData.push('memo');
+      if (safeUser.addProfile?.memoArea?.dots?.some(d => d !== "") || safeUser.idol?.memoArea?.dots?.some(d => d !== "")) activeTabsWithData.push('art');
+
+      if (activeTabsWithData.length > 0) {
+        initialTabOrder = [...new Set(['developer', ...activeTabsWithData])];
+      } else {
+        // 신규 회원의 경우 사용하지 않는 탭에 부담을 느끼지 않도록 핵심 2개 탭만 기본 활성화!
+        initialTabOrder = ['developer', 'addProfile'];
+      }
+    }
     
     const savedPersonaOrder = safeUser.idol?.personaOrder || ['all', ...Object.keys(safeUser.idol?.personas || DEFAULT_PERSONAS)];
 
@@ -65,7 +92,7 @@ const EditProfileView = () => {
       
       idol: { 
           ...(safeUser.idol || {}),
-          tabOrder: mergedOrder,
+          tabOrder: initialTabOrder,
           personaOrder: [...new Set(savedPersonaOrder)], 
           personas: safeUser.idol?.personas || JSON.parse(JSON.stringify(DEFAULT_PERSONAS)),
           businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
@@ -96,7 +123,7 @@ const EditProfileView = () => {
     };
   });
 
-  const [editTab, setEditTab] = useState('developer');
+  const [editTab, setEditTab] = useState(() => (formData.idol?.tabOrder?.[0] || 'developer'));
   const [isLoading, setIsLoading] = useState(false);
   
   const [isProfileImageUploading, setIsProfileImageUploading] = useState(false);
@@ -109,21 +136,56 @@ const EditProfileView = () => {
   const [viewHistoryItem, setViewHistoryItem] = useState(null); 
   const [draggedTabIndex, setDraggedTabIndex] = useState(null);
   const [draggedPersonaIndex, setDraggedPersonaIndex] = useState(null);
+  const [showAddTabModal, setShowAddTabModal] = useState(false);
 
-  // TABS_CONFIG에 이력서 탭(developer2) 추가
+  // 11개 프로필 서브 탭 메타데이터 (아이콘, 영문/한글 이름, 설명, 배지 색상)
+  const ALL_SUBTABS_INFO = {
+    developer: { id: 'developer', label: 'Developer', name: '개발자 프로필', desc: '기술 스택, 프로젝트, 학습 기록 등을 체계적으로 정리합니다.', icon: <Code size={16}/>, badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+    developer2: { id: 'developer2', label: 'Resume', name: '상세 이력서', desc: '학력, 경력, 오픈소스, 아티클 및 발표 이력을 기록합니다.', icon: <Terminal size={16}/>, badgeColor: 'bg-zinc-100 text-zinc-800 border-zinc-300' },
+    career: { id: 'career', label: 'Career', name: '커리어 패스', desc: '목표 직무, 핵심 역량 및 중장기 커리어 비전을 설정합니다.', icon: <Briefcase size={16}/>, badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
+    addProfile: { id: 'addProfile', label: 'Add Profile', name: '프로필 상세', desc: 'MBTI, 인생 좌우명, 소셜 미디어(SNS) 링크를 연결합니다.', icon: <UserPlus size={16}/>, badgeColor: 'bg-rose-50 text-rose-700 border-rose-200' },
+    businessCard: { id: 'businessCard', label: 'Business Card', name: '디지털 명함', desc: '이메일, 직함, 소속 및 연락처 정보를 공유합니다.', icon: <CreditCard size={16}/>, badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    qna: { id: 'qna', label: 'Q&A', name: '100문 100답', desc: '가치관과 취향을 깊이 있게 묻고 답하는 인터뷰입니다.', icon: <MessageSquare size={16}/>, badgeColor: 'bg-amber-50 text-amber-800 border-amber-200' },
+    hobby: { id: 'hobby', label: 'Hobby', name: '취미 / 관심사', desc: '좋아하는 취미 사진과 상세 이야기를 등록합니다.', icon: <Palette size={16}/>, badgeColor: 'bg-violet-50 text-violet-700 border-violet-200' },
+    vision: { id: 'vision', label: 'Mandalart', name: '만다라트 목표', desc: '핵심 목표와 8개 세부 계획을 9x9 격자로 관리합니다.', icon: <Compass size={16}/>, badgeColor: 'bg-pink-50 text-pink-700 border-pink-200' },
+    quotes: { id: 'quotes', label: 'Quotes', name: '인생 명언집', desc: '영감을 주는 책 구절, 명언 및 마인드셋을 모아둡니다.', icon: <Quote size={16}/>, badgeColor: 'bg-yellow-50 text-yellow-800 border-yellow-200' },
+    memo: { id: 'memo', label: 'Memo', name: '프리 메모장', desc: '자유로운 생각과 아이디어를 편하게 메모하는 공간입니다.', icon: <FileText size={16}/>, badgeColor: 'bg-orange-50 text-orange-700 border-orange-200' },
+    art: { id: 'art', label: 'Dot Art', name: '도트 아트 캔버스', desc: '15x15 픽셀 그리드 위에 나만의 도트 그래픽을 그립니다.', icon: <Grid size={16}/>, badgeColor: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
+  };
+
   const TABS_CONFIG = {
-    developer: { id: 'developer', label: 'Developer', icon: <Code size={16}/> },
-    developer2: { id: 'developer2', label: 'Resume', icon: <Terminal size={16}/> },
-    career: { id: 'career', label: 'Career', icon: <Briefcase size={16}/> },
-    addProfile: { id: 'addProfile', label: 'Add Profile', icon: <UserPlus size={16}/> },
-    businessCard: { id: 'businessCard', label: 'Business Card', icon: <CreditCard size={16}/> },
-    qna: { id: 'qna', label: 'Q&A', icon: <MessageSquare size={16}/> },
-    hobby: { id: 'hobby', label: 'Hobby', icon: <Palette size={16}/> },
-    vision: { id: 'vision', label: 'Mandalart', icon: <Compass size={16}/> },
-    quotes: { id: 'quotes', label: 'Quotes', icon: <Quote size={16}/> },
-    memo: { id: 'memo', label: 'Memo', icon: <FileText size={16}/> },
-    art: { id: 'art', label: 'Dot Art', icon: <Grid size={16}/> },
-    persona: { id: 'persona', label: 'Persona Set', icon: <Layers size={16}/> }
+    ...ALL_SUBTABS_INFO,
+    persona: { id: 'persona', label: 'Persona Set', name: '페르소나 설정', desc: '상황별 탭 묶음 프로필', icon: <Layers size={16}/>, badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+  };
+
+  const activeTabIds = formData.idol?.tabOrder || [];
+  const inactiveTabIds = Object.keys(ALL_SUBTABS_INFO).filter(id => !activeTabIds.includes(id));
+
+  // 탭 추가 핸들러
+  const handleAddTab = (tabId) => {
+    if (activeTabIds.includes(tabId)) return;
+    const newOrder = [...activeTabIds, tabId];
+    updateNested(['idol', 'tabOrder'], newOrder);
+    setEditTab(tabId);
+    setShowAddTabModal(false);
+    showToast(`'${ALL_SUBTABS_INFO[tabId]?.name || tabId}' 탭이 활성화되었습니다! ✨`);
+  };
+
+  // 탭 비활성화(숨김) 핸들러
+  const handleRemoveTab = (tabId) => {
+    if (activeTabIds.length <= 1) {
+      showToast('최소 1개 이상의 서브 탭은 유지되어야 합니다.');
+      return;
+    }
+    const tabName = ALL_SUBTABS_INFO[tabId]?.name || tabId;
+    if (window.confirm(`'${tabName}' 탭을 비활성화(숨김)하시겠습니까?\n\n(작성하신 데이터는 안전하게 보존되며 언제든 [+ 탭 추가] 버튼으로 다시 켤 수 있습니다.)`)) {
+      const newOrder = activeTabIds.filter(id => id !== tabId);
+      updateNested(['idol', 'tabOrder'], newOrder);
+      if (editTab === tabId) {
+        setEditTab(newOrder[0] || 'persona');
+      }
+      showToast(`'${tabName}' 탭이 비활성화되었습니다.`);
+    }
   };
 
   // ⭐️ 4단계 공개 범위 레벨 조회 헬퍼 (0: 전체공개, 1: 팔로워공개, 2: 비밀번호 잠금, 4: 비공개)
@@ -608,7 +670,7 @@ const EditProfileView = () => {
             </div>
         )}
 
-        <div className="flex flex-wrap gap-2 mb-4 p-1">
+        <div className="flex flex-wrap items-center gap-2 mb-4 p-1">
           {['persona', ...(formData.idol?.tabOrder || [])].map((tabId, index) => {
               const tab = TABS_CONFIG[tabId];
               if (!tab) return null;
@@ -656,27 +718,53 @@ const EditProfileView = () => {
                   </button>
               );
           })}
+
+          {/* ⭐️ + 탭 추가 버튼 (미활성화된 서브 탭이 남아있는 경우) */}
+          {inactiveTabIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAddTabModal(true)}
+              className="shrink-0 flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-black transition-all whitespace-nowrap border border-dashed border-indigo-300 bg-indigo-50/60 text-indigo-600 hover:bg-indigo-100 hover:border-indigo-500 shadow-2xs group active:scale-95"
+            >
+              <Plus size={14} className="group-hover:rotate-90 transition-transform duration-200" />
+              <span>탭 추가</span>
+              <span className="px-1.5 py-0.5 text-[10px] bg-indigo-200/80 text-indigo-800 rounded-full font-black">
+                {inactiveTabIds.length}
+              </span>
+            </button>
+          )}
         </div>
 
-        {/* ⭐️ 서브 탭 4단계 공개 범위 제어 패널 */}
+        {/* ⭐️ 서브 탭 4단계 공개 범위 제어 패널 & 탭 비활성화 버튼 */}
         {editTab !== 'persona' && (
           <div className="mb-6 p-4 sm:p-5 bg-white border border-zinc-200 rounded-2xl shadow-sm animate-in fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-3 border-b border-zinc-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-zinc-100">
               <div>
                 <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2">
                   <ShieldCheck size={17} className="text-indigo-600" />
-                  [{TABS_CONFIG[editTab]?.label}] 탭 공개 범위 설정
+                  [{ALL_SUBTABS_INFO[editTab]?.name || TABS_CONFIG[editTab]?.label}] 탭 설정
                 </h3>
                 <p className="text-[11px] font-medium text-zinc-500 mt-0.5">
-                  이 서브 탭의 열람 권한을 4단계 보안 레벨로 제어합니다.
+                  이 서브 탭의 보안 공개 레벨을 설정하거나, 사용하지 않을 때 비활성화하여 숨길 수 있습니다.
                 </p>
               </div>
-              <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-700 w-max shrink-0">
-                {getTabLevel(editTab) === 0 && '🌐 0단계 전체 공개 (누구나)'}
-                {getTabLevel(editTab) === 1 && '👥 1단계 팔로워 공개 (팔로워만)'}
-                {getTabLevel(editTab) === 2 && '🔐 2단계 비밀번호 잠금 (PIN)'}
-                {getTabLevel(editTab) === 4 && '🔒 4단계 나만 보기 (비공개)'}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-black px-2.5 py-1.5 rounded-xl bg-zinc-100 text-zinc-700">
+                  {getTabLevel(editTab) === 0 && '🌐 0단계 전체 공개 (누구나)'}
+                  {getTabLevel(editTab) === 1 && '👥 1단계 팔로워 공개 (팔로워만)'}
+                  {getTabLevel(editTab) === 2 && '🔐 2단계 비밀번호 잠금 (PIN)'}
+                  {getTabLevel(editTab) === 4 && '🔒 4단계 나만 보기 (비공개)'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTab(editTab)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 text-zinc-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 text-xs font-bold transition-all active:scale-95 shadow-2xs"
+                  title="이 탭을 비활성화하고 숨깁니다 (작성 데이터는 보존되며 언제든 다시 추가 가능)"
+                >
+                  <EyeOff size={13} />
+                  <span>탭 숨기기</span>
+                </button>
+              </div>
             </div>
 
             {/* 4단계 선택 탭 버튼 그리드 */}
@@ -749,6 +837,96 @@ const EditProfileView = () => {
           {editTab === 'memo' && <MemoEditTab formData={formData} updateNested={updateNested} />}
           {editTab === 'art' && <ArtEditTab formData={formData} updateNested={updateNested} />}
         </div>
+
+        {/* ⭐️ 서브 탭 동적 활성화 모달 */}
+        {showAddTabModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-zinc-100 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150">
+              {/* 모달 헤더 */}
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-zinc-900">프로필 서브 탭 추가하기</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">내 프로필에 필요한 탭만 쏙쏙 골라 활성화해보세요.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTabModal(false)}
+                  className="p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors"
+                >
+                  <CloseIcon size={18} />
+                </button>
+              </div>
+
+              {/* 탭 목록 */}
+              <div className="overflow-y-auto py-4 pr-1 space-y-2.5 flex-1">
+                {inactiveTabIds.length === 0 ? (
+                  <div className="py-12 text-center text-zinc-400 text-sm font-medium">
+                    모든 서브 탭이 이미 활성화되어 있습니다! ✨
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {inactiveTabIds.map(tabId => {
+                      const tabInfo = ALL_SUBTABS_INFO[tabId];
+                      if (!tabInfo) return null;
+                      return (
+                        <div
+                          key={tabId}
+                          className="flex flex-col justify-between p-3.5 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 hover:bg-indigo-50/30 hover:border-indigo-300 transition-all group"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className={`p-1.5 rounded-xl border ${tabInfo.badgeColor}`}>
+                                  {tabInfo.icon}
+                                </span>
+                                <div>
+                                  <div className="text-xs font-black text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                                    {tabInfo.name}
+                                  </div>
+                                  <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                                    {tabInfo.label}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-zinc-500 font-medium leading-relaxed mt-1 line-clamp-2">
+                              {tabInfo.desc}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddTab(tabId)}
+                            className="mt-3 w-full py-1.5 px-3 bg-white group-hover:bg-indigo-600 group-hover:text-white border border-zinc-200 group-hover:border-indigo-600 rounded-xl text-xs font-black text-zinc-700 flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95"
+                          >
+                            <Plus size={13} />
+                            <span>추가하기</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 모달 풋터 안내 */}
+              <div className="pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
+                <span>💡 활성화된 탭은 탭 바에서 드래그하여 순서를 바꿀 수 있습니다.</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTabModal(false)}
+                  className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-xl text-xs transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </React.Fragment>
   );

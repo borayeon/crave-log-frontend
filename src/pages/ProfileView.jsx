@@ -245,7 +245,7 @@ const ProfileView = () => {
   };
 
   const privacyObj = useMemo(() => {
-      let p = { developer: 0, career: 0, addProfile: 0, businessCard: 0, qna: 0, hobby: 0, vision: 0, quotes: 0, memo: 0, art: 0 };
+      let p = { developer: 0, developer2: 0, career: 0, addProfile: 0, businessCard: 0, qna: 0, hobby: 0, vision: 0, quotes: 0, memo: 0, art: 0 };
       if (safeUser.privacy) {
           if (typeof safeUser.privacy === 'string') {
               try { p = { ...p, ...JSON.parse(safeUser.privacy) }; } catch {}
@@ -271,7 +271,7 @@ const ProfileView = () => {
 
   // ⭐️ 2단계 서브 탭 비밀번호(PIN) 검증 및 잠금 해제 핸들러
   const handleUnlockTab = (tabId) => {
-      const expectedPin = safeUser.addProfile?.tabPasscodes?.[tabId] || safeUser.tabPasscodes?.[tabId];
+      const expectedPin = safeUser.addProfile?.tabPasscodes?.[tabId] || safeUser.tabPasscodes?.[tabId] || safeUser.idol?.tabPasscodes?.[tabId];
       const inputPin = (pinInputs[tabId] || '').trim();
       if (!expectedPin || inputPin === String(expectedPin).trim()) {
           setUnlockedTabs(prev => ({ ...prev, [tabId]: true }));
@@ -282,8 +282,8 @@ const ProfileView = () => {
   };
 
   const defaultOrder = ['developer', 'developer2', 'career', 'addProfile', 'businessCard', 'qna', 'hobby', 'vision', 'quotes', 'memo', 'art'];
-  const savedOrder = safeUser.addProfile?.tabOrder || [];
-  const currentOrder = [...new Set([...savedOrder, ...defaultOrder])].filter(id => allTabsMap[id]);
+  const savedOrder = safeUser.idol?.tabOrder || safeUser.addProfile?.tabOrder;
+  const currentOrder = (Array.isArray(savedOrder) && savedOrder.length > 0 ? savedOrder : defaultOrder).filter(id => allTabsMap[id]);
 
   const activePersonaObj = CUSTOM_PERSONAS[currentPersona] || CUSTOM_PERSONAS['all'];
 
