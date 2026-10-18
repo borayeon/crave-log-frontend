@@ -5,7 +5,7 @@ import {
   Grid, UserPlus, X as CloseIcon, Loader2, ShieldCheck, Heart, Layers
 } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
-import { DEFAULT_PERSONAS } from '../../pages/EditProfileView';
+import { DEFAULT_PERSONAS, getDefaultPersonas } from '../../pages/EditProfileView';
 
 // ⭐️ 시작 페르소나 프리셋 목록 정의
 export const getOnboardingPersonas = (currentLang = 'ko') => [
@@ -132,10 +132,10 @@ const OnboardingPersonaModal = () => {
     try {
       const safeUser = JSON.parse(JSON.stringify(user || {}));
 
-      // 1. 기존 페르소나 목록 또는 DEFAULT_PERSONAS 복사
+      // 1. 기존 페르소나 목록 또는 현재 언어에 맞는 기본 페르소나 복사
       const basePersonas = safeUser.idol?.personas 
         ? JSON.parse(JSON.stringify(safeUser.idol.personas))
-        : JSON.parse(JSON.stringify(DEFAULT_PERSONAS));
+        : JSON.parse(JSON.stringify(getDefaultPersonas(currentLang)));
 
       const targetPersonaKey = ONBOARDING_TO_PERSONA_MAP[currentPersona.id] || currentPersona.id;
 

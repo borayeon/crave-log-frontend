@@ -1260,13 +1260,18 @@ export const translations = {
  */
 export const translate = (key, lang = 'ko', fallbackOrParams = '', params = {}) => {
   let fallback = '';
-  let actualParams = params;
+  let actualParams = {};
 
   if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
     actualParams = fallbackOrParams;
-    fallback = '';
+    if (typeof params === 'string') {
+      fallback = params;
+    }
   } else if (typeof fallbackOrParams === 'string') {
     fallback = fallbackOrParams;
+    if (typeof params === 'object' && params !== null) {
+      actualParams = params;
+    }
   }
 
   const currentLangDict = translations[lang] || translations.ko;

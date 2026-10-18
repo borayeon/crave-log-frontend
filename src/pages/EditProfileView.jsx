@@ -28,6 +28,7 @@ export const DEFAULT_PERSONAS = getDefaultPersonas('ko');
 
 const EditProfileView = () => {
   const { setViewMode, user, showToast, fetchAllData, apiFetch, setOnboardingModalOpen, t, currentLang } = useAppStore();
+  const currentDefaultPersonas = getDefaultPersonas(currentLang);
   
   const [formData, setFormData] = useState(() => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
@@ -97,7 +98,7 @@ const EditProfileView = () => {
           ...(safeUser.idol || {}),
           tabOrder: initialTabOrder,
           personaOrder: [...new Set(savedPersonaOrder)], 
-          personas: safeUser.idol?.personas || JSON.parse(JSON.stringify(DEFAULT_PERSONAS)),
+          personas: safeUser.idol?.personas || JSON.parse(JSON.stringify(getDefaultPersonas(currentLang))),
           businessCard: safeUser.idol?.businessCard || safeUser.businessCard || { company: "", position: "", email: "", phone: "", website: "", address: "", template: "dark" },
           qna: qnaData,
           hobby: safeUser.idol?.hobby || safeUser.hobby || { title: "", image: "", description: "", keywords: [] },
@@ -730,10 +731,10 @@ const EditProfileView = () => {
                 <div className="flex flex-wrap gap-2">
                     {(formData.idol.personaOrder || []).filter(pId => {
                         if (pId === 'all') return true;
-                        const pObj = formData.idol?.personas?.[pId] || DEFAULT_PERSONAS[pId];
+                        const pObj = formData.idol?.personas?.[pId] || currentDefaultPersonas[pId];
                         return pObj?.isActive !== false;
                     }).map((pId, idx, activeList) => {
-                        const pObj = pId === 'all' ? { id: 'all', name: currentLang === 'zh' ? '✨ 全部' : currentLang === 'en' ? '✨ All' : '✨ 전체' } : (formData.idol?.personas?.[pId] || DEFAULT_PERSONAS[pId]);
+                        const pObj = pId === 'all' ? { id: 'all', name: currentLang === 'zh' ? '✨ 全部' : currentLang === 'en' ? '✨ All' : '✨ 전체' } : (formData.idol?.personas?.[pId] || currentDefaultPersonas[pId]);
                         if (!pObj) return null;
                         return (
                             <button

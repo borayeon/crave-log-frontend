@@ -126,8 +126,8 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  const t = useCallback((key, fallback) => {
-    return translate(key, currentLang, fallback);
+  const t = useCallback((key, fallbackOrParams, params) => {
+    return translate(key, currentLang, fallbackOrParams, params);
   }, [currentLang]);
 
   useEffect(() => {
