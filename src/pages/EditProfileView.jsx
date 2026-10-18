@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { 
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
