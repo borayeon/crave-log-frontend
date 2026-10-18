@@ -358,6 +358,13 @@ export const AppProvider = ({ children }) => {
   // -------------------------------------------------------
   const resetToMyProfile = useCallback(
     async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setLoginModalOpen(true);
+        showToast('로그인이 필요한 서비스입니다. 🔒');
+        return;
+      }
+
       setVisitedHandle(null);
       setIsGuestMode(false);
       setViewMode('profile');
@@ -370,7 +377,7 @@ export const AppProvider = ({ children }) => {
 
       await fetchAllData(false, '');
     },
-    [fetchAllData]
+    [fetchAllData, showToast]
   );
 
   // -------------------------------------------------------
@@ -423,10 +430,11 @@ export const AppProvider = ({ children }) => {
     setIsAdmin(false);
     setVisitedHandle(null);
     setIsGuestMode(true);
-    setViewMode('profile');
+    setViewMode('landing');
     
-    // ⭐️ 4. 로그아웃 시 내 고정 정보도 완벽하게 날려줍니다
+    // ⭐️ 로그아웃 시 내 고정 정보 및 프로필 상태 비움
     setCurrentUser(null);
+    setUser(null);
 
     window.history.replaceState(
       {},
@@ -434,9 +442,8 @@ export const AppProvider = ({ children }) => {
       window.location.pathname
     );
 
-    // 로그아웃 후 반드시 공개 프로필 조회
-    await fetchAllData(false, MAIN_HOST_HANDLE);
-  }, [fetchAllData]);
+    showToast("로그아웃 되었습니다. 👋");
+  }, [showToast]);
 
   // -------------------------------------------------------
   // 최초 진입

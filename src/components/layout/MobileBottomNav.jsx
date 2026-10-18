@@ -3,7 +3,7 @@ import { History, User, Network, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 
 const MobileBottomNav = () => {
-  const { viewMode, setViewMode } = useAppStore();
+  const { viewMode, setViewMode, isAdmin, visitedHandle, setLoginModalOpen, showToast } = useAppStore();
   
   return (
     <div className="md:hidden fixed bottom-6 left-4 right-4 z-50 pointer-events-none">
@@ -14,7 +14,17 @@ const MobileBottomNav = () => {
             <span className="text-[9px] font-bold">소개</span>
         </button>
 
-        <button onClick={() => setViewMode('profile')} className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'profile' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}>
+        <button 
+          onClick={() => {
+            if (!isAdmin && !visitedHandle) {
+              setLoginModalOpen(true);
+              showToast('로그인이 필요한 서비스입니다. 🔒');
+              return;
+            }
+            setViewMode('profile');
+          }} 
+          className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'profile' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}
+        >
             <User size={18} />
             <span className="text-[9px] font-bold">프로필</span>
         </button>

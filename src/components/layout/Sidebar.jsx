@@ -12,7 +12,8 @@ const Sidebar = () => {
     isAdmin, 
     setLoginModalOpen, 
     visitedHandle, 
-    resetToMyProfile 
+    resetToMyProfile,
+    showToast 
   } = useAppStore();
   
   // ⭐️ 내용량 대폭 추가 (뱃지, 배경 워터마크 아이콘, 해시태그 기능)
@@ -115,7 +116,14 @@ const Sidebar = () => {
                 return (
                     <button 
                     key={item.id} 
-                    onClick={() => setViewMode(item.id)} 
+                    onClick={() => {
+                      if (item.id === 'profile' && !isAdmin && !visitedHandle) {
+                        setLoginModalOpen(true);
+                        showToast('로그인이 필요한 서비스입니다. 🔒');
+                        return;
+                      }
+                      setViewMode(item.id);
+                    }} 
                     className={`w-full flex items-center gap-3 p-2 rounded-2xl transition-all duration-300 text-left group/btn ${
                         active ? 'bg-white text-indigo-600 shadow-sm border border-zinc-200/80' : 'hover:bg-white hover:text-zinc-900 border border-transparent hover:shadow-sm'
                     }`}
