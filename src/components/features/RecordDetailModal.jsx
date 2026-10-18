@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 import CustomDateRangePicker from '../common/CustomDateRangePicker';
-import { DEFAULT_IMAGE, getYoutubeId, getDomain } from '../../utils/mediaUtils';
+import { DEFAULT_IMAGE, getYoutubeId, getDomain, getFaviconUrl, getFallbackAvatarUrl } from '../../utils/mediaUtils';
 import { trackOutboundClick } from '../../utils/analyticsTracker';
 
 const RecordDetailModal = ({ 
@@ -247,12 +247,13 @@ const RecordDetailModal = ({
                 <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
                   {getDomain(youtubeUrl) ? (
                     <img 
-                      src={`https://icons.duckduckgo.com/ip3/${getDomain(youtubeUrl)}.ico`} 
+                      src={getFaviconUrl(getDomain(youtubeUrl))} 
+                      referrerPolicy="no-referrer"
                       onError={(e) => { 
                         e.target.onerror = null; 
-                        e.target.src = `https://ui-avatars.com/api/?name=${getDomain(youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
+                        e.target.src = getFallbackAvatarUrl(getDomain(youtubeUrl)); 
                       }}
-                      className="w-20 h-20 bg-zinc-50 p-2 rounded-2xl mb-4 border border-zinc-100" 
+                      className="w-20 h-20 bg-zinc-50 p-2 rounded-2xl mb-4 border border-zinc-100 object-contain" 
                       alt="favicon" 
                     />
                   ) : <LinkIcon size={48} className="text-zinc-400 mb-4" />}
@@ -276,10 +277,11 @@ const RecordDetailModal = ({
               {record.youtubeUrl && viewDomain ? (
                 <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-3xl p-4 shadow-xl mb-6 flex items-center justify-center transform hover:scale-105 transition-transform z-10 border border-zinc-100">
                   <img 
-                    src={`https://icons.duckduckgo.com/ip3/${viewDomain}.ico`} 
+                    src={getFaviconUrl(viewDomain)} 
+                    referrerPolicy="no-referrer"
                     onError={(e) => { 
                       e.target.onerror = null; 
-                      e.target.src = `https://ui-avatars.com/api/?name=${viewDomain?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`; 
+                      e.target.src = getFallbackAvatarUrl(viewDomain); 
                     }} 
                     alt="favicon" 
                     className="w-full h-full object-contain" 

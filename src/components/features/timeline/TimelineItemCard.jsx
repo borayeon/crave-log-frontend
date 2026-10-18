@@ -3,7 +3,7 @@ import {
   Calendar, Disc, Lock, PlayCircle, Link as LinkIcon, 
   ExternalLink, Quote 
 } from 'lucide-react';
-import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE, getYoutubeId, getDomain } from '../../../utils/mediaUtils';
+import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE, getYoutubeId, getDomain, getFaviconUrl, getFallbackAvatarUrl } from '../../../utils/mediaUtils';
 import { trackOutboundClick } from '../../../utils/analyticsTracker';
 
 const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlockSecret, onFollowHost }) => {
@@ -111,13 +111,14 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
             <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 bg-white group-hover/link:opacity-0">
               {item.youtubeUrl && getDomain(item.youtubeUrl) ? (
                 <img
-                  src={`https://icons.duckduckgo.com/ip3/${getDomain(item.youtubeUrl)}.ico`}
+                  src={getFaviconUrl(getDomain(item.youtubeUrl))}
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${getDomain(item.youtubeUrl)?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`;
+                    e.target.src = getFallbackAvatarUrl(getDomain(item.youtubeUrl));
                   }}
                   alt="favicon"
-                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 rounded-lg shadow-sm"
+                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 rounded-lg shadow-sm object-contain"
                 />
               ) : (
                 <LinkIcon size={28} className="text-blue-300 mb-2" />
