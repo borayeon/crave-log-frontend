@@ -197,7 +197,13 @@ const ArchiveRecordCard = ({
           </div>
 
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-zinc-900 shrink-0 relative shadow-inner">
-            <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
+            <img 
+              src={thumbnailUrl} 
+              alt={item.title} 
+              referrerPolicy="no-referrer"
+              onError={(e) => { e.target.onerror = null; e.target.src = MUSIC_DEFAULT_IMAGE; }}
+              className="w-full h-full object-cover" 
+            />
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
               <PlayCircle className="text-white drop-shadow" size={20} />
             </div>
@@ -245,7 +251,13 @@ const ArchiveRecordCard = ({
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center shrink-0">
           <div className="absolute inset-0 rounded-full bg-zinc-950 shadow-xl border-4 border-zinc-800 flex items-center justify-center group-hover:rotate-45 transition-transform duration-700 ease-out">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-white/20 shadow-inner">
-              <img src={thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
+              <img 
+                src={thumbnailUrl} 
+                alt={item.title} 
+                referrerPolicy="no-referrer"
+                onError={(e) => { e.target.onerror = null; e.target.src = MUSIC_DEFAULT_IMAGE; }}
+                className="w-full h-full object-cover" 
+              />
             </div>
             <div className="absolute w-4 h-4 rounded-full bg-zinc-900 border-2 border-zinc-700"></div>
           </div>
@@ -293,10 +305,15 @@ const ArchiveRecordCard = ({
             {item.youtubeUrl && item.domain ? (
               <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center p-2 sm:p-3 mb-3 sm:mb-4 border border-zinc-100 transition-transform group-hover/card:scale-110">
                 <img
-                  src={`https://icons.duckduckgo.com/ip3/${item.domain}.ico`}
+                  src={
+                    item.domain === 'cravelog.me' || item.domain === 'localhost'
+                      ? '/favicon.svg'
+                      : `https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`
+                  }
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${item.domain?.charAt(0)}&background=EFF6FF&color=4F46E5&bold=true&size=128`;
+                    e.target.src = `https://ui-avatars.com/api/?name=${item.domain?.charAt(0) || 'U'}&background=EFF6FF&color=4F46E5&bold=true&size=128`;
                   }}
                   className="w-full h-full object-contain"
                   alt="site logo"
@@ -341,6 +358,11 @@ const ArchiveRecordCard = ({
             <img
               src={item.image || DEFAULT_IMAGE}
               alt={item.title}
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = DEFAULT_IMAGE;
+              }}
               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
             <div className="absolute top-3 sm:top-4 left-3 sm:left-4 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/90 backdrop-blur-md text-indigo-600 text-[9px] sm:text-[11px] font-black rounded-lg shadow-sm uppercase tracking-wider">

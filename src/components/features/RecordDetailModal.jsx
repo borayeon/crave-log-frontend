@@ -317,7 +317,13 @@ const RecordDetailModal = ({
               {record.content && <p className="text-zinc-600 text-lg md:text-xl font-medium leading-relaxed max-w-md line-clamp-6">"{record.content}"</p>}
             </div>
           ) : (
-            <img src={recordImage} onError={(e) => { e.target.src = DEFAULT_IMAGE; }} alt={record.title} className="w-full h-full object-contain bg-zinc-50" />
+            <img 
+              src={recordImage} 
+              referrerPolicy="no-referrer"
+              onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_IMAGE; }} 
+              alt={record.title} 
+              className="w-full h-full object-contain bg-zinc-50" 
+            />
           )}
         </div>
 
