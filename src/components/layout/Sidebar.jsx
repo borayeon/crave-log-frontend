@@ -3,7 +3,7 @@ import { User, Network, History, Sparkles, Rocket, BookOpen, Share2, ChevronLeft
 import { useAppStore } from '../../store/AppStore'; // 경로는 기존 설정대로 유지하세요
 
 const Sidebar = () => {
-  // ⭐️ 1. 상태 스토어에서 currentUser, visitUserProfile을 가져옵니다.
+  // ⭐️ 1. 상태 스토어에서 currentUser, visitUserProfile, i18n t를 가져옵니다.
   const { 
     viewMode, 
     setViewMode, 
@@ -13,7 +13,9 @@ const Sidebar = () => {
     setLoginModalOpen, 
     visitedHandle, 
     resetToMyProfile,
-    showToast 
+    showToast,
+    t,
+    currentLang
   } = useAppStore();
   
   // ⭐️ 내용량 대폭 추가 (뱃지, 배경 워터마크 아이콘, 해시태그 기능)
@@ -21,30 +23,30 @@ const Sidebar = () => {
     {
       icon: <Sparkles size={20} className="text-indigo-600" />,
       bgIcon: <Sparkles size={140} strokeWidth={1} className="text-indigo-600/5 absolute -right-6 -bottom-6 transform -rotate-12 pointer-events-none" />,
-      badge: "Portfolio 2.0",
-      title: "새로운 차원의 프로필",
-      desc: <>이력서나 포트폴리오를 넘어, 나라는 사람의 <span className="text-indigo-600 font-black">취향과 성향</span>을 아카이빙합니다.</>,
-      features: ["#멀티_페르소나", "#취향_컬렉션", "#도트_캔버스"],
+      badge: t('sidebar.banner1_badge', 'Portfolio 2.0'),
+      title: t('sidebar.banner1_title', '새로운 차원의 프로필'),
+      desc: t('sidebar.banner1_desc', '이력서나 포트폴리오를 넘어, 나라는 사람의 취향과 성향을 아카이빙합니다.'),
+      features: currentLang === 'ko' ? ["#멀티_페르소나", "#취향_컬렉션", "#도트_캔버스"] : currentLang === 'zh' ? ["#多重角色", "#兴趣收藏", "#像素画布"] : ["#Multi_Persona", "#Taste_Collection", "#Canvas"],
       bg: "from-indigo-50 to-violet-50/50",
       border: "border-indigo-100/50"
     },
     {
       icon: <BookOpen size={20} className="text-emerald-600" />,
       bgIcon: <BookOpen size={140} strokeWidth={1} className="text-emerald-600/5 absolute -right-6 -bottom-6 transform rotate-12 pointer-events-none" />,
-      badge: "Archive",
-      title: "기록의 재발견",
-      desc: <>파편화된 지식부터 소소한 일상까지 <span className="text-emerald-600 font-black">모든 기록을 나만의 색깔로</span> 안전하게 보관하세요.</>,
-      features: ["#개발_인사이트", "#회고록", "#개인_블로그"],
+      badge: t('sidebar.banner2_badge', 'Archive'),
+      title: t('sidebar.banner2_title', '기록의 재발견'),
+      desc: t('sidebar.banner2_desc', '파편화된 지식부터 소소한 일상까지 모든 기록을 나만의 색깔로 안전하게 보관하세요.'),
+      features: currentLang === 'ko' ? ["#개발_인사이트", "#회고록", "#개인_블로그"] : currentLang === 'zh' ? ["#开发灵感", "#日常随笔", "#个人博客"] : ["#Dev_Insights", "#Memoir", "#Blog"],
       bg: "from-emerald-50 to-teal-50/50",
       border: "border-emerald-100/50"
     },
     {
       icon: <Share2 size={20} className="text-rose-600" />,
       bgIcon: <Share2 size={140} strokeWidth={1} className="text-rose-600/5 absolute -right-6 -bottom-6 transform -rotate-12 pointer-events-none" />,
-      badge: "Networking",
-      title: "간편한 네트워킹",
-      desc: <>복잡한 설명 없이 잘 꾸며진 <span className="text-rose-600 font-black">프로필 링크 하나로</span> 나를 가장 완벽하게 소개해보세요.</>,
-      features: ["#원클릭_공유", "#이력서_대체", "#모바일_명함"],
+      badge: t('sidebar.banner3_badge', 'Networking'),
+      title: t('sidebar.banner3_title', '간편한 네트워킹'),
+      desc: t('sidebar.banner3_desc', '복잡한 설명 없이 잘 꾸며진 프로필 링크 하나로 나를 가장 완벽하게 소개해보세요.'),
+      features: currentLang === 'ko' ? ["#원클릭_공유", "#이력서_대체", "#모바일_명함"] : currentLang === 'zh' ? ["#一键分享", "#替代简历", "#电子名片"] : ["#OneClick_Share", "#Resume_Alt", "#Card"],
       bg: "from-rose-50 to-pink-50/50",
       border: "border-rose-100/50"
     }
@@ -73,11 +75,11 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    ...(!isAdmin ? [{ id: 'landing', icon: <Sparkles size={20} />, label: '홈 / 소개', desc: 'CraveLog 시작하기' }] : []),
-    { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
-    { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
-    { id: 'timeline', icon: <History size={20} />, label: '타임라인', desc: '시간순 기록장' },
-    ...(isAdmin ? [{ id: 'access_control', icon: <ShieldCheck size={20} />, label: '공개 & 팔로우', desc: '기록 보안 및 인맥 관리' }] : []),
+    ...(!isAdmin ? [{ id: 'landing', icon: <Sparkles size={20} />, label: t('nav.home', '홈 / 소개'), desc: t('sidebar.desc_home', 'CraveLog 시작하기') }] : []),
+    { id: 'profile', icon: <User size={20} />, label: t('nav.profile', '프로필'), desc: t('sidebar.desc_profile', '나를 소개하는 공간') },
+    { id: 'archive', icon: <Network size={20} />, label: t('nav.archive', '컬렉션'), desc: t('sidebar.desc_archive', '내 취향 모아보기') },
+    { id: 'timeline', icon: <History size={20} />, label: t('nav.timeline', '타임라인'), desc: t('sidebar.desc_timeline', '시간순 기록장') },
+    ...(isAdmin ? [{ id: 'access_control', icon: <ShieldCheck size={20} />, label: t('nav.access_short', '공개 & 팔로우'), desc: t('sidebar.desc_access', '기록 보안 및 인맥 관리') }] : []),
   ];
 
   return (
@@ -102,7 +104,7 @@ const Sidebar = () => {
               }
             }}
             className="h-20 flex items-center px-5 gap-3 mt-2 shrink-0 cursor-pointer group/logo"
-            title={isAdmin ? "내 프로필로 이동" : "CraveLog 홈 / 소개로 이동"}
+            title={isAdmin ? t('header.home_tooltip_user', "내 프로필로 이동") : t('header.home_tooltip_guest', "CraveLog 홈 / 소개로 이동")}
           >
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-white text-indigo-600 border border-zinc-200 shrink-0 group-hover/logo:bg-indigo-50 transition-colors">
               <Sparkles size={18} className="group-hover/logo:scale-110 transition-transform" />
@@ -126,7 +128,7 @@ const Sidebar = () => {
                     onClick={() => {
                       if (['profile', 'archive', 'timeline'].includes(item.id) && !isAdmin && !visitedHandle) {
                         setLoginModalOpen(true);
-                        showToast('로그인이 필요한 서비스입니다. 🔒');
+                        showToast(t('toast.login_required', '로그인이 필요한 서비스입니다. 🔒'));
                         return;
                       }
                       setViewMode(item.id);
@@ -250,10 +252,10 @@ const Sidebar = () => {
                 </div>
                 <div className={`w-full transition-opacity duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                   <p className="text-[11px] font-bold text-zinc-500 leading-relaxed mb-2">
-                    나만의 취향 공간이<br/>필요하신가요?
+                    {currentLang === 'zh' ? <>想要拥有专属于您的<br/>个性化空间吗？</> : currentLang === 'en' ? <>Need your own<br/>taste & profile space?</> : <>나만의 취향 공간이<br/>필요하신가요?</>}
                   </p>
                   <button onClick={() => setLoginModalOpen(true)} className="w-full py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition shadow-sm">
-                    CraveLog 시작하기
+                    {t('sidebar.desc_home', 'CraveLog 시작하기')}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, ShieldCheck } from 'lucide-react';
+import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, ShieldCheck, Globe, Check } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 import { trackSearchEvent } from '../../utils/analyticsTracker';
 
@@ -8,22 +8,26 @@ const TopNavBar = () => {
     viewMode, setViewMode, isSidebarOpen, setIsSidebarOpen, isAdmin, 
     setLoginModalOpen, setAddRecordModalOpen, showToast, handleLogout, 
     isGuestMode, setIsGuestMode, searchQuery, setSearchQuery, searchUsers,
-    visitedHandle, resetToMyProfile, visitUserProfile 
+    visitedHandle, resetToMyProfile, visitUserProfile,
+    t, currentLang, setLanguage, SUPPORTED_LANGS 
   } = useAppStore();
 
-  // 상태 관리: 모바일 검색창 & 사용자 드롭다운 메뉴
+  // 상태 관리: 모바일 검색창 & 사용자 드롭다운 메뉴 & 언어 선택 드롭다운
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); 
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+
+  const currentLangObj = SUPPORTED_LANGS?.find(l => l.code === currentLang) || { code: 'ko', short: 'KO', flag: '🇰🇷', label: '한국어' };
 
   const titleMap = { 
-    landing: '홈 / 소개 (Home)',
-    profile: '프로필 (Profile)', 
-    edit_profile: '프로필 설정 (Set Profile)', 
-    archive: '컬렉션 (Collection)', 
-    timeline: '타임라인 (Timeline)', 
-    search: '검색 결과 (Search)',
-    account_settings: '계정 설정 (Settings)',
-    access_control: '공개 권한 & 팔로우'
+    landing: t('nav.home_full', '홈 / 소개 (Home)'),
+    profile: t('nav.profile_full', '프로필 (Profile)'), 
+    edit_profile: t('nav.edit_profile_full', '프로필 설정 (Set Profile)'), 
+    archive: t('nav.archive_full', '컬렉션 (Collection)'), 
+    timeline: t('nav.timeline_full', '타임라인 (Timeline)'), 
+    search: t('nav.search_full', '검색 결과 (Search)'),
+    account_settings: t('nav.account_settings_full', '계정 설정 (Settings)'),
+    access_control: t('nav.access_control', '공개 권한 & 팔로우')
   };
 
   const handleSearchSubmit = () => {
@@ -70,7 +74,7 @@ const TopNavBar = () => {
             value={searchQuery || ''} 
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSearchSubmit(); }}
-            placeholder="사용자 및 기록 검색..." 
+            placeholder={t('header.search_placeholder', '사용자 및 기록 검색...')} 
             className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-zinc-800"
           />
           <button 
@@ -89,7 +93,7 @@ const TopNavBar = () => {
         <button 
           onClick={handleHomeClick}
           className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors"
-          title={isAdmin ? "내 프로필로 이동" : "CraveLog 홈 / 소개로 이동"}
+          title={isAdmin ? t('header.home_tooltip_user', '내 프로필로 이동') : t('header.home_tooltip_guest', 'CraveLog 홈 / 소개로 이동')}
         >
           <Sparkles size={14} />
         </button>
@@ -98,12 +102,12 @@ const TopNavBar = () => {
           <button 
             onClick={handleHomeClick}
             className="hidden md:inline text-zinc-400 hover:text-indigo-600 transition-colors cursor-pointer"
-            title={isAdmin ? "내 프로필로 이동" : "CraveLog 홈 / 소개로 이동"}
+            title={isAdmin ? t('header.home_tooltip_user', '내 프로필로 이동') : t('header.home_tooltip_guest', 'CraveLog 홈 / 소개로 이동')}
           >
             CraveLog
           </button>
           <span className="hidden md:inline text-zinc-300">/</span>
-          {titleMap[viewMode] || '검색'}
+          {titleMap[viewMode] || t('nav.search', '검색')}
         </h2>
       </div>
       
@@ -112,7 +116,7 @@ const TopNavBar = () => {
         
         {/* 검색창 (데스크톱) */}
         <div className="hidden sm:flex items-center relative w-full max-w-[200px] md:max-w-[240px] lg:max-w-[280px]">
-          <button onClick={handleSearchSubmit} className="absolute left-2.5 p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-zinc-200/50 rounded-full transition-colors z-10" title="검색하기">
+          <button onClick={handleSearchSubmit} className="absolute left-2.5 p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-zinc-200/50 rounded-full transition-colors z-10" title={t('header.search_btn', '검색하기')}>
             <Search size={16} />
           </button>
           <input 
@@ -120,7 +124,7 @@ const TopNavBar = () => {
             value={searchQuery || ''} 
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSearchSubmit(); }}
-            placeholder="사용자 및 기록 검색..." 
+            placeholder={t('header.search_placeholder', '사용자 및 기록 검색...')} 
             className="w-full bg-zinc-100/80 border border-transparent focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-full py-2 pl-10 pr-4 text-xs font-bold text-zinc-800 outline-none transition-all shadow-sm"
           />
         </div>
@@ -129,25 +133,75 @@ const TopNavBar = () => {
         <button 
           onClick={() => setIsMobileSearchOpen(true)} 
           className="sm:hidden w-9 h-9 flex items-center justify-center text-zinc-500 hover:bg-zinc-100 rounded-full transition-colors"
+          title={t('header.search_btn', '검색하기')}
         >
           <Search size={18} />
         </button>
+
+        {/* 🌐 언어 선택 드롭다운 (다국어 지원: 한국어, English, 简体中文) */}
+        <div className="relative">
+          <button 
+            onClick={() => { setIsLangMenuOpen(!isLangMenuOpen); setIsUserMenuOpen(false); }}
+            className={`h-9 px-2.5 rounded-full flex items-center gap-1.5 transition text-xs font-bold border shadow-sm ${
+              isLangMenuOpen 
+                ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
+                : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-indigo-600 hover:bg-indigo-50'
+            }`}
+            title={t('lang.select', '언어 선택')}
+          >
+            <Globe size={15} className="text-zinc-500 group-hover:text-indigo-600" />
+            <span className="text-[11px] font-extrabold">{currentLangObj.short}</span>
+          </button>
+
+          {isLangMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)}></div>
+              
+              <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-zinc-100 rounded-2xl shadow-xl overflow-hidden py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 flex items-center gap-1.5">
+                  <Globe size={12} /> {t('lang.select', '언어 선택')}
+                </div>
+                {SUPPORTED_LANGS.map((lang) => (
+                  <button 
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code);
+                      setIsLangMenuOpen(false);
+                      showToast(t('toast.lang_changed', '언어가 변경되었습니다.'));
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2 text-xs font-bold transition text-left ${
+                      currentLang === lang.code 
+                        ? 'bg-indigo-50/80 text-indigo-600 font-extrabold' 
+                        : 'text-zinc-700 hover:bg-zinc-50'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">{lang.flag}</span>
+                      <span>{lang.label}</span>
+                    </span>
+                    {currentLang === lang.code && <Check size={14} className="text-indigo-600" />}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         {isAdmin ? (
           <>
             {/* ⭐️ 가장 중요한 '새 기록' 액션은 외부에 단독 배치 */}
             {canEdit && (
               <button onClick={() => setAddRecordModalOpen(true)} className="px-3 md:px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5 md:mr-1">
-                <Plus size={14} /> <span className="hidden md:inline">새 기록</span>
+                <Plus size={14} /> <span className="hidden md:inline">{t('header.new_record', '새 기록')}</span>
               </button>
             )}
             
             {/* ⭐️ 나머지 메뉴를 깔끔하게 통합한 사용자 드롭다운 */}
             <div className="relative">
               <button 
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
+                onClick={() => { setIsUserMenuOpen(!isUserMenuOpen); setIsLangMenuOpen(false); }} 
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition shadow-sm border ${isUserMenuOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-indigo-600 hover:bg-indigo-50'}`}
-                title="사용자 메뉴"
+                title={t('header.user_menu', '사용자 메뉴')}
               >
                 <User size={16} />
               </button>
@@ -163,7 +217,7 @@ const TopNavBar = () => {
                       onClick={() => { handleGoToProfile(); setIsUserMenuOpen(false); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                     >
-                      <User size={16} className="text-zinc-400" /> 마이페이지
+                      <User size={16} className="text-zinc-400" /> {t('header.mypage', '마이페이지')}
                     </button>
 
                     {/* 🔒 사용자 전용 공개 권한 & 팔로우 관리 */}
@@ -171,7 +225,7 @@ const TopNavBar = () => {
                       onClick={() => { setViewMode('access_control'); setIsUserMenuOpen(false); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                     >
-                      <ShieldCheck size={16} className="text-indigo-600" /> 공개 권한 & 팔로우
+                      <ShieldCheck size={16} className="text-indigo-600" /> {t('header.access_control', '공개 권한 & 팔로우')}
                     </button>
 
                     {canEdit && (
@@ -179,7 +233,7 @@ const TopNavBar = () => {
                         onClick={() => { setViewMode('account_settings'); setIsUserMenuOpen(false); }} 
                         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                       >
-                        <Settings size={16} className="text-zinc-400" /> 계정 설정
+                        <Settings size={16} className="text-zinc-400" /> {t('header.account_settings', '계정 설정')}
                       </button>
                     )}
 
@@ -193,7 +247,7 @@ const TopNavBar = () => {
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                     >
                       {isViewingOther ? <EyeOff size={16} className="text-zinc-400" /> : <Eye size={16} className="text-zinc-400" />}
-                      {isViewingOther ? '내 프로필로 복귀' : '게스트 뷰 체험'}
+                      {isViewingOther ? t('header.guest_mode_off', '내 프로필로 복귀') : t('header.guest_mode_on', '게스트 뷰 체험')}
                     </button>
 
                     <div className="h-px bg-zinc-100 my-1 mx-2"></div>
@@ -202,14 +256,14 @@ const TopNavBar = () => {
                       onClick={() => { setViewMode('landing'); setIsUserMenuOpen(false); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
                     >
-                      <Sparkles size={16} className="text-zinc-400" /> CraveLog 소개
+                      <Sparkles size={16} className="text-zinc-400" /> {t('header.about', 'CraveLog 소개')}
                     </button>
 
                     <button 
-                      onClick={() => { handleLogout(); showToast("로그아웃 되었습니다. 👋"); setIsUserMenuOpen(false); }} 
+                      onClick={() => { handleLogout(); showToast(t('toast.logged_out', '로그아웃 되었습니다. 👋')); setIsUserMenuOpen(false); }} 
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 transition text-left"
                     >
-                      <LogOut size={16} className="text-rose-400" /> 로그아웃
+                      <LogOut size={16} className="text-rose-400" /> {t('header.logout', '로그아웃')}
                     </button>
                   </div>
                 </>
@@ -217,7 +271,7 @@ const TopNavBar = () => {
             </div>
           </>
         ) : (
-          <button onClick={() => setLoginModalOpen(true)} className="w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition shadow-sm" title="로그인">
+          <button onClick={() => setLoginModalOpen(true)} className="w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition shadow-sm" title={t('header.login', '로그인')}>
             <Lock size={14} />
           </button>
         )}

@@ -32,7 +32,7 @@ const DEFAULT_PERSONAS = {
 };
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch, visitedHandle, setOnboardingModalOpen } = useAppStore();
+  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch, visitedHandle, setOnboardingModalOpen, t, currentLang } = useAppStore();
 
   const [activeTab, setActiveTab] = useState(null); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
@@ -83,11 +83,13 @@ const ProfileView = () => {
 
   const CUSTOM_PERSONAS = useMemo(() => {
     const p = safeUser.addProfile?.personas || DEFAULT_PERSONAS;
+    const allName = currentLang === 'zh' ? '✨ 全部' : currentLang === 'en' ? '✨ All' : '✨ 전체';
+    const allDesc = currentLang === 'zh' ? '查看所有角色' : currentLang === 'en' ? 'View all profiles' : '모든 프로필 보기';
     return {
-      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true, visibilityLevel: 0, isActive: true },
+      all: { id: 'all', name: allName, desc: allDesc, tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true, visibilityLevel: 0, isActive: true },
       ...p
     };
-  }, [safeUser.addProfile?.personas]);
+  }, [safeUser.addProfile?.personas, currentLang]);
 
   // ⭐️ 페르소나 4단계 공개 범위 레벨 조회 헬퍼 (0: 전체공개, 1: 팔로워공개, 2: 비밀번호잠금, 4: 비공개)
   const getPersonaLevel = (persona) => {

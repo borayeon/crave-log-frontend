@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Settings, Lock, AlertTriangle, KeyRound, Save, Trash2, MessageSquare } from 'lucide-react';
+import { Settings, Lock, AlertTriangle, KeyRound, Save, Trash2, MessageSquare, Globe, Check } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const AccountSettingsView = () => {
-  // ⭐️ 1. user를 추가로 가져옵니다.
-  const { setViewMode, apiFetch, showToast, handleLogout, user } = useAppStore();
+  // ⭐️ 1. user 및 i18n 상태를 추가로 가져옵니다.
+  const { setViewMode, apiFetch, showToast, handleLogout, user, t, currentLang, setLanguage, SUPPORTED_LANGS } = useAppStore();
   const [activeTab, setActiveTab] = useState('password');
   
   // 비밀번호 변경 상태
@@ -80,7 +80,7 @@ const AccountSettingsView = () => {
     <div className="max-w-4xl mx-auto w-full p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10">
       <header className="mb-8 border-b border-zinc-200/60 pb-6">
         <h2 className="text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
-          <Settings className="text-indigo-500" size={28} /> 계정 설정
+          <Settings className="text-indigo-500" size={28} /> {t('nav.account_settings', '계정 설정')}
         </h2>
         <p className="text-sm font-bold text-zinc-400 mt-2 uppercase tracking-widest">
           Account Settings
@@ -88,13 +88,64 @@ const AccountSettingsView = () => {
       </header>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-8 p-1 bg-zinc-100/50 rounded-2xl border border-zinc-200/50">
-        <button onClick={() => setActiveTab('password')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'password' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
-          <Lock size={16} /> 비밀번호 관리
+        <button onClick={() => setActiveTab('language')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'language' ? 'bg-white text-indigo-600 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
+          <Globe size={16} /> {t('lang.select', '언어 선택')}
         </button>
-        <button onClick={() => setActiveTab('delete')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'delete' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
-          <AlertTriangle size={16} /> 계정 탈퇴
+        <button onClick={() => setActiveTab('password')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'password' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
+          <Lock size={16} /> {currentLang === 'zh' ? '密码管理' : currentLang === 'en' ? 'Password' : '비밀번호 관리'}
+        </button>
+        <button onClick={() => setActiveTab('delete')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'delete' ? 'bg-white text-rose-600 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
+          <AlertTriangle size={16} /> {currentLang === 'zh' ? '注销账号' : currentLang === 'en' ? 'Delete Account' : '계정 탈퇴'}
         </button>
       </div>
+
+      {/* 🌐 언어 선택 탭 */}
+      {activeTab === 'language' && (
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 animate-in fade-in">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+              <Globe size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-zinc-900">
+                {t('lang.select', '언어 선택 (Language)')}
+              </h3>
+              <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                {currentLang === 'zh' ? '选择 CraveLog 的界面显示语言' : currentLang === 'en' ? 'Choose display language for CraveLog' : 'CraveLog의 표시 언어를 선택합니다.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
+            {SUPPORTED_LANGS.map((lang) => {
+              const isSelected = currentLang === lang.code;
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setLanguage(lang.code);
+                    showToast(t('toast.lang_changed', '언어가 변경되었습니다.'));
+                  }}
+                  className={`p-5 rounded-2xl border-2 flex flex-col items-start justify-between text-left transition-all ${
+                    isSelected
+                      ? 'border-indigo-600 bg-indigo-50/40 shadow-sm'
+                      : 'border-zinc-200/80 bg-zinc-50/50 hover:bg-white hover:border-zinc-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-3">
+                    <span className="text-3xl">{lang.flag}</span>
+                    {isSelected && <Check size={18} className="text-indigo-600 font-bold" />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-zinc-900">{lang.label}</h4>
+                    <p className="text-[11px] text-zinc-400 font-bold mt-0.5">{lang.short} ({lang.code})</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'password' && (
         isSocialUser ? (

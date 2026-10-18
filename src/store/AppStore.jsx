@@ -12,6 +12,8 @@ import {
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
+import { translate, detectInitialLang, SUPPORTED_LANGS } from '../utils/i18n';
+
 const MAIN_HOST_HANDLE = 'taeya00';
 
 const INITIAL_USER_DATA = {
@@ -112,6 +114,27 @@ export const AppProvider = ({ children }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
+
+  // 🌐 i18n 다국어 지원 상태 (ko: 한국어, en: English, zh: 简体中文)
+  const [currentLang, setCurrentLang] = useState(detectInitialLang);
+
+  const setLanguage = useCallback((lang) => {
+    setCurrentLang(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cravelog_lang', lang);
+      document.documentElement.lang = lang;
+    }
+  }, []);
+
+  const t = useCallback((key, fallback) => {
+    return translate(key, currentLang, fallback);
+  }, [currentLang]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.documentElement.lang = currentLang;
+    }
+  }, [currentLang]);
 
   // 초기에는 "손님 프로필"을 실제 데이터로 취급하지 않도록 한다.
   const [user, setUser] = useState(null);
@@ -682,6 +705,12 @@ export const AppProvider = ({ children }) => {
 
         isLoading,
         setIsLoading,
+
+        // 🌐 다국어 지원 (i18n)
+        currentLang,
+        setLanguage,
+        t,
+        SUPPORTED_LANGS,
 
         apiFetch,
         fetchAllData,
