@@ -4,7 +4,7 @@ import { useAppStore } from '../store/AppStore';
 
 const SearchView = () => {
   // ⭐️ visitUserProfile 가져오기
-  const { searchResults, searchQuery, showToast, visitUserProfile } = useAppStore();
+  const { searchResults, searchQuery, showToast, visitUserProfile, t, currentLang } = useAppStore();
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-10 animate-in fade-in duration-300 pb-28 md:pb-10">
@@ -12,11 +12,11 @@ const SearchView = () => {
         <h2 className="text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
           <Search className="text-indigo-500" size={28} /> 
           <span className="text-indigo-600">
-            {searchQuery.trim() === '' ? '모든 사용자' : `"${searchQuery}"`}
-          </span> 검색 결과
+            {searchQuery.trim() === '' ? t('search.all_users', '모든 사용자') : `"${searchQuery}"`}
+          </span> {t('search.results_suffix', '검색 결과')}
         </h2>
         <p className="text-sm font-bold text-zinc-400 mt-2 uppercase tracking-widest">
-          총 {searchResults.length}명의 사용자를 찾았습니다
+          {t('search.found_count', { count: searchResults.length })}
         </p>
       </header>
 
@@ -25,8 +25,8 @@ const SearchView = () => {
           <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center text-zinc-300 mb-4 border border-zinc-100">
             <Search size={32} />
           </div>
-          <h3 className="text-xl font-black text-zinc-800 mb-2">검색 결과가 없습니다</h3>
-          <p className="text-sm font-medium text-zinc-500">다른 이름이나 아이디로 다시 시도해 보세요.</p>
+          <h3 className="text-xl font-black text-zinc-800 mb-2">{t('search.empty_title', '검색 결과가 없습니다')}</h3>
+          <p className="text-sm font-medium text-zinc-500">{t('search.empty_desc', '다른 이름이나 아이디로 다시 시도해 보세요.')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -35,7 +35,7 @@ const SearchView = () => {
               key={user.handle} 
               // ⭐️ 클릭 시 해당 유저의 프로필 데이터 불러오기
               onClick={() => {
-                showToast(`${user.name}님의 프로필로 이동합니다 🚀`);
+                showToast(currentLang === 'zh' ? `正在前往 ${user.name} 的主页 🚀` : currentLang === 'en' ? `Visiting ${user.name}'s profile 🚀` : `${user.name}님의 프로필로 이동합니다 🚀`);
                 if (visitUserProfile) {
                     visitUserProfile(user.handle);
                 }

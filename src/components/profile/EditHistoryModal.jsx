@@ -1,7 +1,9 @@
 import React from 'react';
 import { History, X as CloseIcon, UserPlus, Compass, Heart } from 'lucide-react';
+import { useAppStore } from '../../store/AppStore';
 
 const EditHistoryModal = ({ viewHistoryItem, setViewHistoryItem, formData, updateNested, showToast }) => {
+    const { currentLang } = useAppStore();
     if (!viewHistoryItem) return null;
 
     return (
@@ -9,8 +11,8 @@ const EditHistoryModal = ({ viewHistoryItem, setViewHistoryItem, formData, updat
             <div className="bg-[#F8FAFC] rounded-3xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
                 <div className="p-5 bg-white border-b border-zinc-200 flex justify-between items-center shrink-0">
                     <div>
-                        <h3 className="text-base font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500" size={18}/> {viewHistoryItem.date} 과거 기록</h3>
-                        <p className="text-[10px] text-zinc-500 font-bold mt-1">해당 날짜에 박제된 상세 프로필의 모든 내용입니다.</p>
+                        <h3 className="text-base font-black text-zinc-900 flex items-center gap-2"><History className="text-indigo-500" size={18}/> {viewHistoryItem.date} {currentLang === 'zh' ? '历史记录' : currentLang === 'en' ? 'Past Record' : '과거 기록'}</h3>
+                        <p className="text-[10px] text-zinc-500 font-bold mt-1">{currentLang === 'zh' ? '该日期保存的详细个人资料的所有内容。' : currentLang === 'en' ? 'All details of the profile snapshot saved on this date.' : '해당 날짜에 박제된 상세 프로필의 모든 내용입니다.'}</p>
                     </div>
                     <button onClick={() => setViewHistoryItem(null)} className="p-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-zinc-500 transition-colors"><CloseIcon size={18}/></button>
                 </div>
@@ -57,10 +59,10 @@ const EditHistoryModal = ({ viewHistoryItem, setViewHistoryItem, formData, updat
                 <div className="p-5 border-t border-zinc-200 bg-white flex justify-end">
                     <button onClick={() => {
                         updateNested(['idol'], { ...formData.idol, ...viewHistoryItem.snapshot, history: formData.idol.history, updatedAt: viewHistoryItem.date });
-                        showToast(`${viewHistoryItem.date} 기록으로 폼이 복원되었습니다!`);
+                        showToast(currentLang === 'zh' ? `已恢复至 ${viewHistoryItem.date} 的记录！` : currentLang === 'en' ? `Form restored to record from ${viewHistoryItem.date}!` : `${viewHistoryItem.date} 기록으로 폼이 복원되었습니다!`);
                         setViewHistoryItem(null);
                     }} className="px-5 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition shadow-sm">
-                        이 기록 폼에 불러오기
+                        {currentLang === 'zh' ? '将此记录载入表单' : currentLang === 'en' ? 'Load this record into form' : '이 기록 폼에 불러오기'}
                     </button>
                 </div>
             </div>

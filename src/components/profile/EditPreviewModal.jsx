@@ -1,5 +1,6 @@
 import React from 'react';
-import { Eye, Save, Sparkles, Briefcase, GraduationCap, MapPin, Quote, Lock, User, UserPlus, Compass, Heart, MessageSquare, Image as ImageIcon, FileText, Grid } from 'lucide-react';
+import { Eye, Save, Sparkles, Briefcase, GraduationCap, MapPin, Quote, Lock, User, UserPlus, Compass, Heart, MessageSquare, Image as ImageIcon, FileText, Grid, Target } from 'lucide-react';
+import { useAppStore } from '../../store/AppStore';
 
 const EditPreviewModal = ({ 
     showPreview, setShowPreview, formData, handleSave, 
@@ -7,6 +8,7 @@ const EditPreviewModal = ({
     renderBusinessCardUI, renderVisionPreview,
     isTabPrivate 
 }) => {
+    const { t, currentLang } = useAppStore();
     if (!showPreview) return null;
 
     return (
@@ -16,16 +18,16 @@ const EditPreviewModal = ({
             <div className="bg-white px-6 py-4 flex justify-between items-center border-b border-zinc-200 sticky top-0 z-50">
               <h3 className="font-black text-sm md:text-base text-zinc-800 flex items-center gap-2">
                 <Eye size={16} className="text-violet-500" />
-                저장 전 미리보기
+                {currentLang === 'zh' ? '保存前预览' : currentLang === 'en' ? 'Preview Before Saving' : '저장 전 미리보기'}
               </h3>
               <div className="flex gap-2">
-                <button type="button" onClick={() => setShowPreview(false)} className="px-3 py-2 bg-zinc-100 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-200 transition shadow-sm">돌아가기</button>
+                <button type="button" onClick={() => setShowPreview(false)} className="px-3 py-2 bg-zinc-100 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-200 transition shadow-sm">{currentLang === 'zh' ? '返回' : currentLang === 'en' ? 'Back' : '돌아가기'}</button>
                 <button 
                   type="button"
                   onClick={() => { setShowPreview(false); handleSave(); }} 
                   className="px-3 py-2 bg-violet-600 rounded-xl text-xs font-bold text-white hover:bg-violet-700 shadow-sm flex items-center gap-1.5 transition"
                 >
-                  <Save size={14} /> 이대로 저장
+                  <Save size={14} /> {currentLang === 'zh' ? '直接保存' : currentLang === 'en' ? 'Save as is' : '이대로 저장'}
                 </button>
               </div>
             </div>
@@ -58,13 +60,13 @@ const EditPreviewModal = ({
                       </div>
                       
                       <div className="flex-1 flex flex-col justify-center min-w-0 md:pt-2">
-                        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{formData.name || '이름 없음'}</h2>
+                        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mb-1 truncate">{formData.name || (currentLang === 'zh' ? '无姓名' : currentLang === 'en' ? 'No Name' : '이름 없음')}</h2>
                         <p className="text-[11px] md:text-sm font-bold text-violet-600 bg-violet-50 border border-violet-100 px-2 py-0.5 md:px-2.5 rounded-lg inline-block w-max mb-3 shadow-sm truncate">@{formData.handle || 'handle'}</p>
                         
                         <div className="space-y-1 md:space-y-1.5">
-                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><Briefcase size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.role || '소속 미입력'}</div>
-                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><GraduationCap size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.major || '전공 미입력'}</div>
-                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><MapPin size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.location || '지역 미입력'}</div>
+                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><Briefcase size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.role || (currentLang === 'zh' ? '未输入所属' : currentLang === 'en' ? 'No affiliation' : '소속 미입력')}</div>
+                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><GraduationCap size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.major || (currentLang === 'zh' ? '未输入专业' : currentLang === 'en' ? 'No major' : '전공 미입력')}</div>
+                          <div className="flex items-center gap-2 text-[11px] md:text-[13px] font-medium text-zinc-600 truncate"><MapPin size={12} className="text-zinc-400 shrink-0 md:w-3.5 md:h-3.5"/> {formData.location || (currentLang === 'zh' ? '未输入地区' : currentLang === 'en' ? 'No location' : '지역 미입력')}</div>
                         </div>
                       </div>
                     </div>
@@ -75,7 +77,7 @@ const EditPreviewModal = ({
                   <div className="flex-1 flex flex-col justify-center md:pl-6 mt-3 md:mt-0">
                     <Quote size={24} className="text-violet-300 mb-3 md:mb-4"/>
                     <p className="text-[13px] md:text-[15px] text-zinc-800 font-bold leading-relaxed mb-4 whitespace-pre-line">
-                      "{formData.bio || '한 줄 소개'}"
+                      "{formData.bio || (currentLang === 'zh' ? '一句话介绍' : currentLang === 'en' ? 'One line bio' : '한 줄 소개')}"
                     </p>
                     <div className="flex flex-wrap gap-1.5 md:gap-2">
                         {(formData.tags || []).map(tag => (
@@ -90,9 +92,9 @@ const EditPreviewModal = ({
                 <React.Fragment>
                   <div className="mt-6 md:mt-8 px-4 md:px-10">
                     <div className="flex items-center justify-between mb-0.5">
-                      <h3 className="text-sm md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
+                      <h3 className="text-sm md:text-lg font-black text-zinc-900 tracking-tight">{currentLang === 'zh' ? '浏览数据' : currentLang === 'en' ? 'Explore Data' : '데이터 탐색'}</h3>
                     </div>
-                    <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-2">미리보기에서는 선택된 탭 하나만 렌더링됩니다. (🔒 표시는 현재 비공개 상태임을 의미합니다)</p>
+                    <p className="text-[10px] md:text-xs text-zinc-500 font-medium mb-2">{currentLang === 'zh' ? '预览中仅渲染选中的一个标签页。（🔒 标志表示当前为非公开状态）' : currentLang === 'en' ? 'Only the selected tab is rendered in preview. (🔒 icon indicates private status)' : '미리보기에서는 선택된 탭 하나만 렌더링됩니다. (🔒 표시는 현재 비공개 상태임을 의미합니다)'}</p>
                     
                     <div className="flex gap-2.5 md:gap-4 overflow-x-auto scrollbar-hide pt-2 pb-4">
                       {availablePreviewTabs.map(tab => {
@@ -159,7 +161,7 @@ const EditPreviewModal = ({
                                     <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Compass size={14}/> Lifestyle & Work</h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
-                                          <span className="text-[10px] font-bold text-blue-400">Motto (좌우명)</span>
+                                          <span className="text-[10px] font-bold text-blue-400">Motto {currentLang === 'zh' ? '(座右铭)' : currentLang === 'en' ? '(Motto)' : '(좌우명)'}</span>
                                           <span className="text-sm font-black text-zinc-800">{formData.idol?.motto || '-'}</span>
                                         </div>
                                         <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
@@ -183,7 +185,7 @@ const EditPreviewModal = ({
                     
                     {previewTab === 'qna' && (
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
-                            <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.idol?.qna?.length || 0}개)</h4>
+                            <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MessageSquare size={14}/> Q&A ({formData.idol?.qna?.length || 0}{currentLang === 'zh' ? '个' : currentLang === 'en' ? '' : '개'})</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 {((formData.idol?.qna) || []).map((item, idx) => (
                                     <div key={idx} className="p-5 bg-violet-50/50 rounded-2xl border border-violet-100/50 relative overflow-hidden">
@@ -206,7 +208,7 @@ const EditPreviewModal = ({
                     
                     {previewTab === 'quotes' && (
                         <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
-                            <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5"><Quote size={14}/> Quotes ({formData.idol?.quotes?.length || 0}개)</h4>
+                            <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5"><Quote size={14}/> Quotes ({formData.idol?.quotes?.length || 0}{currentLang === 'zh' ? '个' : currentLang === 'en' ? '' : '개'})</h4>
                         </div>
                     )}
 
@@ -215,7 +217,7 @@ const EditPreviewModal = ({
                         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col">
                             <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><FileText size={14}/> Free Memo</h4>
                             <div className="w-full text-sm text-zinc-800 leading-relaxed font-medium whitespace-pre-line bg-amber-50/30 p-5 rounded-2xl border border-amber-100/50 min-h-[150px]">
-                                {formData.idol?.memoArea?.text || '입력된 메모가 없습니다.'}
+                                {formData.idol?.memoArea?.text || (currentLang === 'zh' ? '没有已输入的便签。' : currentLang === 'en' ? 'No memo entered.' : '입력된 메모가 없습니다.')}
                             </div>
                         </div>
                     )}

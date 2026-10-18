@@ -22,7 +22,9 @@ const TimelineView = () => {
     searchQuery, 
     isLoading,
     visitedHandle,
-    setViewMode
+    setViewMode,
+    t,
+    currentLang
   } = useAppStore();
   
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -38,10 +40,10 @@ const TimelineView = () => {
     if (!hostUser?.handle) return;
     try {
       await apiFetch(`/api/v1/users/${hostUser.handle}/follow`, { method: 'POST' });
-      showToast(`${hostUser.nickname || hostUser.handle}님을 팔로우했습니다. 타임라인을 새로고침합니다.`, 'success');
+      showToast(`${hostUser.nickname || hostUser.handle}${currentLang === 'zh' ? ' 已关注。正在刷新时间线。' : currentLang === 'en' ? ' followed. Refreshing timeline.' : '님을 팔로우했습니다. 타임라인을 새로고침합니다.'}`, 'success');
       await fetchAllData(true);
     } catch (err) {
-      showToast(err.message || '팔로우에 실패했습니다.', 'error');
+      showToast(err.message || (currentLang === 'zh' ? '关注失败。' : currentLang === 'en' ? 'Follow failed.' : '팔로우에 실패했습니다.'), 'error');
     }
   };
   const [expandedFolders, setExpandedFolders] = useState({});
@@ -122,8 +124,8 @@ const TimelineView = () => {
     return (
       <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
         <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
-        <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
-        <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
+        <h2 className="text-lg font-black text-zinc-800 tracking-tight">{t('common.loading', '데이터를 불러오는 중입니다...')}</h2>
+        <p className="text-sm text-zinc-500 font-medium mt-2">{currentLang === 'zh' ? '请稍候' : currentLang === 'en' ? 'Please wait a moment' : '잠시만 기다려주세요'}</p>
       </div>
     );
   }
@@ -136,13 +138,13 @@ const TimelineView = () => {
           <Lock size={30} />
         </div>
         <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg mb-2">
-          로그인 필요
+          {currentLang === 'zh' ? '需要登录' : currentLang === 'en' ? 'Login Required' : '로그인 필요'}
         </span>
         <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight mb-2">
-          로그인이 필요한 페이지입니다
+          {currentLang === 'zh' ? '该页面需要登录访问' : currentLang === 'en' ? 'This page requires login' : '로그인이 필요한 페이지입니다'}
         </h2>
         <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed mb-6 max-w-sm">
-          나만의 타임라인과 시간순 기록을 확인하시려면 먼저 CraveLog에 로그인해주세요.
+          {currentLang === 'zh' ? '如需查看您的专属时间线与时间轴记录，请先登录 CraveLog。' : currentLang === 'en' ? 'Please log in to CraveLog to view your personal timeline and chronological records.' : '나만의 타임라인과 시간순 기록을 확인하시려면 먼저 CraveLog에 로그인해주세요.'}
         </p>
         <div className="flex items-center gap-3 w-full justify-center">
           <button
@@ -150,13 +152,13 @@ const TimelineView = () => {
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center gap-2"
           >
             <Lock size={14} />
-            <span>로그인하기</span>
+            <span>{t('header.login', '로그인하기')}</span>
           </button>
           <button
             onClick={() => setViewMode('landing')}
             className="px-5 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer"
           >
-            홈(소개)으로 이동
+            {currentLang === 'zh' ? '前往首页(介绍)' : currentLang === 'en' ? 'Go to Home (Intro)' : '홈(소개)으로 이동'}
           </button>
         </div>
       </div>
@@ -167,10 +169,10 @@ const TimelineView = () => {
     return (
       <div className="h-full bg-[#F8FAFC]">
         <EmptyState 
-          title="아직 발자취가 없어요" 
+          title={currentLang === 'zh' ? '还没有时间轴足迹' : currentLang === 'en' ? 'No footprint yet' : '아직 발자취가 없어요'} 
           icon={<History size={32}/>} 
           onAction={() => isAdmin && !isGuestMode ? setIsEditing(true) : setLoginModalOpen(true)}
-          actionLabel={isAdmin && !isGuestMode ? "카테고리 만들기" : "로그인하고 시작하기"}
+          actionLabel={isAdmin && !isGuestMode ? (currentLang === 'zh' ? '新建分类' : currentLang === 'en' ? 'Create Category' : '카테고리 만들기') : (currentLang === 'zh' ? '登录并开始' : currentLang === 'en' ? 'Log in & start' : '로그인하고 시작하기')}
         />
       </div>
     );
@@ -194,7 +196,7 @@ const TimelineView = () => {
         await fetchAllData(true);
         setNewCategoryName('');
         setNewCategoryType('GENERAL');
-        showToast('새 카테고리가 추가되었습니다.');
+        showToast(currentLang === 'zh' ? '新分类添加成功。' : currentLang === 'en' ? 'New category added.' : '새 카테고리가 추가되었습니다.');
       }
     } catch (e) { 
       console.error(e); 
@@ -216,7 +218,7 @@ const TimelineView = () => {
       if (res.ok) {
         await fetchAllData(true);
         setNewTagNames(prev => ({ ...prev, [catId]: '' }));
-        showToast('새 태그가 추가되었습니다.');
+        showToast(currentLang === 'zh' ? '新标签添加成功。' : currentLang === 'en' ? 'New tag added.' : '새 태그가 추가되었습니다.');
       }
     } catch (e) { 
       console.error(e); 
@@ -232,7 +234,7 @@ const TimelineView = () => {
     if (type === 'category') {
       const catType = cat.type || (cat.name.includes('음악') ? 'MUSIC' : cat.name.includes('URL') ? 'URL' : 'GENERAL');
       if (catType === 'MUSIC' || catType === 'URL') {
-        return showToast("시스템 기본 폴더는 삭제할 수 없습니다.");
+        return showToast(currentLang === 'zh' ? '无法删除系统默认分类。' : currentLang === 'en' ? 'System default folders cannot be deleted.' : '시스템 기본 폴더는 삭제할 수 없습니다.');
       }
     }
 
@@ -246,7 +248,7 @@ const TimelineView = () => {
           if (type === 'category') setSelectedFilter({ type: 'all', value: '전체', id: 'all' });
           else setSelectedFilter({ type: 'category', value: safeTagTree.find(c => String(c.id) === String(parentId))?.name, id: parentId });
         }
-        showToast('삭제되었습니다.');
+        showToast(currentLang === 'zh' ? '已删除。' : currentLang === 'en' ? 'Deleted successfully.' : '삭제되었습니다.');
       }
     } catch (e) { 
       console.error(e); 
@@ -270,11 +272,11 @@ const TimelineView = () => {
         if (selectedFilter.type === 'category' && selectedFilter.id === cat.id) {
           setSelectedFilter({ ...selectedFilter, value: newName });
         }
-        showToast('카테고리 이름이 변경되었습니다! ✨');
+        showToast(currentLang === 'zh' ? '分类名称已更新！✨' : currentLang === 'en' ? 'Category name updated! ✨' : '카테고리 이름이 변경되었습니다! ✨');
       }
     } catch (e) {
       console.error(e);
-      showToast('이름 변경에 실패했습니다.');
+      showToast(currentLang === 'zh' ? '更新名称失败。' : currentLang === 'en' ? 'Failed to update name.' : '이름 변경에 실패했습니다.');
     } finally {
       setEditingCategoryId(null);
     }
@@ -309,7 +311,7 @@ const TimelineView = () => {
           method: 'PUT',
           body: JSON.stringify({ categoryIds: orderedIds })
         });
-        showToast('카테고리 순서가 저장되었습니다! 🔄');
+        showToast(currentLang === 'zh' ? '分类排序已保存！🔄' : currentLang === 'en' ? 'Category order saved! 🔄' : '카테고리 순서가 저장되었습니다! 🔄');
       }
     } catch (err) {
       console.error("순서 저장 API 연동 실패:", err);
@@ -347,7 +349,7 @@ const TimelineView = () => {
             onClick={() => setIsEditing(!isEditing)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
           >
-            {isEditing ? <><CloseIcon size={14}/> 편집 완료</> : <><Edit2 size={14}/> 트리 편집</>}
+            {isEditing ? <><CloseIcon size={14}/> {currentLang === 'zh' ? '完成' : currentLang === 'en' ? 'Done' : '편집 완료'}</> : <><Edit2 size={14}/> {currentLang === 'zh' ? '编辑分类' : currentLang === 'en' ? 'Edit Tree' : '트리 편집'}</>}
           </button>
         )}
       </header>
@@ -388,10 +390,10 @@ const TimelineView = () => {
           {safeRecords.length > 0 && filteredRecords.length === 0 && (
             <div className="text-center py-16 md:py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed flex flex-col items-center gap-3">
               <FolderOpen size={32} className="text-zinc-300" />
-              해당 분류의 기록이 없습니다.
+              {t('timeline.empty_category', '해당 분류의 기록이 없습니다.')}
               {isAdmin && !isGuestMode && (
                 <button onClick={() => setAddRecordModalOpen(true)} className="mt-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm hover:bg-indigo-100 transition">
-                  새 기록 추가하기
+                  {t('timeline.add_record', '새 기록 작성')}
                 </button>
               )}
             </div>

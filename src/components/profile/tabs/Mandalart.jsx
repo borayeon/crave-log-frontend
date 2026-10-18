@@ -1,7 +1,9 @@
 import React from 'react';
 import { Compass } from 'lucide-react';
+import { useAppStore } from '../../../store/AppStore';
 
 const Mandalart = ({ visionData, isEditMode = false, updateNested }) => {
+  const { currentLang } = useAppStore();
   const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
   const v = {
       core: visionData?.core || defaultVision.core,
@@ -49,7 +51,7 @@ const Mandalart = ({ visionData, isEditMode = false, updateNested }) => {
           
           <div className="text-center mb-8 relative z-10">
               <h3 className="text-2xl md:text-3xl font-black mb-2 flex items-center justify-center gap-2"><Compass className="text-violet-400"/> {isEditMode ? 'Mandalart Editor' : 'Mandalart'}</h3>
-              <p className="text-violet-200/80 text-[11px] font-medium uppercase tracking-widest">나의 비전을 이루기 위한 81가지 세부 계획{isEditMode && '을 수정하세요'}</p>
+              <p className="text-violet-200/80 text-[11px] font-medium uppercase tracking-widest">{currentLang === 'zh' ? `为实现我的愿景而制定的81项细化计划${isEditMode ? '（可编辑）' : ''}` : currentLang === 'en' ? `81 detailed plans to realize my vision${isEditMode ? ' (editable)' : ''}` : `나의 비전을 이루기 위한 81가지 세부 계획${isEditMode ? '을 수정하세요' : ''}`}</p>
           </div>
           <div className={`${isEditMode ? 'min-w-[650px]' : 'w-full'} max-w-2xl mx-auto aspect-square grid grid-cols-3 gap-1 md:gap-1.5 p-1.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 relative z-10 shadow-2xl`}>
               {blocks.map((block, bIdx) => (
@@ -57,19 +59,19 @@ const Mandalart = ({ visionData, isEditMode = false, updateNested }) => {
                       {block.map((cell, cIdx) => {
                           let bg = isEditMode ? "bg-white/95 hover:bg-white focus:bg-white" : "bg-white/95";
                           let textClass = "text-slate-800 font-bold";
-                          let placeholder = "세부 계획";
+                          let placeholder = currentLang === 'zh' ? '详细计划' : currentLang === 'en' ? 'Detail plan' : '세부 계획';
                           let onChange = null;
                           let disabled = !isEditMode;
 
                           if (cell.t === 'core') {
                               bg = isEditMode ? "bg-violet-500 hover:bg-violet-400 focus:bg-violet-400 z-10 shadow-md" : "bg-violet-500 shadow-lg z-10";
                               textClass = "text-white font-black text-[9px] sm:text-[11px] md:text-sm";
-                              placeholder = "최종 목표";
+                              placeholder = currentLang === 'zh' ? '最终目标' : currentLang === 'en' ? 'Core goal' : '최종 목표';
                               onChange = (e) => handleCoreChange(e.target.value);
                           } else if (cell.t === 'sub') {
                               bg = isEditMode ? "bg-violet-100 hover:bg-violet-50 focus:bg-violet-50" : "bg-violet-50";
                               textClass = "text-violet-900 font-black text-[8px] sm:text-[10px] md:text-sm";
-                              placeholder = "핵심 요건";
+                              placeholder = currentLang === 'zh' ? '核心要素' : currentLang === 'en' ? 'Sub goal' : '핵심 요건';
                               onChange = (e) => handleSubChange(cell.idx, e.target.value);
                           } else if (cell.t === 'sub-readonly') {
                               bg = isEditMode ? "bg-violet-200/80 cursor-not-allowed" : "bg-violet-50";

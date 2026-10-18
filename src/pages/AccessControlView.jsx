@@ -7,7 +7,7 @@ import {
 import { useAppStore } from '../store/AppStore';
 
 const AccessControlView = () => {
-  const { apiFetch, showToast, records, fetchAllData } = useAppStore();
+  const { apiFetch, showToast, records, fetchAllData, t, currentLang } = useAppStore();
   const [activeTab, setActiveTab] = useState('records'); // 'records' | 'followers'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -79,15 +79,19 @@ const AccessControlView = () => {
             ? { ...r, visibilityLevel: targetLevel, isPublic: targetLevel === 0 }
             : r
         ));
-        const levelNames = { 0: '전체 공개(0단계)', 1: '팔로워 공개(1단계)', 4: '비공개(4단계)' };
-        showToast(`🔒 ${levelNames[targetLevel]}로 변경되었습니다.`);
+        const levelNames = { 
+          0: currentLang === 'zh' ? '公开(第0级)' : currentLang === 'en' ? 'Public (Level 0)' : '전체 공개(0단계)', 
+          1: currentLang === 'zh' ? '仅关注者(第1级)' : currentLang === 'en' ? 'Followers Only (Level 1)' : '팔로워 공개(1단계)', 
+          4: currentLang === 'zh' ? '私密(第4级)' : currentLang === 'en' ? 'Private (Level 4)' : '비공개(4단계)' 
+        };
+        showToast(currentLang === 'zh' ? `🔒 已更改为 ${levelNames[targetLevel]}。` : currentLang === 'en' ? `🔒 Changed to ${levelNames[targetLevel]}.` : `🔒 ${levelNames[targetLevel]}로 변경되었습니다.`);
         fetchAllData(true);
       } else {
-        showToast('공개 범위 변경에 실패했습니다.');
+        showToast(currentLang === 'zh' ? '更改公开范围失败。' : currentLang === 'en' ? 'Failed to update visibility.' : '공개 범위 변경에 실패했습니다.');
       }
     } catch (err) {
       console.error('Visibility update error:', err);
-      showToast('오류가 발생했습니다.');
+      showToast(currentLang === 'zh' ? '发生错误。' : currentLang === 'en' ? 'An error occurred.' : '오류가 발생했습니다.');
     }
   };
 
@@ -96,7 +100,7 @@ const AccessControlView = () => {
     e.preventDefault();
     if (!pinModalRecord) return;
     if (!newPin.trim()) {
-      showToast('비밀번호를 입력해주세요.');
+      showToast(currentLang === 'zh' ? '请输入访问密码。' : currentLang === 'en' ? 'Please enter a passcode.' : '비밀번호를 입력해주세요.');
       return;
     }
 
@@ -116,16 +120,16 @@ const AccessControlView = () => {
             ? { ...r, visibilityLevel: 2, isPublic: false }
             : r
         ));
-        showToast('🔐 비밀 공개(2단계) 설정 및 PIN 저장이 완료되었습니다.');
+        showToast(currentLang === 'zh' ? '🔐 已成功设置秘密公开(第2级)并保存PIN。' : currentLang === 'en' ? '🔐 Secret access (Level 2) and PIN saved.' : '🔐 비밀 공개(2단계) 설정 및 PIN 저장이 완료되었습니다.');
         setPinModalRecord(null);
         setNewPin('');
         fetchAllData(true);
       } else {
-        showToast('설정 저장에 실패했습니다.');
+        showToast(currentLang === 'zh' ? '保存设置失败。' : currentLang === 'en' ? 'Failed to save settings.' : '설정 저장에 실패했습니다.');
       }
     } catch (err) {
       console.error('Save pin error:', err);
-      showToast('오류가 발생했습니다.');
+      showToast(currentLang === 'zh' ? '发生错误。' : currentLang === 'en' ? 'An error occurred.' : '오류가 발생했습니다.');
     } finally {
       setIsSavingPin(false);
     }
@@ -133,13 +137,18 @@ const AccessControlView = () => {
 
   // 2. 팔로워 끊기 (삭제)
   const handleRemoveFollower = async (followerId) => {
-    if (!window.confirm('이 사용자의 팔로우를 해제하시겠습니까? (상대방은 더 이상 내 팔로워 공개 글을 볼 수 없습니다)')) return;
+    const confirmMsg = currentLang === 'zh' 
+      ? '确定要移除该关注者吗？（对方将无法查看您的关注者专属记录）' 
+      : currentLang === 'en' 
+      ? 'Remove this follower? (They will no longer be able to view your follower-only records)' 
+      : '이 사용자의 팔로우를 해제하시겠습니까? (상대방은 더 이상 내 팔로워 공개 글을 볼 수 없습니다)';
+    if (!window.confirm(confirmMsg)) return;
 
     try {
       const res = await apiFetch(`/me/followers/${followerId}`, { method: 'DELETE' });
       if (res?.ok) {
         setFollowers(prev => prev.filter(f => f.id !== followerId));
-        showToast('팔로워가 삭제되었습니다.');
+        showToast(currentLang === 'zh' ? '关注者已移除。' : currentLang === 'en' ? 'Follower removed.' : '팔로워가 삭제되었습니다.');
       }
     } catch (err) {
       console.error('Remove follower error:', err);
@@ -152,7 +161,7 @@ const AccessControlView = () => {
       const res = await apiFetch(`/users/${targetHandle}/follow`, { method: 'DELETE' });
       if (res?.ok) {
         setFollowings(prev => prev.filter(f => f.handle !== targetHandle));
-        showToast(`@${targetHandle} 팔로우를 취소했습니다.`);
+        showToast(`@${targetHandle} ${currentLang === 'zh' ? '已取消关注。' : currentLang === 'en' ? 'unfollowed.' : '팔로우를 취소했습니다.'}`);
       }
     } catch (err) {
       console.error('Unfollow error:', err);
@@ -183,10 +192,14 @@ const AccessControlView = () => {
             </div>
 
             <h3 className="text-base font-black text-zinc-900 tracking-tight">
-              2단계 비밀 공개 PIN 설정
+              {currentLang === 'zh' ? '设置第2级密码保护 PIN' : currentLang === 'en' ? 'Set Level 2 PIN Passcode' : '2단계 비밀 공개 PIN 설정'}
             </h3>
             <p className="text-xs text-zinc-500 font-semibold mt-1 mb-5 break-keep">
-              &quot;{pinModalRecord.title}&quot; 기록을 열람할 수 있는 비밀번호(PIN)를 입력하세요.
+              {currentLang === 'zh' 
+                ? `请输入查看 "${pinModalRecord.title}" 记录所需的密码(PIN)。` 
+                : currentLang === 'en' 
+                ? `Enter the passcode (PIN) required to view "${pinModalRecord.title}".` 
+                : `"${pinModalRecord.title}" 기록을 열람할 수 있는 비밀번호(PIN)를 입력하세요.`}
             </p>
 
             <form onSubmit={handleSavePin} className="space-y-4">
@@ -196,11 +209,11 @@ const AccessControlView = () => {
                   autoFocus
                   value={newPin}
                   onChange={e => setNewPin(e.target.value)}
-                  placeholder="새 비밀번호 입력 (예: 1234)"
+                  placeholder={currentLang === 'zh' ? '输入新密码 (例: 1234)' : currentLang === 'en' ? 'Enter new passcode (e.g. 1234)' : '새 비밀번호 입력 (예: 1234)'}
                   className="w-full bg-zinc-50 border border-zinc-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-2xl py-3 px-4 text-sm font-black tracking-widest text-zinc-900 outline-none transition-all"
                 />
                 <p className="text-[11px] text-zinc-400 font-medium mt-2">
-                  이 비밀번호를 알고 있는 사람만 해당 기록을 열람할 수 있습니다.
+                  {currentLang === 'zh' ? '只有知晓此密码的用户才能查看该记录。' : currentLang === 'en' ? 'Only people who know this passcode can view this record.' : '이 비밀번호를 알고 있는 사람만 해당 기록을 열람할 수 있습니다.'}
                 </p>
               </div>
 
@@ -210,14 +223,14 @@ const AccessControlView = () => {
                   onClick={() => setPinModalRecord(null)}
                   className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 rounded-xl text-xs font-black transition-all"
                 >
-                  취소
+                  {currentLang === 'zh' ? '取消' : currentLang === 'en' ? 'Cancel' : '취소'}
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingPin || !newPin.trim()}
                   className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  {isSavingPin ? <Loader2 size={16} className="animate-spin" /> : '비밀 공개 저장'}
+                  {isSavingPin ? <Loader2 size={16} className="animate-spin" /> : (currentLang === 'zh' ? '保存密码设置' : currentLang === 'en' ? 'Save PIN' : '비밀 공개 저장')}
                 </button>
               </div>
             </form>
@@ -235,10 +248,14 @@ const AccessControlView = () => {
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-2.5">
-            기록 공개 권한 및 팔로우 관리
+            {currentLang === 'zh' ? '记录访问权限与关注管理' : currentLang === 'en' ? 'Access Control & Follower Management' : '기록 공개 권한 및 팔로우 관리'}
           </h1>
           <p className="text-xs md:text-sm text-zinc-500 font-semibold mt-1">
-            내 기록의 공개 범위(0단계 전체공개 ~ 4단계 비공개)를 설정하고, 나를 팔로우하는 관계를 안전하게 관리합니다.
+            {currentLang === 'zh' 
+              ? '设置记录公开范围（第0级公开 ~ 第4级私密），安全管理关注关系。' 
+              : currentLang === 'en' 
+              ? 'Set visibility levels (Level 0 Public ~ Level 4 Private) and manage followers securely.' 
+              : '내 기록의 공개 범위(0단계 전체공개 ~ 4단계 비공개)를 설정하고, 나를 팔로우하는 관계를 안전하게 관리합니다.'}
           </p>
         </div>
 
@@ -253,7 +270,7 @@ const AccessControlView = () => {
             }`}
           >
             <Lock size={14} className={activeTab === 'records' ? 'text-indigo-600' : ''} />
-            기록 공개범위 설정 ({localRecords.length})
+            {currentLang === 'zh' ? `记录公开设置 (${localRecords.length})` : currentLang === 'en' ? `Record Visibility (${localRecords.length})` : `기록 공개범위 설정 (${localRecords.length})`}
           </button>
           <button
             onClick={() => setActiveTab('followers')}
@@ -264,7 +281,7 @@ const AccessControlView = () => {
             }`}
           >
             <Users size={14} className={activeTab === 'followers' ? 'text-indigo-600' : ''} />
-            팔로우 관리 ({followers.length})
+            {currentLang === 'zh' ? `关注管理 (${followers.length})` : currentLang === 'en' ? `Follow Management (${followers.length})` : `팔로우 관리 (${followers.length})`}
           </button>
         </div>
       </div>
@@ -277,34 +294,34 @@ const AccessControlView = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-white p-3.5 rounded-2xl border border-zinc-200/80 shadow-sm">
               <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider flex items-center gap-1.5">
-                <Globe size={13} /> 0단계 전체공개
+                <Globe size={13} /> {currentLang === 'zh' ? '0级 全部公开' : currentLang === 'en' ? 'Level 0 Public' : '0단계 전체공개'}
               </span>
-              <p className="text-xs font-bold text-zinc-700 mt-1">누구나 열람 가능</p>
-              <p className="text-[10px] text-zinc-400 mt-0.5">손님(GUEST) 포함 전체 오픈</p>
+              <p className="text-xs font-bold text-zinc-700 mt-1">{currentLang === 'zh' ? '所有人均可访问' : currentLang === 'en' ? 'Anyone can view' : '누구나 열람 가능'}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">{currentLang === 'zh' ? '包含访客在内的所有人' : currentLang === 'en' ? 'Open to everyone including guests' : '손님(GUEST) 포함 전체 오픈'}</p>
             </div>
 
             <div className="bg-white p-3.5 rounded-2xl border border-zinc-200/80 shadow-sm">
               <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider flex items-center gap-1.5">
-                <Users size={13} /> 1단계 팔로워공개
+                <Users size={13} /> {currentLang === 'zh' ? '1级 仅关注者' : currentLang === 'en' ? 'Level 1 Followers' : '1단계 팔로워공개'}
               </span>
-              <p className="text-xs font-bold text-zinc-700 mt-1">팔로워만 열람 가능</p>
-              <p className="text-[10px] text-zinc-400 mt-0.5">나를 팔로우한 유저 전용</p>
+              <p className="text-xs font-bold text-zinc-700 mt-1">{currentLang === 'zh' ? '仅关注者可访问' : currentLang === 'en' ? 'Followers only' : '팔로워만 열람 가능'}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">{currentLang === 'zh' ? '专供关注您的用户' : currentLang === 'en' ? 'Only users who follow you' : '나를 팔로우한 유저 전용'}</p>
             </div>
 
             <div className="bg-white p-3.5 rounded-2xl border border-zinc-200/80 shadow-sm">
               <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider flex items-center gap-1.5">
-                <KeyRound size={13} /> 2단계 비밀공개
+                <KeyRound size={13} /> {currentLang === 'zh' ? '2级 密码保护' : currentLang === 'en' ? 'Level 2 PIN Protected' : '2단계 비밀공개'}
               </span>
-              <p className="text-xs font-bold text-zinc-700 mt-1">비밀번호(PIN) 필요</p>
-              <p className="text-[10px] text-zinc-400 mt-0.5">암호 입력자만 열람</p>
+              <p className="text-xs font-bold text-zinc-700 mt-1">{currentLang === 'zh' ? '需要访问密码(PIN)' : currentLang === 'en' ? 'Passcode (PIN) required' : '비밀번호(PIN) 필요'}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">{currentLang === 'zh' ? '仅输入正确密码可看' : currentLang === 'en' ? 'Unlocked by PIN entry' : '암호 입력자만 열람'}</p>
             </div>
 
             <div className="bg-white p-3.5 rounded-2xl border border-zinc-200/80 shadow-sm">
               <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1.5">
-                <Lock size={13} /> 4단계 비공개
+                <Lock size={13} /> {currentLang === 'zh' ? '4级 私密' : currentLang === 'en' ? 'Level 4 Private' : '4단계 비공개'}
               </span>
-              <p className="text-xs font-bold text-zinc-700 mt-1">나만 보기</p>
-              <p className="text-[10px] text-zinc-400 mt-0.5">외부에 절대 노출 안 됨</p>
+              <p className="text-xs font-bold text-zinc-700 mt-1">{currentLang === 'zh' ? '仅自己可见' : currentLang === 'en' ? 'Only me' : '나만 보기'}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">{currentLang === 'zh' ? '不对任何外部人员展示' : currentLang === 'en' ? 'Completely hidden externally' : '외부에 절대 노출 안 됨'}</p>
             </div>
           </div>
 
@@ -316,11 +333,13 @@ const AccessControlView = () => {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="기록 제목이나 카테고리로 검색..."
+                placeholder={currentLang === 'zh' ? '按记录标题或分类搜索...' : currentLang === 'en' ? 'Search by title or category...' : '기록 제목이나 카테고리로 검색...'}
                 className="w-full bg-white border border-zinc-200/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-2xl py-2 pl-10 pr-4 text-xs font-bold text-zinc-800 outline-none transition-all shadow-sm"
               />
             </div>
-            <span className="text-xs font-bold text-zinc-400">총 {filteredRecords.length}개 기록</span>
+            <span className="text-xs font-bold text-zinc-400">
+              {currentLang === 'zh' ? `共 ${filteredRecords.length} 条记录` : currentLang === 'en' ? `Total ${filteredRecords.length} records` : `총 ${filteredRecords.length}개 기록`}
+            </span>
           </div>
 
           {/* 기록 목록 테이블/카드 */}
@@ -344,19 +363,19 @@ const AccessControlView = () => {
                         />
                       ) : (
                         <div className="w-14 h-14 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-400 shrink-0 font-bold text-xs">
-                          {rec.category?.charAt(0) || '기록'}
+                          {rec.category?.charAt(0) || (currentLang === 'zh' ? '记' : currentLang === 'en' ? 'R' : '기')}
                         </div>
                       )}
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="px-2 py-0.5 rounded-md bg-zinc-100 border border-zinc-200/60 text-[10px] font-black text-zinc-600">
-                            {rec.category || '기본'}
+                            {rec.category || (currentLang === 'zh' ? '常规' : currentLang === 'en' ? 'General' : '기본')}
                           </span>
                           <span className="text-[11px] font-bold text-zinc-400">{rec.date}</span>
                         </div>
                         <h4 className="text-sm font-black text-zinc-900 truncate tracking-tight">{rec.title}</h4>
-                        <p className="text-xs text-zinc-500 font-medium truncate mt-0.5">{rec.content || '작성된 내용 없음'}</p>
+                        <p className="text-xs text-zinc-500 font-medium truncate mt-0.5">{rec.content || (currentLang === 'zh' ? '暂无内容' : currentLang === 'en' ? 'No content' : '작성된 내용 없음')}</p>
                       </div>
                     </div>
 
@@ -370,10 +389,10 @@ const AccessControlView = () => {
                             ? 'bg-emerald-500 text-white shadow-sm'
                             : 'text-zinc-500 hover:text-zinc-800'
                         }`}
-                        title="0단계: 누구나 열람 가능"
+                        title={currentLang === 'zh' ? '第0级: 所有人均可访问' : currentLang === 'en' ? 'Level 0: Anyone can view' : '0단계: 누구나 열람 가능'}
                       >
                         <Globe size={13} />
-                        <span className="hidden sm:inline">0단계</span> 전체
+                        <span className="hidden sm:inline">{currentLang === 'zh' ? '0级' : currentLang === 'en' ? 'Lvl 0' : '0단계'}</span> {currentLang === 'zh' ? '公开' : currentLang === 'en' ? 'Public' : '전체'}
                       </button>
 
                       {/* 1단계 팔로워공개 */}
@@ -384,10 +403,10 @@ const AccessControlView = () => {
                             ? 'bg-indigo-600 text-white shadow-sm'
                             : 'text-zinc-500 hover:text-zinc-800'
                         }`}
-                        title="1단계: 나를 팔로우한 유저만 열람 가능"
+                        title={currentLang === 'zh' ? '第1级: 仅限关注者访问' : currentLang === 'en' ? 'Level 1: Followers only' : '1단계: 나를 팔로우한 유저만 열람 가능'}
                       >
                         <Users size={13} />
-                        <span className="hidden sm:inline">1단계</span> 팔로워
+                        <span className="hidden sm:inline">{currentLang === 'zh' ? '1级' : currentLang === 'en' ? 'Lvl 1' : '1단계'}</span> {currentLang === 'zh' ? '关注者' : currentLang === 'en' ? 'Followers' : '팔로워'}
                       </button>
 
                       {/* 2단계 비밀공개 */}
@@ -398,10 +417,10 @@ const AccessControlView = () => {
                             ? 'bg-amber-500 text-white shadow-sm'
                             : 'text-zinc-500 hover:text-zinc-800'
                         }`}
-                        title="2단계: 비밀번호(PIN) 입력자만 열람 가능"
+                        title={currentLang === 'zh' ? '第2级: 输入密码后访问' : currentLang === 'en' ? 'Level 2: PIN protected' : '2단계: 비밀번호(PIN) 입력자만 열람 가능'}
                       >
                         <KeyRound size={13} />
-                        <span className="hidden sm:inline">2단계</span> 비밀
+                        <span className="hidden sm:inline">{currentLang === 'zh' ? '2级' : currentLang === 'en' ? 'Lvl 2' : '2단계'}</span> {currentLang === 'zh' ? '密码' : currentLang === 'en' ? 'PIN' : '비밀'}
                       </button>
 
                       {/* 4단계 비공개 */}
@@ -412,10 +431,10 @@ const AccessControlView = () => {
                             ? 'bg-zinc-700 text-white shadow-sm'
                             : 'text-zinc-500 hover:text-zinc-800'
                         }`}
-                        title="4단계: 나만 보기 (외부 완전 차단)"
+                        title={currentLang === 'zh' ? '第4级: 仅自己可见 (外部完全屏蔽)' : currentLang === 'en' ? 'Level 4: Private (Completely hidden)' : '4단계: 나만 보기 (외부 완전 차단)'}
                       >
                         <Lock size={13} />
-                        <span className="hidden sm:inline">4단계</span> 비공개
+                        <span className="hidden sm:inline">{currentLang === 'zh' ? '4级' : currentLang === 'en' ? 'Lvl 4' : '4단계'}</span> {currentLang === 'zh' ? '私密' : currentLang === 'en' ? 'Private' : '비공개'}
                       </button>
                     </div>
 
@@ -424,7 +443,9 @@ const AccessControlView = () => {
               })
             ) : (
               <div className="bg-white rounded-2xl p-12 text-center border border-zinc-200/80">
-                <p className="text-sm font-bold text-zinc-400">등록된 기록이 없거나 검색 결과가 없습니다.</p>
+                <p className="text-sm font-bold text-zinc-400">
+                  {currentLang === 'zh' ? '暂无记录或未找到搜索结果。' : currentLang === 'en' ? 'No records found.' : '등록된 기록이 없거나 검색 결과가 없습니다.'}
+                </p>
               </div>
             )}
           </div>
@@ -447,7 +468,7 @@ const AccessControlView = () => {
                     : 'border-transparent text-zinc-400 hover:text-zinc-700'
                 }`}
               >
-                나의 팔로워 ({followers.length}명)
+                {currentLang === 'zh' ? `我的关注者 (${followers.length})` : currentLang === 'en' ? `My Followers (${followers.length})` : `나의 팔로워 (${followers.length}명)`}
               </button>
               <button
                 onClick={() => setFollowSubTab('followings')}
@@ -457,7 +478,7 @@ const AccessControlView = () => {
                     : 'border-transparent text-zinc-400 hover:text-zinc-700'
                 }`}
               >
-                내가 팔로우 중 ({followings.length}명)
+                {currentLang === 'zh' ? `我关注的人 (${followings.length})` : currentLang === 'en' ? `Following (${followings.length})` : `내가 팔로우 중 (${followings.length}명)`}
               </button>
             </div>
 
@@ -465,7 +486,7 @@ const AccessControlView = () => {
               onClick={loadFollowData}
               disabled={isFollowLoading}
               className="p-2 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 rounded-xl transition-colors"
-              title="새로고침"
+              title={currentLang === 'zh' ? '刷新' : currentLang === 'en' ? 'Refresh' : '새로고침'}
             >
               <RefreshCw size={16} className={isFollowLoading ? 'animate-spin text-indigo-600' : ''} />
             </button>
@@ -503,13 +524,15 @@ const AccessControlView = () => {
                       onClick={() => handleRemoveFollower(f.id)}
                       className="px-3 py-1.5 bg-zinc-50 hover:bg-rose-50 border border-zinc-200 hover:border-rose-200 text-zinc-600 hover:text-rose-600 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0"
                     >
-                      <UserX size={14} /> 팔로워 끊기
+                      <UserX size={14} /> {currentLang === 'zh' ? '移除关注者' : currentLang === 'en' ? 'Remove' : '팔로워 끊기'}
                     </button>
                   </div>
                 ))
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border border-zinc-200/80">
-                  <p className="text-sm font-bold text-zinc-400">아직 나를 팔로우한 사용자가 없습니다.</p>
+                  <p className="text-sm font-bold text-zinc-400">
+                    {currentLang === 'zh' ? '还没有用户关注您。' : currentLang === 'en' ? 'No followers yet.' : '아직 나를 팔로우한 사용자가 없습니다.'}
+                  </p>
                 </div>
               )}
             </div>
@@ -546,13 +569,15 @@ const AccessControlView = () => {
                       onClick={() => handleUnfollow(f.handle)}
                       className="px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0"
                     >
-                      <UserMinus size={14} /> 언팔로우
+                      <UserMinus size={14} /> {currentLang === 'zh' ? '取消关注' : currentLang === 'en' ? 'Unfollow' : '언팔로우'}
                     </button>
                   </div>
                 ))
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border border-zinc-200/80">
-                  <p className="text-sm font-bold text-zinc-400">내가 팔로우 중인 사용자가 없습니다.</p>
+                  <p className="text-sm font-bold text-zinc-400">
+                    {currentLang === 'zh' ? '您还没有关注任何用户。' : currentLang === 'en' ? 'Not following anyone yet.' : '내가 팔로우 중인 사용자가 없습니다.'}
+                  </p>
                 </div>
               )}
             </div>

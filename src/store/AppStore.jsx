@@ -391,7 +391,7 @@ export const AppProvider = ({ children }) => {
     async (targetHandle) => {
       // ⭐️ 관리자(Admin) 계정 프로필 접근 원천 방어
       if (targetHandle === 'admin_craver' || targetHandle?.toLowerCase().includes('admin')) {
-        showToast('존재하지 않는 사용자입니다.');
+        showToast(currentLang === 'zh' ? '用户不存在。' : currentLang === 'en' ? 'User does not exist.' : '존재하지 않는 사용자입니다.');
         return;
       }
 
@@ -408,7 +408,7 @@ export const AppProvider = ({ children }) => {
 
       await fetchAllData(false, targetHandle);
     },
-    [fetchAllData, showToast]
+    [fetchAllData, showToast, currentLang]
   );
 
   // -------------------------------------------------------
@@ -419,7 +419,7 @@ export const AppProvider = ({ children }) => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         setLoginModalOpen(true);
-        showToast('로그인이 필요한 서비스입니다. 🔒');
+        showToast(currentLang === 'zh' ? '该服务需要登录。🔒' : currentLang === 'en' ? 'Login is required for this service. 🔒' : '로그인이 필요한 서비스입니다. 🔒');
         return;
       }
 
@@ -466,18 +466,18 @@ export const AppProvider = ({ children }) => {
           setViewMode('search');
         } else {
           setSearchResults([]);
-          showToast('검색에 실패했습니다.');
+          showToast(currentLang === 'zh' ? '搜索失败。' : currentLang === 'en' ? 'Search failed.' : '검색에 실패했습니다.');
         }
       } catch (error) {
         console.error('검색 에러:', error);
 
         setSearchResults([]);
-        showToast('서버 오류가 발생했습니다.');
+        showToast(currentLang === 'zh' ? '服务器发生错误。' : currentLang === 'en' ? 'A server error occurred.' : '서버 오류가 발생했습니다.');
       } finally {
         setIsLoading(false);
       }
     },
-    [apiFetch, showToast]
+    [apiFetch, showToast, currentLang]
   );
 
   // -------------------------------------------------------
@@ -503,8 +503,8 @@ export const AppProvider = ({ children }) => {
       window.location.pathname
     );
 
-    showToast("로그아웃 되었습니다. 👋");
-  }, [showToast]);
+    showToast(currentLang === 'zh' ? '已退出登录。👋' : currentLang === 'en' ? 'Logged out. 👋' : '로그아웃 되었습니다. 👋');
+  }, [showToast, currentLang]);
 
   // -------------------------------------------------------
   // 최초 진입
@@ -537,7 +537,7 @@ export const AppProvider = ({ children }) => {
           window.location.pathname
         );
 
-        showToast('로그인 성공! 환영합니다. 🎉');
+        showToast(currentLang === 'zh' ? '登录成功！欢迎。🎉' : currentLang === 'en' ? 'Login successful! Welcome. 🎉' : '로그인 성공! 환영합니다. 🎉');
 
         if (!cancelled) {
           await fetchAllData(false, '');
@@ -557,7 +557,7 @@ export const AppProvider = ({ children }) => {
         );
 
         showToast(
-          '로그인 실패: ' +
+          (currentLang === 'zh' ? '登录失败: ' : currentLang === 'en' ? 'Login failed: ' : '로그인 실패: ') +
             decodeURIComponent(error)
         );
 

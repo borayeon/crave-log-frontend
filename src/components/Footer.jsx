@@ -1,7 +1,10 @@
 import React from 'react';
 import { Mail, ShieldCheck } from 'lucide-react';
+import { useAppStore } from '../store/AppStore';
 
 const Footer = () => {
+  const { t } = useAppStore();
+
   return (
     <footer className="mt-16 text-center pb-8 animate-in fade-in duration-500 shrink-0 w-full border-t border-zinc-200/60 pt-6">
       
@@ -13,7 +16,7 @@ const Footer = () => {
           rel="noopener noreferrer" 
           className="hover:text-zinc-600 transition-colors"
         >
-          이용약관
+          {t('footer.terms', '이용약관')}
         </a>
         <span className="text-zinc-300 hidden sm:inline">|</span>
         
@@ -23,11 +26,11 @@ const Footer = () => {
           rel="noopener noreferrer" 
           className="text-zinc-500 hover:text-zinc-700 transition-colors"
         >
-          개인정보처리방침
+          {t('footer.privacy', '개인정보처리방침')}
         </a>
         <span className="text-zinc-300 hidden sm:inline">|</span>
 
-        {/* ⭐️ 라이선스 및 크레딧 표기 (추후 Notion 페이지 만들어서 href 수정) */}
+        {/* ⭐️ 라이선스 및 크레딧 표기 */}
         <a 
           href="https://possible-lungfish-74d.notion.site/Licenses-Credits-3c56310e41b180db862afaf3297ab599?source=copy_link" 
           target="_blank" 
@@ -35,17 +38,17 @@ const Footer = () => {
           className="hover:text-zinc-600 transition-colors flex items-center gap-1"
         >
           <ShieldCheck size={12} />
-          <span>라이선스 및 크레딧</span>
+          <span>{t('footer.licenses', '라이선스 및 크레딧')}</span>
         </a>
         <span className="text-zinc-300 hidden sm:inline">|</span>
 
-        {/* ⭐️ 연락처 (mailto: 이메일 주소 수정) */}
+        {/* ⭐️ 연락처 */}
         <a 
           href="mailto:retsbe13@gmail.com" 
           className="hover:text-zinc-600 transition-colors flex items-center gap-1"
         >
           <Mail size={12} />
-          <span>Contact Us</span>
+          <span>{t('footer.contact', 'Contact Us')}</span>
         </a>
       </div>
 

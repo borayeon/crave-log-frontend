@@ -8,15 +8,15 @@ import { useAppStore } from '../../store/AppStore';
 import { DEFAULT_PERSONAS } from '../../pages/EditProfileView';
 
 // ⭐️ 시작 페르소나 프리셋 목록 정의
-export const ONBOARDING_PERSONAS = [
+export const getOnboardingPersonas = (currentLang = 'ko') => [
   {
     id: 'portfolio',
     emoji: '💼',
-    name: '개발자 & 테크 포트폴리오',
+    name: currentLang === 'zh' ? '开发者 & 技术作品集' : currentLang === 'en' ? 'Developer & Tech Portfolio' : '개발자 & 테크 포트폴리오',
     subtitle: 'Developer & Career',
-    tagline: '전문성과 기술 역량을 어필하는 테크 중심 프로필',
-    desc: '기술 스택, 프로젝트 경험, 학력/경력 이력서, 디지털 명함으로 개발 커리어를 완벽하게 보여줍니다.',
-    tags: ['#개발자', '#이력서', '#포트폴리오', '#기술스택'],
+    tagline: currentLang === 'zh' ? '展示工程师专业实力与技术深度的科技风主页' : currentLang === 'en' ? 'Tech-focused profile highlighting engineering expertise' : '전문성과 기술 역량을 어필하는 테크 중심 프로필',
+    desc: currentLang === 'zh' ? '以技术栈、项目经历、学经历程与数字名片展示工程师专业实力。' : currentLang === 'en' ? 'Showcase tech stack, projects, resume, and digital business card.' : '기술 스택, 프로젝트 경험, 학력/경력 이력서, 디지털 명함으로 개발 커리어를 완벽하게 보여줍니다.',
+    tags: ['#Developer', '#Resume', '#Portfolio', '#TechStack'],
     color: 'from-blue-500 to-indigo-600',
     borderActive: 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/30',
     badgeBg: 'bg-indigo-100 text-indigo-700',
@@ -25,11 +25,11 @@ export const ONBOARDING_PERSONAS = [
   {
     id: 'social',
     emoji: '🍻',
-    name: '친목 & 소셜 네트워킹',
+    name: currentLang === 'zh' ? '社交 & 兴趣生活' : currentLang === 'en' ? 'Social & Lifestyle' : '친목 & 소셜 네트워킹',
     subtitle: 'Social & Lifestyle',
-    tagline: '나만의 매력과 취향을 자유롭게 표현하는 프로필',
-    desc: 'MBTI, 100문 100답 인터뷰, 즐겨하는 취미, 픽셀 도트 아트와 메모로 친근하고 매력적인 나를 소개합니다.',
-    tags: ['#친목', '#네트워킹', '#100문100답', '#취향기록'],
+    tagline: currentLang === 'zh' ? '自由展示个人魅力与独特品味的生动主页' : currentLang === 'en' ? 'Express personality and taste freely' : '나만의 매력과 취향을 자유롭게 표현하는 프로필',
+    desc: currentLang === 'zh' ? '通过MBTI、百问百答采访、爱好、像素画与随笔展现生动有趣的自己。' : currentLang === 'en' ? 'Express personality with MBTI, 100 Q&A interview, hobbies, and pixel dot art.' : 'MBTI, 100문 100답 인터뷰, 즐겨하는 취미, 픽셀 도트 아트와 메모로 친근하고 매력적인 나를 소개합니다.',
+    tags: ['#Social', '#Networking', '#QnA', '#Lifestyle'],
     color: 'from-amber-500 to-orange-500',
     borderActive: 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30',
     badgeBg: 'bg-amber-100 text-amber-800',
@@ -38,11 +38,11 @@ export const ONBOARDING_PERSONAS = [
   {
     id: 'vision',
     emoji: '💖',
-    name: '자기성장 & 비전 달성',
+    name: currentLang === 'zh' ? '自我成长与愿景规划' : currentLang === 'en' ? 'Growth & Mandalart' : '자기성장 & 비전 달성',
     subtitle: 'Growth & Mandalart',
-    tagline: '목표와 영감, 가치관을 시각화하는 성장 아카이브',
-    desc: '9x9 만다라트 목표 달성 계획표, 가슴을 울린 인생 명언집, 상세 소개와 Q&A로 성장의 여정을 기록합니다.',
-    tags: ['#자기계발', '#만다라트', '#목표달성', '#명언집'],
+    tagline: currentLang === 'zh' ? '将目标、灵感与核心价值观可视化的成长档案' : currentLang === 'en' ? 'Growth archive visualizing goals and values' : '목표와 영감, 가치관을 시각화하는 성장 아카이브',
+    desc: currentLang === 'zh' ? '用9x9曼陀罗目标计划表、人生名言录与成长笔记记录进阶之路。' : currentLang === 'en' ? 'Visualize goals with 9x9 Mandalart, inspiring quotes, and self-growth reflections.' : '9x9 만다라트 목표 달성 계획표, 가슴을 울린 인생 명언집, 상세 소개와 Q&A로 성장의 여정을 기록합니다.',
+    tags: ['#Growth', '#Mandalart', '#Vision', '#Quotes'],
     color: 'from-rose-500 to-pink-600',
     borderActive: 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30',
     badgeBg: 'bg-rose-100 text-rose-700',
@@ -51,11 +51,11 @@ export const ONBOARDING_PERSONAS = [
   {
     id: 'creator',
     emoji: '🎨',
-    name: '크리에이터 & 갤러리',
+    name: currentLang === 'zh' ? '创作者与灵感画廊' : currentLang === 'en' ? 'Creator & Archive' : '크리에이터 & 갤러리',
     subtitle: 'Creator & Archive',
-    tagline: '취미와 창작물, 영감을 모아두는 나만의 갤러리',
-    desc: '취미 사진 갤러리, 15x15 픽셀 아트 캔버스, 자유로운 생각 메모와 영감 문장들로 공간을 채웁니다.',
-    tags: ['#크리에이터', '#취미갤러리', '#도트아트', '#영감메모'],
+    tagline: currentLang === 'zh' ? '收录个人作品、兴趣爱好与灵感火花的专属展厅' : currentLang === 'en' ? 'Personal gallery gathering hobbies and creative inspirations' : '취미와 창작물, 영감을 모아두는 나만의 갤러리',
+    desc: currentLang === 'zh' ? '用兴趣相册画廊、15x15像素画布与创意灵感便签填满专属空间。' : currentLang === 'en' ? 'Fill your space with photo gallery, 15x15 dot art, and creative memos.' : '취미 사진 갤러리, 15x15 픽셀 아트 캔버스, 자유로운 생각 메모와 영감 문장들로 공간을 채웁니다.',
+    tags: ['#Creator', '#Gallery', '#DotArt', '#Memo'],
     color: 'from-purple-500 to-violet-600',
     borderActive: 'border-purple-500 ring-2 ring-purple-500/20 bg-purple-50/30',
     badgeBg: 'bg-purple-100 text-purple-700',
@@ -64,11 +64,11 @@ export const ONBOARDING_PERSONAS = [
   {
     id: 'minimal',
     emoji: '⚡',
-    name: '미니멀 & 직접 구성',
+    name: currentLang === 'zh' ? '极简主义与自主配置' : currentLang === 'en' ? 'Minimal & Custom' : '미니멀 & 직접 구성',
     subtitle: 'Minimal & Custom',
-    tagline: '가장 심플하게 시작하여 필요한 탭만 직접 추가',
-    desc: '핵심 기본 정보부터 가볍게 시작하며, 프로필 편집 화면에서 언제든 [+ 탭 추가]로 확장할 수 있습니다.',
-    tags: ['#심플', '#미니멀', '#자유구성', '#직접추가'],
+    tagline: currentLang === 'zh' ? '以最轻量的方式启程，仅添加必要的功能标签' : currentLang === 'en' ? 'Start simple and freely expand tabs anytime' : '가장 심플하게 시작하여 필요한 탭만 직접 추가',
+    desc: currentLang === 'zh' ? '从最核心的基础资料开始，随时可在编辑页面通过[+ 添加标签]扩展。' : currentLang === 'en' ? 'Start simple with essential info, and freely expand tabs anytime.' : '핵심 기본 정보부터 가볍게 시작하며, 프로필 편집 화면에서 언제든 [+ 탭 추가]로 확장할 수 있습니다.',
+    tags: ['#Simple', '#Minimal', '#Custom', '#AddTabs'],
     color: 'from-emerald-500 to-teal-600',
     borderActive: 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30',
     badgeBg: 'bg-emerald-100 text-emerald-700',
@@ -76,20 +76,24 @@ export const ONBOARDING_PERSONAS = [
   }
 ];
 
-// 각 서브 탭의 한글 레이블 및 아이콘 매핑
-const TAB_LABEL_MAP = {
-  developer: { label: 'Developer (개발자)', icon: <Code size={12} /> },
-  developer2: { label: 'Resume (이력서)', icon: <Terminal size={12} /> },
-  career: { label: 'Career (커리어)', icon: <Briefcase size={12} /> },
-  addProfile: { label: 'Profile (상세소개)', icon: <UserPlus size={12} /> },
-  businessCard: { label: 'Business Card (명함)', icon: <CreditCard size={12} /> },
-  qna: { label: 'Q&A (100문100답)', icon: <MessageSquare size={12} /> },
-  hobby: { label: 'Hobby (취미)', icon: <Palette size={12} /> },
-  vision: { label: 'Mandalart (만다라트)', icon: <Compass size={12} /> },
-  quotes: { label: 'Quotes (명언집)', icon: <Quote size={12} /> },
-  memo: { label: 'Memo (메모장)', icon: <FileText size={12} /> },
-  art: { label: 'Dot Art (도트아트)', icon: <Grid size={12} /> }
-};
+export const ONBOARDING_PERSONAS = getOnboardingPersonas('ko');
+
+// 각 서브 탭의 레이블 및 아이콘 매핑
+export const getTabLabelMap = (currentLang = 'ko') => ({
+  developer: { label: currentLang === 'zh' ? 'Developer (开发者)' : currentLang === 'en' ? 'Developer' : 'Developer (개발자)', icon: <Code size={12} /> },
+  developer2: { label: currentLang === 'zh' ? 'Resume (简历)' : currentLang === 'en' ? 'Resume' : 'Resume (이력서)', icon: <Terminal size={12} /> },
+  career: { label: currentLang === 'zh' ? 'Career (职业经历)' : currentLang === 'en' ? 'Career' : 'Career (커리어)', icon: <Briefcase size={12} /> },
+  addProfile: { label: currentLang === 'zh' ? 'Profile (个人介绍)' : currentLang === 'en' ? 'Profile' : 'Profile (상세소개)', icon: <UserPlus size={12} /> },
+  businessCard: { label: currentLang === 'zh' ? 'Business Card (数字名片)' : currentLang === 'en' ? 'Business Card' : 'Business Card (명함)', icon: <CreditCard size={12} /> },
+  qna: { label: currentLang === 'zh' ? 'Q&A (百问百答)' : currentLang === 'en' ? 'Q&A' : 'Q&A (100문100답)', icon: <MessageSquare size={12} /> },
+  hobby: { label: currentLang === 'zh' ? 'Hobby (兴趣爱好)' : currentLang === 'en' ? 'Hobby' : 'Hobby (취미)', icon: <Palette size={12} /> },
+  vision: { label: currentLang === 'zh' ? 'Mandalart (曼陀罗)' : currentLang === 'en' ? 'Mandalart' : 'Mandalart (만다라트)', icon: <Compass size={12} /> },
+  quotes: { label: currentLang === 'zh' ? 'Quotes (人生语录)' : currentLang === 'en' ? 'Quotes' : 'Quotes (명언집)', icon: <Quote size={12} /> },
+  memo: { label: currentLang === 'zh' ? 'Memo (思考便签)' : currentLang === 'en' ? 'Memo' : 'Memo (메모장)', icon: <FileText size={12} /> },
+  art: { label: currentLang === 'zh' ? 'Dot Art (像素艺术)' : currentLang === 'en' ? 'Dot Art' : 'Dot Art (도트아트)', icon: <Grid size={12} /> }
+});
+
+export const TAB_LABEL_MAP = getTabLabelMap('ko');
 
 const OnboardingPersonaModal = () => {
   const { 
@@ -99,15 +103,21 @@ const OnboardingPersonaModal = () => {
     apiFetch, 
     fetchAllData, 
     setViewMode, 
-    showToast 
+    showToast,
+    t,
+    currentLang 
   } = useAppStore();
 
   const [selectedPersonaId, setSelectedPersonaId] = useState('portfolio');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ⭐️ 다국어 지원이 적용된 시작 페르소나 및 서브 탭 매핑
+  const localizedPersonas = getOnboardingPersonas(currentLang);
+  const tabLabelMap = getTabLabelMap(currentLang);
+
   if (!onboardingModalOpen) return null;
 
-  const currentPersona = ONBOARDING_PERSONAS.find(p => p.id === selectedPersonaId) || ONBOARDING_PERSONAS[0];
+  const currentPersona = localizedPersonas.find(p => p.id === selectedPersonaId) || localizedPersonas[0];
 
   const ONBOARDING_TO_PERSONA_MAP = {
     portfolio: 'portfolio',
@@ -138,8 +148,8 @@ const OnboardingPersonaModal = () => {
           pObj.isActive = true;
           pObj.tabs = currentPersona.tabs;
           if (currentPersona.id === 'vision' && pKey === 'dating') {
-            pObj.name = '💖 비전 & 성장';
-            pObj.desc = '목표와 비전을 시각화하는 성장 아카이브';
+            pObj.name = currentLang === 'zh' ? '💖 愿景与成长' : currentLang === 'en' ? '💖 Vision & Growth' : '💖 비전 & 성장';
+            pObj.desc = currentLang === 'zh' ? '将目标与愿景可视化的成长档案' : currentLang === 'en' ? 'Growth archive visualizing goals and values' : '목표와 비전을 시각화하는 성장 아카이브';
           }
         } else {
           // ⭐️ 나머지 페르소나는 비활성화 처리
@@ -177,14 +187,14 @@ const OnboardingPersonaModal = () => {
         await fetchAllData();
         setOnboardingModalOpen(false);
         setViewMode('profile');
-        showToast(`🎉 '${currentPersona.name}' 모드로 설정되었습니다! 선택한 페르소나 외 나머지는 비활성화되었습니다.`);
+        showToast(currentLang === 'zh' ? `🎉 已成功设定为“${currentPersona.name}”模式！其余角色已自动停用。` : currentLang === 'en' ? `🎉 Configured to '${currentPersona.name}' mode! Other personas have been deactivated.` : `🎉 '${currentPersona.name}' 모드로 설정되었습니다! 선택한 페르소나 외 나머지는 비활성화되었습니다.`);
       } else {
         const err = await res.json().catch(() => ({}));
-        showToast(err.message || '설정 저장에 실패했습니다. 다시 시도해주세요.');
+        showToast(err.message || (currentLang === 'zh' ? '保存设置失败，请重试。' : currentLang === 'en' ? 'Failed to save settings. Please try again.' : '설정 저장에 실패했습니다. 다시 시도해주세요.'));
       }
     } catch (error) {
       console.error(error);
-      showToast('서버 연결 중 오류가 발생했습니다.');
+      showToast(currentLang === 'zh' ? '服务器连接发生错误。' : currentLang === 'en' ? 'Server connection error occurred.' : '서버 연결 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -192,7 +202,7 @@ const OnboardingPersonaModal = () => {
 
   const handleSkip = () => {
     setOnboardingModalOpen(false);
-    showToast('기본 프로필 모드로 시작합니다. 언제든 [+ 탭 추가]로 원하는 탭을 켤 수 있습니다.');
+    showToast(currentLang === 'zh' ? '以默认资料模式开始。您随时可通过 [+ 添加标签] 开启所需内容。' : currentLang === 'en' ? 'Starting in default profile mode. You can enable tabs anytime via [+ Add Tab].' : '기본 프로필 모드로 시작합니다. 언제든 [+ 탭 추가]로 원하는 탭을 켤 수 있습니다.');
   };
 
   return (
@@ -206,7 +216,7 @@ const OnboardingPersonaModal = () => {
           type="button"
           onClick={handleSkip}
           className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-full transition-colors z-10"
-          title="건너뛰기"
+          title={currentLang === 'zh' ? '跳过' : currentLang === 'en' ? 'Skip' : '건너뛰기'}
         >
           <CloseIcon size={20} />
         </button>
@@ -215,21 +225,20 @@ const OnboardingPersonaModal = () => {
         <div className="text-center pb-5 border-b border-zinc-100">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-black mb-2 shadow-2xs">
             <Sparkles size={14} className="animate-spin text-indigo-500" style={{ animationDuration: '4s' }} />
-            <span>CraveLog Welcome Guide</span>
+            <span>{t('onboarding.guide_badge', 'CraveLog Welcome Guide')}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight">
-            어떤 목적으로 프로필을 시작하시겠어요? ✨
+            {t('onboarding.main_q', '어떤 목적으로 프로필을 시작하시겠어요? ✨')}
           </h2>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1.5 max-w-lg mx-auto leading-relaxed">
-            선택하시는 목적에 맞추어 <strong className="text-zinc-800">꼭 필요한 서브 탭들을 자동으로 구성</strong>해드립니다.<br className="hidden sm:inline" />
-            (나중에 언제든지 탭을 자유롭게 추가하거나 숨길 수 있습니다.)
+            {t('onboarding.main_desc', '선택하시는 목적에 맞추어 꼭 필요한 서브 탭들을 자동으로 구성해드립니다.')}
           </p>
         </div>
 
         {/* 페르소나 선택 카드 리스트 */}
         <div className="flex-1 overflow-y-auto py-4 pr-1 space-y-3">
           <div className="grid grid-cols-1 gap-2.5">
-            {ONBOARDING_PERSONAS.map((persona) => {
+            {localizedPersonas.map((persona) => {
               const isSelected = selectedPersonaId === persona.id;
 
               return (
@@ -279,10 +288,10 @@ const OnboardingPersonaModal = () => {
                   {/* 자동 활성화되는 서브 탭 뱃지 리스트 */}
                   <div className="pt-2 border-t border-zinc-100/80 flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider mr-1">
-                      자동 활성화 탭 ({persona.tabs.length}):
+                      {currentLang === 'zh' ? '自动启用标签' : currentLang === 'en' ? 'Auto-enabled Tabs' : '자동 활성화 탭'} ({persona.tabs.length}):
                     </span>
                     {persona.tabs.map(tabId => {
-                      const tabInfo = TAB_LABEL_MAP[tabId];
+                      const tabInfo = tabLabelMap[tabId];
                       return (
                         <span 
                           key={tabId} 
@@ -303,8 +312,8 @@ const OnboardingPersonaModal = () => {
         {/* 모달 하단 액션 버튼 */}
         <div className="pt-4 border-t border-zinc-100 flex flex-col gap-3">
           <p className="text-[11px] text-zinc-500 font-medium flex items-center gap-1.5 bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100/70">
-            <span className="text-indigo-600 font-black shrink-0">💡 알림:</span>
-            <span>선택하신 페르소나만 프로필에 활성화되며, 나머지 페르소나는 비활성화되어 심플하게 시작합니다. (프로필 편집에서 언제든 다시 켤 수 있어요!)</span>
+            <span className="text-indigo-600 font-black shrink-0">💡 {currentLang === 'zh' ? '提示:' : currentLang === 'en' ? 'Notice:' : '알림:'}</span>
+            <span>{t('onboarding.note_text', '선택하신 페르소나만 프로필에 활성화되며, 나머지 페르소나는 비활성화되어 심플하게 시작합니다.')}</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -314,7 +323,7 @@ const OnboardingPersonaModal = () => {
               disabled={isSubmitting}
               className="text-xs font-bold text-zinc-400 hover:text-zinc-600 hover:underline transition-colors order-2 sm:order-1 cursor-pointer"
             >
-              다음에 선택할게요 (기본으로 시작)
+              {t('onboarding.skip_btn', '다음에 선택할게요 (기본으로 시작)')}
             </button>
 
             <button
@@ -326,11 +335,13 @@ const OnboardingPersonaModal = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin text-white" />
-                  <span>페르소나 구성 적용 중...</span>
+                  <span>{currentLang === 'zh' ? '正在应用配置...' : currentLang === 'en' ? 'Applying setup...' : '페르소나 구성 적용 중...'}</span>
                 </>
               ) : (
                 <>
-                  <span>'{currentPersona.name}'으로 시작하기</span>
+                  <span>
+                    {currentLang === 'zh' ? `以“${currentPersona.name}”开启` : currentLang === 'en' ? `Start with '${currentPersona.name}'` : `'${currentPersona.name}'으로 시작하기`}
+                  </span>
                   <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                 </>
               )}

@@ -20,16 +20,16 @@ const AccountSettingsView = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!pwData.currentPassword || !pwData.newPassword || !pwData.confirmPassword) {
-      return showToast("모든 항목을 입력해주세요.");
+      return showToast(t('common.fill_all', "모든 항목을 입력해주세요."));
     }
     if (pwData.newPassword !== pwData.confirmPassword) {
-      return showToast("새 비밀번호가 서로 일치하지 않습니다.");
+      return showToast(t('auth.pw_mismatch', "새 비밀번호가 서로 일치하지 않습니다."));
     }
     
     // 정규식 검증
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{8,}$/;
     if (!regex.test(pwData.newPassword)) {
-      return showToast("새 비밀번호는 영문, 숫자, 특수문자 조합 8자 이상이어야 합니다.");
+      return showToast(t('auth.pw_format_error', "새 비밀번호는 영문, 숫자, 특수문자 조합 8자 이상이어야 합니다."));
     }
 
     try {
@@ -42,20 +42,20 @@ const AccountSettingsView = () => {
       });
 
       if (res.ok) {
-        showToast("비밀번호가 성공적으로 변경되었습니다. 🔐");
+        showToast(t('auth.pw_changed_success', "비밀번호가 성공적으로 변경되었습니다. 🔐"));
         setPwData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
-        showToast("현재 비밀번호가 일치하지 않습니다.");
+        showToast(t('settings.current_pw_mismatch', "현재 비밀번호가 일치하지 않습니다."));
       }
     } catch (err) {
-      showToast("서버 오류가 발생했습니다.");
+      showToast(t('auth.server_error', "서버 오류가 발생했습니다."));
     }
   };
 
   // 2. 계정 탈퇴 요청
   const handleDeleteAccount = async () => {
     // ⭐️ 소셜 유저는 비밀번호 입력을 생략하므로 조건 우회
-    if (!isSocialUser && !deletePassword) return showToast("본인 확인을 위해 비밀번호를 입력해주세요.");
+    if (!isSocialUser && !deletePassword) return showToast(t('settings.delete_account_pw_placeholder', "본인 확인을 위해 비밀번호를 입력해주세요."));
 
     try {
       const res = await apiFetch('/me', {
@@ -64,15 +64,15 @@ const AccountSettingsView = () => {
       });
 
       if (res.ok) {
-        showToast("계정이 영구적으로 삭제되었습니다. 그동안 이용해주셔서 감사합니다. 👋");
+        showToast(t('settings.account_deleted_toast', "계정이 영구적으로 삭제되었습니다. 그동안 이용해주셔서 감사합니다. 👋"));
         handleLogout(); 
       } else {
         const errData = await res.json().catch(() => ({}));
-        showToast(errData.message || "비밀번호가 일치하지 않습니다.");
+        showToast(errData.message || t('settings.current_pw_mismatch', "비밀번호가 일치하지 않습니다."));
         setShowDeleteConfirm(false);
       }
     } catch (err) {
-      showToast("탈퇴 처리 중 서버 오류가 발생했습니다.");
+      showToast(t('auth.server_error', "탈퇴 처리 중 서버 오류가 발생했습니다."));
     }
   };
 
@@ -92,10 +92,10 @@ const AccountSettingsView = () => {
           <Globe size={16} /> {t('lang.select', '언어 선택')}
         </button>
         <button onClick={() => setActiveTab('password')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'password' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
-          <Lock size={16} /> {currentLang === 'zh' ? '密码管理' : currentLang === 'en' ? 'Password' : '비밀번호 관리'}
+          <Lock size={16} /> {t('settings.password_tab', '비밀번호 관리')}
         </button>
         <button onClick={() => setActiveTab('delete')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeTab === 'delete' ? 'bg-white text-rose-600 shadow-sm border border-zinc-200/60' : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/50'}`}>
-          <AlertTriangle size={16} /> {currentLang === 'zh' ? '注销账号' : currentLang === 'en' ? 'Delete Account' : '계정 탈퇴'}
+          <AlertTriangle size={16} /> {t('settings.delete_tab', '계정 탈퇴')}
         </button>
       </div>
 
@@ -153,32 +153,32 @@ const AccountSettingsView = () => {
              <div className="w-16 h-16 bg-[#FEE500]/20 rounded-full flex items-center justify-center mx-auto mb-5 border border-[#FEE500]/30">
                  <MessageSquare className="text-yellow-600 fill-yellow-600" size={28} />
              </div>
-             <h3 className="text-lg font-black text-zinc-800 mb-2">카카오 연동 계정입니다</h3>
-             <p className="text-sm font-medium text-zinc-500 leading-relaxed">
-                 소셜 로그인 가입자는 이메일 비밀번호를 변경할 수 없습니다.<br/>보안 및 계정 관리는 카카오를 이용해 주세요.
+             <h3 className="text-lg font-black text-zinc-800 mb-2">{t('settings.kakao_user_title', '카카오 연동 계정입니다')}</h3>
+             <p className="text-sm font-medium text-zinc-500 leading-relaxed whitespace-pre-line">
+                 {t('settings.kakao_user_desc', '소셜 로그인 가입자는 이메일 비밀번호를 변경할 수 없습니다.\n보안 및 계정 관리는 카카오를 이용해 주세요.')}
              </p>
           </div>
         ) : (
           <form onSubmit={handleChangePassword} className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-200/60 animate-in fade-in">
             <h3 className="text-lg font-black text-zinc-800 mb-6 flex items-center gap-2">
-              <KeyRound size={20} className="text-indigo-500" /> 비밀번호 변경
+              <KeyRound size={20} className="text-indigo-500" /> {t('settings.change_pw_title', '비밀번호 변경')}
             </h3>
             <div className="space-y-5 max-w-md">
               <div>
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">현재 비밀번호</label>
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">{t('settings.current_pw', '현재 비밀번호')}</label>
                 <input type="password" value={pwData.currentPassword} onChange={e=>setPwData({...pwData, currentPassword: e.target.value})} className="w-full mt-1.5 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" required />
               </div>
               <div>
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">새 비밀번호</label>
-                <input type="password" value={pwData.newPassword} onChange={e=>setPwData({...pwData, newPassword: e.target.value})} className="w-full mt-1.5 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" required placeholder="영문, 숫자, 특수문자 조합 8자 이상" />
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">{t('settings.new_pw', '새 비밀번호')}</label>
+                <input type="password" value={pwData.newPassword} onChange={e=>setPwData({...pwData, newPassword: e.target.value})} className="w-full mt-1.5 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" required placeholder={t('settings.new_pw_guide', '영문, 숫자, 특수문자 조합 8자 이상')} />
               </div>
               <div>
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">새 비밀번호 확인</label>
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">{t('settings.new_pw_confirm', '새 비밀번호 확인')}</label>
                 <input type="password" value={pwData.confirmPassword} onChange={e=>setPwData({...pwData, confirmPassword: e.target.value})} className="w-full mt-1.5 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none" required />
               </div>
             </div>
             <button type="submit" className="mt-8 px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
-              <Save size={16} /> 변경사항 저장
+              <Save size={16} /> {t('settings.save_changes', '변경사항 저장')}
             </button>
           </form>
         )
@@ -188,10 +188,10 @@ const AccountSettingsView = () => {
         <div className="bg-rose-50 p-8 rounded-[2rem] border border-rose-200 animate-in fade-in relative overflow-hidden">
           <div className="max-w-lg">
             <h3 className="text-xl font-black text-rose-600 flex items-center gap-2 mb-3">
-              <AlertTriangle size={24} /> 정말로 떠나시나요?
+              <AlertTriangle size={24} /> {t('settings.delete_account_title', '정말로 떠나시나요?')}
             </h3>
             <p className="text-sm font-medium text-rose-700/80 mb-6 leading-relaxed">
-              계정을 삭제하면 모든 프로필 정보와 저장된 취향 기록, 태그가 영구적으로 파기되며, 이는 어떠한 경우에도 복구할 수 없습니다. 계속 진행하시려면 {isSocialUser ? "아래 버튼을 눌러주세요." : "비밀번호를 입력해주세요."}
+              {t('settings.delete_account_desc', '계정을 삭제하면 모든 프로필 정보와 저장된 취향 기록, 태그가 영구적으로 파기되며, 이는 어떠한 경우에도 복구할 수 없습니다.')} {isSocialUser ? (currentLang === 'zh' ? '请点击下方按钮继续。' : currentLang === 'en' ? 'Please click the button below to continue.' : '계속 진행하시려면 아래 버튼을 눌러주세요.') : (currentLang === 'zh' ? '请输入当前密码继续。' : currentLang === 'en' ? 'Please enter your password to continue.' : '계속 진행하시려면 비밀번호를 입력해주세요.')}
             </p>
 
             {isSocialUser ? (
@@ -199,13 +199,13 @@ const AccountSettingsView = () => {
                   onClick={() => setShowDeleteConfirm(true)}
                   className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors shadow-sm flex items-center gap-2"
               >
-                  <Trash2 size={16} /> 카카오 연동 해제 및 영구 탈퇴
+                  <Trash2 size={16} /> {t('settings.delete_account_kakao_btn', '카카오 연동 해제 및 영구 탈퇴')}
               </button>
             ) : (
               <div className="space-y-4">
                 <input 
                   type="password" 
-                  placeholder="현재 비밀번호를 입력하세요" 
+                  placeholder={t('settings.delete_account_pw_placeholder', '현재 비밀번호를 입력하세요')} 
                   value={deletePassword}
                   onChange={e=>setDeletePassword(e.target.value)}
                   className="w-full bg-white border border-rose-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-rose-500 outline-none" 
@@ -215,7 +215,7 @@ const AccountSettingsView = () => {
                     disabled={!deletePassword}
                     className="px-6 py-3 bg-rose-600 disabled:bg-rose-300 text-white rounded-xl font-bold hover:bg-rose-700 transition-colors shadow-sm flex items-center gap-2"
                 >
-                    <Trash2 size={16} /> 내 계정 영구 삭제
+                    <Trash2 size={16} /> {t('settings.delete_account_btn', '내 계정 영구 삭제')}
                 </button>
               </div>
             )}
@@ -224,14 +224,14 @@ const AccountSettingsView = () => {
           {showDeleteConfirm && (
               <div className="absolute inset-0 bg-rose-100/95 backdrop-blur-md z-10 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95">
                   <AlertTriangle size={48} className="text-rose-500 mb-4" />
-                  <h4 className="text-xl font-black text-rose-900 mb-2">정말 삭제하시겠습니까?</h4>
-                  <p className="text-sm font-medium text-rose-700 mb-6">모든 데이터가 즉시, 그리고 영구적으로 파기됩니다.</p>
+                  <h4 className="text-xl font-black text-rose-900 mb-2">{t('settings.delete_confirm_modal_title', '정말 삭제하시겠습니까?')}</h4>
+                  <p className="text-sm font-medium text-rose-700 mb-6">{t('settings.delete_confirm_modal_desc', '모든 데이터가 즉시, 그리고 영구적으로 파기됩니다.')}</p>
                   <div className="flex gap-3">
                       <button onClick={() => setShowDeleteConfirm(false)} className="px-5 py-2.5 bg-white text-zinc-600 rounded-xl font-bold shadow-sm border border-zinc-200 hover:bg-zinc-50">
-                          취소하기
+                          {t('settings.cancel_btn', '취소하기')}
                       </button>
                       <button onClick={handleDeleteAccount} className="px-5 py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700">
-                          네, 완전히 삭제합니다
+                          {t('settings.confirm_delete_btn', '네, 완전히 삭제합니다')}
                       </button>
                   </div>
               </div>

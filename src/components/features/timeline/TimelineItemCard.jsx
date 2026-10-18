@@ -5,8 +5,11 @@ import {
 } from 'lucide-react';
 import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE, getYoutubeId, getDomain, getFaviconUrl, getFallbackAvatarUrl } from '../../../utils/mediaUtils';
 import { trackOutboundClick } from '../../../utils/analyticsTracker';
+import { useAppStore } from '../../../store/AppStore';
 
 const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlockSecret, onFollowHost }) => {
+  const { t, currentLang } = useAppStore();
+
   if (item.isLocked) {
     const isFollowerLocked = item.lockType === 'FOLLOWER';
     return (
@@ -19,7 +22,7 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
           <div className="flex-1 text-left min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className={`text-[10px] font-black px-2 py-0.5 rounded ${isFollowerLocked ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
-                {isFollowerLocked ? '1단계: 팔로워 공개' : '2단계: 비밀 공개'}
+                {isFollowerLocked ? (currentLang === 'zh' ? '1级: 关注者公开' : currentLang === 'en' ? 'Level 1: Followers' : '1단계: 팔로워 공개') : (currentLang === 'zh' ? '2级: PIN密码锁' : currentLang === 'en' ? 'Level 2: PIN Lock' : '2단계: 비밀 공개')}
               </span>
               <span className="text-[11px] font-bold text-zinc-400">{item.date}</span>
             </div>
@@ -32,7 +35,7 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
                 onClick={onFollowHost}
                 className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
               >
-                팔로우 요청
+                {currentLang === 'zh' ? '关注作者' : currentLang === 'en' ? 'Follow Host' : '팔로우 요청'}
               </button>
             )
           ) : (
@@ -41,7 +44,7 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
                 onClick={() => onUnlockSecret(item)}
                 className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
               >
-                PIN 입력
+                {currentLang === 'zh' ? '输入 PIN' : currentLang === 'en' ? 'Enter PIN' : 'PIN 입력'}
               </button>
             )
           )}
@@ -130,7 +133,7 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
             <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
               <ExternalLink size={32} className="text-blue-500 mb-2" />
               <span className="text-[11px] font-black text-blue-600 bg-white px-3 py-1 rounded-md shadow-sm hidden sm:block">
-                새 창으로 열기
+                {currentLang === 'zh' ? '新窗口打开' : currentLang === 'en' ? 'Open in new window' : '새 창으로 열기'}
               </span>
             </div>
             <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-white/80 backdrop-blur-sm text-blue-700 text-[8px] font-black rounded-md shadow-sm uppercase tracking-wider border border-white/50 z-10">
@@ -177,7 +180,7 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
             {isMusic && <Disc size={16} className="text-zinc-400 shrink-0" />}
             <span className="truncate">{item.title}</span>
             {!item.isPublic && (
-              <Lock size={14} className="text-rose-500 shrink-0" title="비공개 기록" />
+              <Lock size={14} className="text-rose-500 shrink-0" title={t('privacy.level4', '비공개 기록')} />
             )}
           </h3>
 

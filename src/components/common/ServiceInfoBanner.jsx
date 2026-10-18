@@ -3,8 +3,8 @@ import { Sparkles, Fingerprint, BookOpen, Quote } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore'; // Added .jsx extension
 
 const ServiceInfoBanner = () => {
-  // 전역 상태에서 로그인 여부(isAdmin)를 가져옵니다.
-  const { isAdmin } = useAppStore();
+  // 전역 상태에서 로그인 여부(isAdmin)와 언어를 가져옵니다.
+  const { isAdmin, t, currentLang } = useAppStore();
 
   // ⭐️ 핵심 조건: 로그인한 사용자(isAdmin === true)에게는 이 배너를 렌더링하지 숨깁니다.
   if (isAdmin) return null;
@@ -21,22 +21,34 @@ const ServiceInfoBanner = () => {
           <div className="w-6 h-6 rounded-full bg-white shadow-sm text-indigo-500 flex items-center justify-center shrink-0 border border-indigo-100">
              <Sparkles size={12} className="fill-indigo-100" />
           </div>
-          <h3 className="text-[13px] font-black text-indigo-900 tracking-tight">CraveLog 소개</h3>
+          <h3 className="text-[13px] font-black text-indigo-900 tracking-tight">
+            {currentLang === 'zh' ? 'CraveLog 简介' : currentLang === 'en' ? 'About CraveLog' : 'CraveLog 소개'}
+          </h3>
         </div>
         
         <ul className="space-y-3 mb-5 relative z-10">
           <li className="flex items-start gap-2.5">
             <Fingerprint size={14} className="text-indigo-400 mt-0.5 shrink-0" />
             <p className="text-[11px] font-bold text-zinc-600 leading-relaxed">
-              이력서나 포트폴리오를 넘어, <br/>
-              <span className="text-indigo-700">나라는 사람의 취향과 성향</span>을<br/>아카이빙하는 공간입니다.
+              {currentLang === 'zh' ? (
+                <>超越简历或作品集，<br/><span className="text-indigo-700">珍藏您的独特品味与个性</span><br/>的个人专属空间。</>
+              ) : currentLang === 'en' ? (
+                <>Beyond a resume or portfolio, <br/><span className="text-indigo-700">archive your personality & tastes</span><br/>in your personal space.</>
+              ) : (
+                <>이력서나 포트폴리오를 넘어, <br/><span className="text-indigo-700">나라는 사람의 취향과 성향</span>을<br/>아카이빙하는 공간입니다.</>
+              )}
             </p>
           </li>
           <li className="flex items-start gap-2.5">
             <BookOpen size={14} className="text-indigo-400 mt-0.5 shrink-0" />
             <p className="text-[11px] font-bold text-zinc-600 leading-relaxed">
-              개발 지식부터 소소한 일상까지 <br/>
-              <span className="text-indigo-700">모든 기록을 나만의 색깔로</span><br/>보관하고 공유하세요.
+              {currentLang === 'zh' ? (
+                <>从专业技术到琐碎日常，<br/><span className="text-indigo-700">以独特的自我风格</span><br/>记录并分享一切。</>
+              ) : currentLang === 'en' ? (
+                <>From development insights to daily life, <br/><span className="text-indigo-700">preserve and share every moment</span><br/>in your own unique style.</>
+              ) : (
+                <>개발 지식부터 소소한 일상까지 <br/><span className="text-indigo-700">모든 기록을 나만의 색깔로</span><br/>보관하고 공유하세요.</>
+              )}
             </p>
           </li>
         </ul>

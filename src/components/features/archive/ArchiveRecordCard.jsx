@@ -5,6 +5,7 @@ import {
   KeyRound, Users, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { DEFAULT_IMAGE, MUSIC_DEFAULT_IMAGE } from '../../../utils/mediaUtils';
+import { useAppStore } from '../../../store/AppStore';
 
 const ArchiveRecordCard = ({
   item,
@@ -27,6 +28,7 @@ const ArchiveRecordCard = ({
   onUnlockSecret,
   onFollowHost
 }) => {
+  const { t, currentLang } = useAppStore();
 
   // 🛡️ 1. 접근 보안 잠금 카드 (팔로워 공개 또는 비밀 공개로 잠겨있는 경우)
   if (item.isLocked) {
@@ -43,7 +45,7 @@ const ArchiveRecordCard = ({
             isSecret ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
           }`}>
             {isSecret ? <KeyRound size={12} /> : <Users size={12} />}
-            {isSecret ? '2단계 비밀공개' : '1단계 팔로워공개'}
+            {isSecret ? (currentLang === 'zh' ? '2级 PIN密码锁' : currentLang === 'en' ? 'Level 2: PIN Lock' : '2단계 비밀공개') : (currentLang === 'zh' ? '1级 关注者公开' : currentLang === 'en' ? 'Level 1: Followers' : '1단계 팔로워공개')}
           </span>
           <span className="p-1 rounded-full bg-zinc-200/60 text-zinc-500">
             <Lock size={12} />
@@ -65,8 +67,8 @@ const ArchiveRecordCard = ({
           </h3>
           <p className="text-[11px] text-zinc-400 font-bold break-keep">
             {isSecret 
-              ? '비밀번호(PIN)를 입력하여 잠금을 해제하세요.' 
-              : '작성자를 팔로우하면 기록을 열람할 수 있습니다.'}
+              ? (currentLang === 'zh' ? '请输入访问密码(PIN)进行解锁。' : currentLang === 'en' ? 'Enter PIN passcode to unlock.' : '비밀번호(PIN)를 입력하여 잠금을 해제하세요.') 
+              : (currentLang === 'zh' ? '关注作者即可浏览该记录。' : currentLang === 'en' ? 'Follow the author to view this record.' : '작성자를 팔로우하면 기록을 열람할 수 있습니다.')}
           </p>
         </div>
 
@@ -80,7 +82,7 @@ const ArchiveRecordCard = ({
               }}
               className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1.5"
             >
-              <KeyRound size={13} /> 비밀번호 입력
+              <KeyRound size={13} /> {currentLang === 'zh' ? '输入访问密码' : currentLang === 'en' ? 'Enter Passcode' : '비밀번호 입력'}
             </button>
           ) : (
             <button
@@ -90,7 +92,7 @@ const ArchiveRecordCard = ({
               }}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1.5"
             >
-              <Users size={13} /> 팔로우하고 보기
+              <Users size={13} /> {currentLang === 'zh' ? '关注并查看' : currentLang === 'en' ? 'Follow & View' : '팔로우하고 보기'}
             </button>
           )}
         </div>
@@ -119,7 +121,7 @@ const ArchiveRecordCard = ({
           {!isEditing && (
             <div
               className="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 p-1 shrink-0 transition-colors"
-              title="드래그하여 순서 변경"
+              title={currentLang === 'zh' ? '拖拽调整顺序' : currentLang === 'en' ? 'Drag to reorder' : '드래그하여 순서 변경'}
             >
               <GripVertical size={18} />
             </div>
@@ -328,13 +330,13 @@ const ArchiveRecordCard = ({
               {item.title}
             </h3>
             <p className="text-[9px] sm:text-[11px] font-bold text-zinc-400 mt-1.5 sm:mt-2 bg-white/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md border border-zinc-100 truncate max-w-[80%]">
-              {item.domain || '클릭하여 열기'}
+              {item.domain || (currentLang === 'zh' ? '点击打开' : currentLang === 'en' ? 'Click to open' : '클릭하여 열기')}
             </p>
           </div>
           <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover/link:opacity-100 bg-blue-50/95 backdrop-blur-sm">
             <ExternalLink size={32} className="text-blue-500 mb-2" />
             <span className="text-[11px] font-black text-blue-600 bg-white px-3 py-1 rounded-md shadow-sm hidden sm:block">
-              새 창으로 열기
+              {currentLang === 'zh' ? '新窗口打开' : currentLang === 'en' ? 'Open in new window' : '새 창으로 열기'}
             </span>
           </div>
         </div>

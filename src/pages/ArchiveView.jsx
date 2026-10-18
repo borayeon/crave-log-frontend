@@ -23,7 +23,9 @@ const ArchiveView = () => {
     isLoading,
     visitedHandle,
     setLoginModalOpen,
-    setViewMode
+    setViewMode,
+    t,
+    currentLang
   } = useAppStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -59,12 +61,12 @@ const ArchiveView = () => {
       const res = await apiFetch(`/me/records/${confirmDeleteId}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchAllData(true);
-        showToast('기록이 보관함에서 삭제되었습니다.');
+        showToast(currentLang === 'zh' ? '记录已从收藏夹中删除。' : currentLang === 'en' ? 'Record deleted from collection.' : '기록이 보관함에서 삭제되었습니다.');
         setConfirmDeleteId(null);
       }
     } catch (err) {
       console.error(err);
-      showToast('삭제 중 오류가 발생했습니다.');
+      showToast(currentLang === 'zh' ? '删除过程中发生错误。' : currentLang === 'en' ? 'An error occurred during deletion.' : '삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -108,7 +110,7 @@ const ArchiveView = () => {
     }
 
     return result.map((item) => {
-      const catName = item.category || item.categoryName || '분류 없음';
+      const catName = item.category || item.categoryName || (currentLang === 'zh' ? '未分类' : currentLang === 'en' ? 'Uncategorized' : '분류 없음');
       const imgUrl = item.image || item.imageUrl || '';
       
       const matchedCat = tagTree.find(
@@ -208,7 +210,7 @@ const ArchiveView = () => {
     updated.splice(targetIndex, 0, movedItem);
 
     setCustomOrderedRecords(updated);
-    showToast(`순위가 ${targetIndex + 1}위로 변경되었습니다! 🎵`);
+    showToast(currentLang === 'zh' ? `排名已变更为第 ${targetIndex + 1} 位！🎵` : currentLang === 'en' ? `Rank updated to #${targetIndex + 1}! 🎵` : `순위가 ${targetIndex + 1}위로 변경되었습니다! 🎵`);
   };
 
   const isCurrentCategoryMusic = useMemo(() => {
@@ -232,10 +234,10 @@ const ArchiveView = () => {
       try {
         const res = await apiFetch(`/users/${visitedHandle}/follow`, { method: 'POST' });
         if (res?.ok) {
-          showToast(`@${visitedHandle}님을 팔로우했습니다! 이제 팔로워 공개 기록을 열람할 수 있습니다. 🎉`);
+          showToast(currentLang === 'zh' ? `@${visitedHandle} 已关注！现在可查看关注者专属记录。🎉` : currentLang === 'en' ? `@${visitedHandle} followed! You can now view follower-only records. 🎉` : `@${visitedHandle}님을 팔로우했습니다! 이제 팔로워 공개 기록을 열람할 수 있습니다. 🎉`);
           await fetchAllData(true);
         } else {
-          showToast('팔로우 처리에 실패했습니다.');
+          showToast(currentLang === 'zh' ? '关注失败。' : currentLang === 'en' ? 'Failed to follow.' : '팔로우 처리에 실패했습니다.');
         }
       } catch (err) {
         console.error(err);
@@ -247,8 +249,8 @@ const ArchiveView = () => {
     return (
       <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-[#F8FAFC]">
         <Loader2 size={40} className="text-indigo-500 animate-spin mb-4" />
-        <h2 className="text-lg font-black text-zinc-800 tracking-tight">데이터를 불러오는 중입니다...</h2>
-        <p className="text-sm text-zinc-500 font-medium mt-2">잠시만 기다려주세요</p>
+        <h2 className="text-lg font-black text-zinc-800 tracking-tight">{t('common.loading', '데이터를 불러오는 중입니다...')}</h2>
+        <p className="text-sm text-zinc-500 font-medium mt-2">{currentLang === 'zh' ? '请稍候' : currentLang === 'en' ? 'Please wait a moment' : '잠시만 기다려주세요'}</p>
       </div>
     );
   }
@@ -261,13 +263,13 @@ const ArchiveView = () => {
           <Lock size={30} />
         </div>
         <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg mb-2">
-          로그인 필요
+          {currentLang === 'zh' ? '需要登录' : currentLang === 'en' ? 'Login Required' : '로그인 필요'}
         </span>
         <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight mb-2">
-          로그인이 필요한 페이지입니다
+          {currentLang === 'zh' ? '该页面需要登录访问' : currentLang === 'en' ? 'This page requires login' : '로그인이 필요한 페이지입니다'}
         </h2>
         <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed mb-6 max-w-sm">
-          나만의 소중한 기록과 컬렉션을 관리하시려면 먼저 CraveLog에 로그인해주세요.
+          {currentLang === 'zh' ? '如需管理您的专属兴趣记录与收藏集，请先登录 CraveLog。' : currentLang === 'en' ? 'Please log in to CraveLog to manage your personal collections and records.' : '나만의 소중한 기록과 컬렉션을 관리하시려면 먼저 CraveLog에 로그인해주세요.'}
         </p>
         <div className="flex items-center gap-3 w-full justify-center">
           <button
@@ -275,13 +277,13 @@ const ArchiveView = () => {
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center gap-2"
           >
             <Lock size={14} />
-            <span>로그인하기</span>
+            <span>{t('header.login', '로그인하기')}</span>
           </button>
           <button
             onClick={() => setViewMode('landing')}
             className="px-5 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer"
           >
-            홈(소개)으로 이동
+            {currentLang === 'zh' ? '前往首页(介绍)' : currentLang === 'en' ? 'Go to Home (Intro)' : '홈(소개)으로 이동'}
           </button>
         </div>
       </div>
@@ -304,16 +306,16 @@ const ArchiveView = () => {
         <div className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in p-4">
           <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full text-center">
             <AlertTriangle size={56} className="text-rose-500 mx-auto mb-4" />
-            <h3 className="text-xl font-black text-zinc-900 mb-2">기록 삭제</h3>
+            <h3 className="text-xl font-black text-zinc-900 mb-2">{t('record.delete_confirm_title', '정말 이 기록을 삭제하시겠습니까?')}</h3>
             <p className="text-sm text-zinc-500 mb-8">
-              선택한 기록을 정말 삭제하시겠습니까?<br/>삭제 후에는 복구할 수 없습니다.
+              {t('record.delete_confirm_desc', '삭제된 기록은 복구할 수 없습니다.')}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl font-bold transition">
-                취소
+                {t('common.cancel', '취소')}
               </button>
               <button onClick={executeGridDelete} className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold transition">
-                삭제하기
+                {t('common.delete', '삭제하기')}
               </button>
             </div>
           </div>
@@ -336,7 +338,7 @@ const ArchiveView = () => {
       <header className="px-6 md:px-10 pt-8 pb-4 shrink-0 relative z-10 bg-[#F8FAFC]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
           <h2 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight flex items-center gap-3">
-            취향 아카이브 <Sparkles size={24} className="text-rose-500 fill-rose-500" />
+            {t('archive.title', '컬렉션')} <Sparkles size={24} className="text-rose-500 fill-rose-500" />
           </h2>
           
           <div className="flex flex-wrap items-center gap-2">
@@ -345,14 +347,14 @@ const ArchiveView = () => {
                 <button 
                   onClick={() => setMusicViewMode('grid')} 
                   className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'grid' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
-                  title="그리드 뷰 (레코드판)"
+                  title={currentLang === 'zh' ? '网格视图' : currentLang === 'en' ? 'Grid View' : '그리드 뷰'}
                 >
                   <LayoutGrid size={16} />
                 </button>
                 <button 
                   onClick={() => setMusicViewMode('list')} 
                   className={`p-1.5 rounded-md transition-colors ${musicViewMode === 'list' ? 'bg-zinc-100 text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
-                  title="리스트 뷰 (멜론 차트형)"
+                  title={currentLang === 'zh' ? '列表视图' : currentLang === 'en' ? 'List View' : '리스트 뷰'}
                 >
                   <ListMusic size={16} />
                 </button>
@@ -365,13 +367,13 @@ const ArchiveView = () => {
                   onClick={() => setAddRecordModalOpen(true)}
                   className="px-4 py-2 bg-zinc-900 text-white rounded-full text-xs font-bold hover:bg-zinc-800 transition-all flex items-center gap-2 shadow-sm"
                 >
-                  <Plus size={14}/> 새 기록 추가
+                  <Plus size={14}/> {t('header.new_record', '새 기록 추가')}
                 </button>
                 <button 
                   onClick={() => setIsEditing(!isEditing)}
                   className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${isEditing ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}
                 >
-                  {isEditing ? <><CloseIcon size={14}/> 편집 완료</> : <><Edit2 size={14}/> 보관함 편집</>}
+                  {isEditing ? <><CloseIcon size={14}/> {currentLang === 'zh' ? '完成' : currentLang === 'en' ? 'Done' : '편집 완료'}</> : <><Edit2 size={14}/> {currentLang === 'zh' ? '编辑收藏' : currentLang === 'en' ? 'Edit' : '보관함 편집'}</>}
                 </button>
               </div>
             )}
@@ -393,7 +395,7 @@ const ArchiveView = () => {
                     : 'bg-white border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
                 }`}
               >
-                {cat}
+                {cat === '전체' ? t('common.all', '전체') : cat}
               </button>
             ))}
           </div>
@@ -409,7 +411,7 @@ const ArchiveView = () => {
                   : 'bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50'
               }`}
             >
-              전체보기
+              {t('common.all', '전체보기')}
             </button>
             {activeCategoryTags.map((tag) => (
               <button
@@ -432,7 +434,7 @@ const ArchiveView = () => {
       <div className="flex-1 px-6 md:px-10 py-6 overflow-y-auto scrollbar-hide">
         {customOrderedRecords.length === 0 && (
           <div className="text-center py-20 text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-200/80 border-dashed">
-            선택한 필터 조건에 해당하는 기록이 없습니다.
+            {t('archive.filter_empty', '선택한 필터 조건에 해당하는 기록이 없습니다.')}
           </div>
         )}
         

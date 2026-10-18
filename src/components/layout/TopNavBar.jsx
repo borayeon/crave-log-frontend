@@ -51,7 +51,7 @@ const TopNavBar = () => {
   const handleGoToProfile = () => {
     if (!isAdmin && !visitedHandle) {
       setLoginModalOpen(true);
-      showToast('로그인이 필요한 서비스입니다. 🔒');
+      showToast(t('toast.login_required', '로그인이 필요한 서비스입니다. 🔒'));
       return;
     }
     if (visitedHandle) resetToMyProfile();

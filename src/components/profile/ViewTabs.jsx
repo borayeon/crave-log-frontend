@@ -4,6 +4,7 @@ import {
   UserPlus, Compass, Heart, MessageSquare, Quote, FileText, Grid, History,
   Mail, Phone, Link as LinkIcon, MessageCircle, Rss, Bell
 } from 'lucide-react';
+import { useAppStore } from '../../store/AppStore';
 
 const SectionHeader = ({ id, title }) => (
   <div id={id} className="border-b border-zinc-200 mt-16 mb-8 pb-3 scroll-mt-28">
@@ -12,6 +13,7 @@ const SectionHeader = ({ id, title }) => (
 );
 
 const TimelineItem = ({ leftText, title, badges, subtitle, bullets, keywords }) => {
+  const { t, currentLang } = useAppStore();
   const [isExpanded, setIsExpanded] = React.useState(false);
   
   const MAX_BULLETS = 3;
@@ -47,7 +49,7 @@ const TimelineItem = ({ leftText, title, badges, subtitle, bullets, keywords }) 
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-4 text-[11px] font-black text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center shadow-sm border border-indigo-100 w-max"
               >
-                {isExpanded ? '내용 접기 ▲' : `더보기 (${bullets.length - MAX_BULLETS}개 더 있음) ▼`}
+                {isExpanded ? (currentLang === 'zh' ? '收起内容 ▲' : currentLang === 'en' ? 'Collapse ▲' : '내용 접기 ▲') : (currentLang === 'zh' ? `展开更多 (${bullets.length - MAX_BULLETS}条) ▼` : currentLang === 'en' ? `Show more (${bullets.length - MAX_BULLETS}) ▼` : `더보기 (${bullets.length - MAX_BULLETS}개 더 있음) ▼`)}
               </button>
             )}
           </div>
@@ -80,6 +82,7 @@ const NAV_ITEMS = [
 ];
 
 export const Developer2Tab = ({ user }) => {
+  const { currentLang } = useAppStore();
   const profile = user || {};
   const devData = profile?.developer || {};
   
@@ -150,7 +153,7 @@ export const Developer2Tab = ({ user }) => {
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 mb-12">
           <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border border-zinc-200 overflow-hidden shrink-0 bg-zinc-50 flex items-center justify-center">
             {profile.profileImageUrl ? (
-              <img src={profile.profileImageUrl} alt="프로필" className="w-full h-full object-cover" />
+              <img src={profile.profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <span className="text-4xl font-black text-zinc-300">{profile.name?.charAt(0) || '?'}</span>
             )}
@@ -158,7 +161,7 @@ export const Developer2Tab = ({ user }) => {
           
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left w-full">
             <div className="flex items-baseline gap-2 mb-1.5">
-              <h2 className="text-2xl md:text-4xl font-black text-zinc-900 tracking-tight">{profile.name || '이름 없음'}</h2>
+              <h2 className="text-2xl md:text-4xl font-black text-zinc-900 tracking-tight">{profile.name || (currentLang === 'zh' ? '无姓名' : currentLang === 'en' ? 'No Name' : '이름 없음')}</h2>
               <span className="text-sm font-bold text-zinc-400">(@{profile.handle || 'guest'})</span>
             </div>
             <p className="text-sm md:text-base font-bold text-zinc-500 mb-5">
@@ -181,7 +184,7 @@ export const Developer2Tab = ({ user }) => {
         {/* 알림 메시지 바 */}
         <div className="bg-zinc-50 text-zinc-600 p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-bold border border-zinc-200/80 mb-12">
           <Bell size={16} className="text-zinc-400 shrink-0" />
-          <p>{devData.motto || '휴대전화나 페이스북 메시지 아닌 이메일로 연락 부탁드립니다.'}</p>
+          <p>{devData.motto || (currentLang === 'zh' ? '请通过邮件而非手机或社交软件联系。' : currentLang === 'en' ? 'Please contact me via email rather than phone or social media.' : '휴대전화나 페이스북 메시지 아닌 이메일로 연락 부탁드립니다.')}</p>
         </div>
 
         {/* 주요 통계 영역 */}
@@ -206,10 +209,22 @@ export const Developer2Tab = ({ user }) => {
           {devData.about ? (
              <div className="whitespace-pre-line">{devData.about}</div>
           ) : (
-             <>
-               <p>웹/앱 서비스 백엔드 개발과 스타트업에서의 다양한 경험을 바탕으로, 현재는 대규모 커머스 서비스의 백엔드 개발을 담당하고 있습니다. 확장성과 유지 보수성이 높은 아키텍처를 설계하고 운영한 경험이 있습니다.</p>
-               <p>백엔드 개발자로서 전문성을 계속 확장해 나가면서도, 팀과 조직과 함께 성장하는 개발자가 되고자 합니다. 적극적인 소통과 협력을 통해 문제를 해결하고 가치를 만들어내는 개발자가 되기 위해 끊임없이 학습하고 경험을 쌓고 있습니다.</p>
-             </>
+             currentLang === 'zh' ? (
+               <>
+                 <p>基于Web/App服务后端开发以及初创企业的丰富经验，目前负责大型电商服务的后端开发。具备设计和运营高扩展性与高可维护性架构的经验。</p>
+                 <p>在不断拓展后端开发者专业能力的同时，渴望成为与团队和组织共同成长的开发者。通过积极沟通与协作来解决问题并创造价值，持之以恒地学习并积累经验。</p>
+               </>
+             ) : currentLang === 'en' ? (
+               <>
+                 <p>Based on diverse experience in web/app backend development and startups, I am currently responsible for backend development for large-scale commerce services. Experienced in designing and operating architectures with high scalability and maintainability.</p>
+                 <p>While continuously expanding expertise as a backend engineer, I strive to grow alongside my team and organization. I am constantly learning to solve challenges and create value through proactive communication and collaboration.</p>
+               </>
+             ) : (
+               <>
+                 <p>웹/앱 서비스 백엔드 개발과 스타트업에서의 다양한 경험을 바탕으로, 현재는 대규모 커머스 서비스의 백엔드 개발을 담당하고 있습니다. 확장성과 유지 보수성이 높은 아키텍처를 설계하고 운영한 경험이 있습니다.</p>
+                 <p>백엔드 개발자로서 전문성을 계속 확장해 나가면서도, 팀과 조직과 함께 성장하는 개발자가 되고자 합니다. 적극적인 소통과 협력을 통해 문제를 해결하고 가치를 만들어내는 개발자가 되기 위해 끊임없이 학습하고 경험을 쌓고 있습니다.</p>
+               </>
+             )
           )}
         </div>
 
@@ -226,7 +241,7 @@ export const Developer2Tab = ({ user }) => {
             />
           ))
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2">등록된 경력 정보가 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2">{currentLang === 'zh' ? '暂无登记的工作经历。' : currentLang === 'en' ? 'No work experience registered.' : '등록된 경력 정보가 없습니다.'}</p>
         )}
 
         {/* 3. PROJECT */}
@@ -235,9 +250,9 @@ export const Developer2Tab = ({ user }) => {
           devData.projects.map((proj, idx) => (
             <TimelineItem 
               key={idx}
-              leftText={proj.date || "진행 기간 미입력"}
+              leftText={proj.date || (currentLang === 'zh' ? '未输入进行周期' : currentLang === 'en' ? 'Period not entered' : '진행 기간 미입력')}
               title={proj.name}
-              subtitle={proj.role || "백엔드 개발"}
+              subtitle={proj.role || (currentLang === 'zh' ? '后端开发' : currentLang === 'en' ? 'Backend Dev' : '백엔드 개발')}
               bullets={[
                 proj.desc,
                 ...(proj.achievements || [])
@@ -245,7 +260,7 @@ export const Developer2Tab = ({ user }) => {
             />
           ))
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2">등록된 프로젝트가 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2">{currentLang === 'zh' ? '暂无登记的项目。' : currentLang === 'en' ? 'No projects registered.' : '등록된 프로젝트가 없습니다.'}</p>
         )}
 
         {/* 4. SKILL */}
@@ -266,7 +281,7 @@ export const Developer2Tab = ({ user }) => {
             />
           ))
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2">등록된 오픈소스 내역이 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2">{currentLang === 'zh' ? '暂无开源贡献记录。' : currentLang === 'en' ? 'No open source history registered.' : '등록된 오픈소스 내역이 없습니다.'}</p>
         )}
 
         {/* 6. PRESENTATION */}
@@ -282,7 +297,7 @@ export const Developer2Tab = ({ user }) => {
             />
           ))
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2">등록된 발표 내역이 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2">{currentLang === 'zh' ? '暂无演讲记录。' : currentLang === 'en' ? 'No presentations registered.' : '등록된 발표 내역이 없습니다.'}</p>
         )}
 
         {/* 7. ARTICLE */}
@@ -297,7 +312,7 @@ export const Developer2Tab = ({ user }) => {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2 mb-10">등록된 작성 글이 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2 mb-10">{currentLang === 'zh' ? '暂无发表文章。' : currentLang === 'en' ? 'No articles registered.' : '등록된 작성 글이 없습니다.'}</p>
         )}
 
         {/* 8. EDUCATION */}
@@ -312,7 +327,7 @@ export const Developer2Tab = ({ user }) => {
             />
           ))
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2">등록된 학력 정보가 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2">{currentLang === 'zh' ? '暂无学历信息。' : currentLang === 'en' ? 'No education history registered.' : '등록된 학력 정보가 없습니다.'}</p>
         )}
 
         {/* 9. ETC */}
@@ -327,7 +342,7 @@ export const Developer2Tab = ({ user }) => {
             />
           ))
         ) : (
-          <p className="text-sm text-zinc-400 font-medium px-2">등록된 기타 이력이 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium px-2">{currentLang === 'zh' ? '暂无其他履历。' : currentLang === 'en' ? 'No other history registered.' : '등록된 기타 이력이 없습니다.'}</p>
         )}
 
       </div>
@@ -361,128 +376,136 @@ export const Developer2Tab = ({ user }) => {
 // ============================================================================
 // 2. 개발자 요약 탭 (기존 유지)
 // ============================================================================
-export const DeveloperTab = ({ data }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 animate-in fade-in slide-in-from-bottom-2">
-    <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
-        <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><UserPlus size={14}/> About Me</h4>
-        <p className="text-sm text-zinc-700 leading-relaxed font-medium whitespace-pre-line">
-          {data?.about || '입력된 자기소개가 없습니다.'}
-        </p>
+export const DeveloperTab = ({ data }) => {
+  const { currentLang } = useAppStore();
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 animate-in fade-in slide-in-from-bottom-2">
+      <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><UserPlus size={14}/> About Me</h4>
+          <p className="text-sm text-zinc-700 leading-relaxed font-medium whitespace-pre-line">
+            {data?.about || (currentLang === 'zh' ? '暂无自我介绍。' : currentLang === 'en' ? 'No about me entered.' : '입력된 자기소개가 없습니다.')}
+          </p>
+        </div>
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
+          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
+          <div className="space-y-5">
+              {['backend', 'db', 'frontend', 'tools'].map(type => {
+                  const stackData = data?.techStack?.[type];
+                  if (!stackData) return null;
+                  const stackArray = Array.isArray(stackData) ? stackData : typeof stackData === 'string' ? stackData.split(',').filter(Boolean) : [];
+                  if (stackArray.length === 0) return null;
+                  return (
+                      <div key={type}>
+                          <span className="block text-[10px] font-black text-zinc-300 uppercase mb-2">{type}</span>
+                          <div className="flex flex-wrap gap-2">
+                              {stackArray.map((tech, i) => (
+                                  <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold cursor-default shadow-sm hover:bg-zinc-100 transition-colors">
+                                      {typeof tech === 'string' ? tech.trim() : String(tech)}
+                                  </span>
+                              ))}
+                          </div>
+                      </div>
+                  )
+              })}
+          </div>
+        </div>
       </div>
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
-        <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
-        <div className="space-y-5">
-            {['backend', 'db', 'frontend', 'tools'].map(type => {
-                const stackData = data?.techStack?.[type];
-                if (!stackData) return null;
-                const stackArray = Array.isArray(stackData) ? stackData : typeof stackData === 'string' ? stackData.split(',').filter(Boolean) : [];
-                if (stackArray.length === 0) return null;
-                return (
-                    <div key={type}>
-                        <span className="block text-[10px] font-black text-zinc-300 uppercase mb-2">{type}</span>
-                        <div className="flex flex-wrap gap-2">
-                            {stackArray.map((tech, i) => (
-                                <span key={i} className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold cursor-default shadow-sm hover:bg-zinc-100 transition-colors">
-                                    {typeof tech === 'string' ? tech.trim() : String(tech)}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )
-            })}
+      <div className="md:col-span-2">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+           <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Code size={14}/> Post & Portfolio</h4>
+           <div className="grid grid-cols-1 gap-4">
+              {(data?.projects || []).map((proj, idx) => (
+                  <div key={idx} className="p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100 hover:bg-white hover:shadow-md hover:border-indigo-100 transition-all duration-300">
+                      <div className="flex justify-between items-start mb-2">
+                          <h5 className="text-base md:text-lg font-black text-zinc-900">{proj.name}</h5>
+                          <div className="flex gap-1.5 text-zinc-400">
+                              {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-zinc-900 hover:bg-zinc-50 transition"><Terminal size={14} /></a>}
+                              {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-indigo-600 hover:bg-indigo-50 transition"><ExternalLink size={14} /></a>}
+                          </div>
+                      </div>
+                      <p className="text-xs md:text-sm text-zinc-500 font-medium leading-relaxed">{proj.desc}</p>
+                  </div>
+              ))}
+              {(!data?.projects || data.projects.length === 0) && <p className="text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">{currentLang === 'zh' ? '暂无登记的项目。' : currentLang === 'en' ? 'No projects registered.' : '등록된 프로젝트가 없습니다.'}</p>}
+           </div>
         </div>
       </div>
     </div>
-    <div className="md:col-span-2">
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
-         <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Code size={14}/> Post & Portfolio</h4>
-         <div className="grid grid-cols-1 gap-4">
-            {(data?.projects || []).map((proj, idx) => (
-                <div key={idx} className="p-5 bg-zinc-50/50 rounded-2xl border border-zinc-100 hover:bg-white hover:shadow-md hover:border-indigo-100 transition-all duration-300">
-                    <div className="flex justify-between items-start mb-2">
-                        <h5 className="text-base md:text-lg font-black text-zinc-900">{proj.name}</h5>
-                        <div className="flex gap-1.5 text-zinc-400">
-                            {proj.githubUrl && <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-zinc-900 hover:bg-zinc-50 transition"><Terminal size={14} /></a>}
-                            {proj.liveUrl && <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 shadow-sm p-1.5 rounded-lg hover:text-indigo-600 hover:bg-indigo-50 transition"><ExternalLink size={14} /></a>}
-                        </div>
-                    </div>
-                    <p className="text-xs md:text-sm text-zinc-500 font-medium leading-relaxed">{proj.desc}</p>
-                </div>
-            ))}
-            {(!data?.projects || data.projects.length === 0) && <p className="text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">등록된 프로젝트가 없습니다.</p>}
-         </div>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 // ============================================================================
 // 3. 커리어 탭 (기존 유지)
 // ============================================================================
-export const CareerTab = ({ data }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 animate-in fade-in slide-in-from-bottom-2">
-    <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
-        <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Target size={14}/> Target Job</h4>
-        <p className="text-xl md:text-2xl font-black text-blue-600">{data?.targetJob || '미입력'}</p>
+export const CareerTab = ({ data }) => {
+  const { currentLang } = useAppStore();
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 animate-in fade-in slide-in-from-bottom-2">
+      <div className="md:col-span-1 flex flex-col gap-4 md:gap-5">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
+          <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Target size={14}/> Target Job</h4>
+          <p className="text-xl md:text-2xl font-black text-blue-600">{data?.targetJob || (currentLang === 'zh' ? '未输入' : currentLang === 'en' ? 'Not entered' : '미입력')}</p>
+        </div>
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
+           <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MapPin size={14}/> Career Goals</h4>
+           <div className="flex flex-col gap-3">
+             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">{currentLang === 'zh' ? '短期目标' : currentLang === 'en' ? 'Short Term' : '단기 목표'}</h5>
+                <p className="text-xs font-bold text-zinc-800 leading-relaxed">{data?.careerGoals?.short || '-'}</p>
+             </div>
+             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">{currentLang === 'zh' ? '中长期目标' : currentLang === 'en' ? 'Mid-to-Long Term' : '중장기 목표'}</h5>
+                <p className="text-xs font-bold text-zinc-800 leading-relaxed">{data?.careerGoals?.mid || '-'}</p>
+             </div>
+             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Long Term Goal</h5>
+                <p className="text-xs font-bold text-zinc-800 leading-relaxed">{data?.careerGoals?.long || '-'}</p>
+             </div>
+           </div>
+        </div>
       </div>
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
-         <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MapPin size={14}/> Career Goals</h4>
-         <div className="flex flex-col gap-3">
-           <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-              <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">단기 목표</h5>
-              <p className="text-xs font-bold text-zinc-800 leading-relaxed">{data?.careerGoals?.short || '-'}</p>
+      <div className="md:col-span-2">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+           <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Briefcase size={14}/> {currentLang === 'zh' ? '经历与优势' : currentLang === 'en' ? 'History & Strengths' : '이력 및 강점'}</h4>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(data?.strengths || []).map((str, idx) => (
+                  <div key={idx} className="p-5 bg-zinc-50/80 rounded-2xl border border-zinc-100 hover:bg-white hover:shadow-md hover:border-blue-100 transition-all duration-300">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs mb-3 shadow-sm">{idx+1}</div>
+                      <h5 className="text-sm md:text-base font-black text-zinc-900 mb-2">{str.title}</h5>
+                      <p className="text-xs text-zinc-500 font-medium leading-relaxed">{str.desc}</p>
+                  </div>
+              ))}
+              {(!data?.strengths || data.strengths.length === 0) && (
+                  <div className="sm:col-span-2 text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
+                      <p className="text-sm text-zinc-400 font-medium">{currentLang === 'zh' ? '暂无履历与优势。' : currentLang === 'en' ? 'No history or strengths registered.' : '등록된 이력 및 강점이 없습니다.'}</p>
+                  </div>
+              )}
            </div>
-           <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-              <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">중장기 목표</h5>
-              <p className="text-xs font-bold text-zinc-800 leading-relaxed">{data?.careerGoals?.mid || '-'}</p>
-           </div>
-           <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-              <h5 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Long Term Goal</h5>
-              <p className="text-xs font-bold text-zinc-800 leading-relaxed">{data?.careerGoals?.long || '-'}</p>
-           </div>
-         </div>
+        </div>
       </div>
     </div>
-    <div className="md:col-span-2">
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
-         <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Briefcase size={14}/> 이력 및 강점</h4>
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {(data?.strengths || []).map((str, idx) => (
-                <div key={idx} className="p-5 bg-zinc-50/80 rounded-2xl border border-zinc-100 hover:bg-white hover:shadow-md hover:border-blue-100 transition-all duration-300">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xs mb-3 shadow-sm">{idx+1}</div>
-                    <h5 className="text-sm md:text-base font-black text-zinc-900 mb-2">{str.title}</h5>
-                    <p className="text-xs text-zinc-500 font-medium leading-relaxed">{str.desc}</p>
-                </div>
-            ))}
-            {(!data?.strengths || data.strengths.length === 0) && (
-                <div className="sm:col-span-2 text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
-                    <p className="text-sm text-zinc-400 font-medium">등록된 이력 및 강점이 없습니다.</p>
-                </div>
-            )}
-         </div>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 // ============================================================================
 // 4. 상세 프로필 탭 (기존 유지)
 // ============================================================================
-export const AddProfileTab = ({ data, setShowHistoryModal }) => (
+export const AddProfileTab = ({ data, setShowHistoryModal }) => {
+  const { currentLang } = useAppStore();
+  return (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 animate-in fade-in slide-in-from-bottom-2">
     
     <div className="md:col-span-3 flex justify-between items-end mb-1">
         <div>
-            <h3 className="text-sm md:text-base font-black text-zinc-800 tracking-tight flex items-center gap-2"><UserPlus size={16} className="text-rose-500"/> 나의 상세 프로필</h3>
+            <h3 className="text-sm md:text-base font-black text-zinc-800 tracking-tight flex items-center gap-2"><UserPlus size={16} className="text-rose-500"/> {currentLang === 'zh' ? '我的详细个人资料' : currentLang === 'en' ? 'My Detailed Profile' : '나의 상세 프로필'}</h3>
             <p className="text-[10px] md:text-xs text-zinc-500 font-medium mt-1">
-                마지막 업데이트: {data?.updatedAt || '-'}
+                {currentLang === 'zh' ? '最后更新: ' : currentLang === 'en' ? 'Last Updated: ' : '마지막 업데이트: '}{data?.updatedAt || '-'}
             </p>
         </div>
         {(data?.history?.length > 0) && (
             <button onClick={() => setShowHistoryModal && setShowHistoryModal(true)} className="px-3 py-1.5 md:px-4 md:py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] md:text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 shadow-sm">
-                <History size={14}/> 과거 기록 보기
+                <History size={14}/> {currentLang === 'zh' ? '查看历史记录' : currentLang === 'en' ? 'View Past Records' : '과거 기록 보기'}
             </button>
         )}
     </div>
@@ -509,7 +532,7 @@ export const AddProfileTab = ({ data, setShowHistoryModal }) => (
           <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5"><Compass size={14}/> Lifestyle & Work</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 gap-1.5 sm:col-span-2">
-                <span className="text-[10px] font-bold text-blue-400">Motto (좌우명)</span>
+                <span className="text-[10px] font-bold text-blue-400">Motto {currentLang === 'zh' ? '(座右铭)' : currentLang === 'en' ? '(Motto)' : '(좌우명)'}</span>
                 <span className="text-sm font-black text-zinc-800">{data?.motto || '-'}</span>
               </div>
               <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
@@ -527,9 +550,13 @@ export const AddProfileTab = ({ data, setShowHistoryModal }) => (
               <div className="flex flex-col bg-zinc-50 p-4 rounded-xl border border-zinc-200/60 gap-1.5">
                 <span className="text-[10px] font-bold text-zinc-400">Contact</span>
                 <div className="flex items-center gap-2 mt-1">
-                    {['적극', '중간', '소극'].map(status => (
-                        <div key={status} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${data?.contact === status ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
-                            {status}
+                    {[
+                        { key: '적극', label: currentLang === 'zh' ? '积极' : currentLang === 'en' ? 'Active' : '적극' },
+                        { key: '중간', label: currentLang === 'zh' ? '中等' : currentLang === 'en' ? 'Medium' : '중간' },
+                        { key: '소극', label: currentLang === 'zh' ? '消极' : currentLang === 'en' ? 'Passive' : '소극' }
+                    ].map(statusObj => (
+                        <div key={statusObj.key} className={`flex-1 text-center py-1 rounded-md text-[10px] font-black transition-all ${data?.contact === statusObj.key ? 'bg-violet-100 text-violet-600 shadow-sm border border-violet-200' : 'bg-zinc-100 text-zinc-400'}`}>
+                            {statusObj.label}
                         </div>
                     ))}
                 </div>
@@ -559,14 +586,17 @@ export const AddProfileTab = ({ data, setShowHistoryModal }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // ============================================================================
 // 5. 그 외 서브 탭들 (기존 유지)
 // ============================================================================
-export const QnaTab = ({ data }) => (
+export const QnaTab = ({ data }) => {
+  const { currentLang } = useAppStore();
+  return (
   <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-zinc-100 animate-in fade-in slide-in-from-bottom-2">
-      <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-1.5"><MessageSquare size={14}/> 100문 100답</h4>
+      <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-1.5"><MessageSquare size={14}/> {currentLang === 'zh' ? '问答集' : currentLang === 'en' ? 'Q&A 100' : '100문 100답'}</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {(data || []).map((item, idx) => (
               <div key={idx} className="p-5 bg-violet-50/50 rounded-2xl border border-violet-100/50 relative overflow-hidden hover:bg-violet-50 hover:shadow-sm transition-all duration-300">
@@ -575,31 +605,37 @@ export const QnaTab = ({ data }) => (
                   <p className="text-xs font-medium text-zinc-600 relative z-10 leading-relaxed">{item.a}</p>
               </div>
           ))}
-          {(!data || data.length === 0) && <p className="md:col-span-2 text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">등록된 Q&A가 없습니다.</p>}
+          {(!data || data.length === 0) && <p className="md:col-span-2 text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">{currentLang === 'zh' ? '暂无登记的Q&A。' : currentLang === 'en' ? 'No Q&A registered.' : '등록된 Q&A가 없습니다.'}</p>}
       </div>
   </div>
-);
+  );
+};
 
-export const HobbyTab = ({ data }) => (
+export const HobbyTab = ({ data }) => {
+  const { currentLang } = useAppStore();
+  return (
   <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden flex flex-col md:flex-row group animate-in fade-in slide-in-from-bottom-2">
       <div className="h-56 md:h-auto md:w-1/2 relative bg-zinc-100 overflow-hidden">
           <img src={data?.image || 'https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81?q=80&w=1000'} alt="Hobby" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90"></div>
-          <h3 className="absolute bottom-6 left-6 md:left-8 text-2xl md:text-3xl font-black text-white drop-shadow-md">{data?.title || '취미 생활'}</h3>
+          <h3 className="absolute bottom-6 left-6 md:left-8 text-2xl md:text-3xl font-black text-white drop-shadow-md">{data?.title || (currentLang === 'zh' ? '兴趣生活' : currentLang === 'en' ? 'Hobbies' : '취미 생활')}</h3>
       </div>
       <div className="p-6 md:p-12 md:w-1/2 flex flex-col justify-center bg-gradient-to-br from-amber-50/30 to-orange-50/10">
           <Quote size={32} className="text-amber-200 mb-4 transform rotate-180" />
           <p className="text-sm text-zinc-700 leading-relaxed font-medium mb-6">
-              {data?.description || '설명이 없습니다.'}
+              {data?.description || (currentLang === 'zh' ? '暂无说明。' : currentLang === 'en' ? 'No description.' : '설명이 없습니다.')}
           </p>
           <div className="flex flex-wrap gap-2 mt-auto">
               {(data?.keywords || []).map(kw => <span key={kw} className="px-3 md:px-4 py-1.5 md:py-2 bg-white text-amber-600 text-[10px] md:text-xs font-black rounded-xl border border-amber-100 shadow-sm">#{kw}</span>)}
           </div>
       </div>
   </div>
-);
+  );
+};
 
-export const QuotesTab = ({ data }) => (
+export const QuotesTab = ({ data }) => {
+  const { currentLang } = useAppStore();
+  return (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2">
       {(data || []).map((q, idx) => (
           <div key={idx} className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-100 relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
@@ -610,20 +646,24 @@ export const QuotesTab = ({ data }) => (
       ))}
       {(!data || data.length === 0) && (
         <div className="sm:col-span-2 md:col-span-3 bg-zinc-50 p-12 rounded-3xl border border-dashed border-zinc-200 text-center">
-          <p className="text-sm text-zinc-400 font-medium">등록된 명언이 없습니다.</p>
+          <p className="text-sm text-zinc-400 font-medium">{currentLang === 'zh' ? '暂无登记的名言。' : currentLang === 'en' ? 'No quotes registered.' : '등록된 명언이 없습니다.'}</p>
         </div>
       )}
   </div>
-);
+  );
+};
 
-export const MemoTab = ({ data }) => (
+export const MemoTab = ({ data }) => {
+  const { currentLang } = useAppStore();
+  return (
   <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex flex-col h-full animate-in fade-in slide-in-from-bottom-2">
       <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><FileText size={14}/> Free Memo</h4>
       <div className="flex-1 text-sm md:text-base text-zinc-800 leading-relaxed font-medium whitespace-pre-line bg-amber-50/30 p-5 md:p-8 rounded-2xl border border-amber-100/50 min-h-[200px]">
-          {data?.text || '입력된 메모가 없습니다.'}
+          {data?.text || (currentLang === 'zh' ? '没有已输入的便签。' : currentLang === 'en' ? 'No memo entered.' : '입력된 메모가 없습니다.')}
       </div>
   </div>
-);
+  );
+};
 
 export const ArtTab = ({ data }) => {
   const gridSize = data?.gridSize || 15;

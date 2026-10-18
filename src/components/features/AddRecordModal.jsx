@@ -47,15 +47,28 @@ const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
     return d > new Date(startDate) && d < new Date(endDate);
   };
 
+  const { currentLang, t } = useAppStore();
+  const weekDays = currentLang === 'zh' 
+    ? ['日','一','二','三','四','五','六'] 
+    : currentLang === 'en' 
+      ? ['Su','Mo','Tu','We','Th','Fr','Sa'] 
+      : ['일','월','화','수','목','금','토'];
+
+  const monthLabel = currentLang === 'zh' 
+    ? `${year}年 ${month + 1}月` 
+    : currentLang === 'en' 
+      ? `${currentDate.toLocaleString('en-US', { month: 'short' })} ${year}` 
+      : `${year}년 ${month + 1}월`;
+
   return (
     <div className="bg-white border border-zinc-200 p-4 rounded-2xl shadow-xl w-[280px] absolute z-[300] mt-2 left-0" onClick={e => e.stopPropagation()}>
       <div className="flex justify-between items-center mb-4">
         <button type="button" onClick={handlePrevMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"><ChevronLeft size={16}/></button>
-        <span className="font-black text-sm text-zinc-800">{year}년 {month + 1}월</span>
+        <span className="font-black text-sm text-zinc-800">{monthLabel}</span>
         <button type="button" onClick={handleNextMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors"><ChevronRight size={16}/></button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-2 text-zinc-400 font-bold uppercase">
-        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+        {weekDays.map(w => <div key={w}>{w}</div>)}
       </div>
       <div className="grid grid-cols-7 gap-y-1 text-sm">
         {blanks.map(b => <div key={`blank-${b}`} className="p-2"/>)}
@@ -94,15 +107,15 @@ const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
         })}
       </div>
       <div className="mt-4 flex justify-between items-center border-t border-zinc-100 pt-3">
-        <span className="text-[10px] font-bold text-zinc-400">{startDate && endDate ? '기간 설정됨' : '날짜 선택'}</span>
-        <button type="button" onClick={onClose} className="text-xs font-black text-white bg-zinc-900 px-4 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">적용</button>
+        <span className="text-[10px] font-bold text-zinc-400">{startDate && endDate ? t('record.date_selected', '기간 설정됨') : t('record.date_select', '날짜 선택')}</span>
+        <button type="button" onClick={onClose} className="text-xs font-black text-white bg-zinc-900 px-4 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">{t('record.apply', '적용')}</button>
       </div>
     </div>
   );
 };
 
 const AddRecordModal = () => {
-  const { addRecordModalOpen, setAddRecordModalOpen, tagTree, fetchAllData, showToast, setViewMode, apiFetch } = useAppStore();
+  const { addRecordModalOpen, setAddRecordModalOpen, tagTree, fetchAllData, showToast, setViewMode, apiFetch, t, currentLang } = useAppStore();
   
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -208,12 +221,12 @@ const AddRecordModal = () => {
 
   const handleSave = async () => {
     if (!title.trim() || (!categoryId && !newCatName.trim())) {
-      showToast('제목과 카테고리는 필수 입력 사항입니다.');
+      showToast(t('record.required_fields', '제목과 카테고리는 필수 입력 사항입니다.'));
       return;
     }
 
     if ((isMusicCat || isUrlCat) && !youtubeUrl.trim()) {
-        showToast(isMusicCat ? '유튜브 영상 링크를 입력해주세요.' : '보관할 웹사이트 링크(URL)를 입력해주세요.');
+        showToast(isMusicCat ? t('record.youtube_placeholder', '유튜브 영상 링크를 입력해주세요.') : (currentLang === 'zh' ? '请输入要收藏的网页链接 (URL)' : currentLang === 'en' ? 'Please enter website URL to save' : '보관할 웹사이트 링크(URL)를 입력해주세요.'));
         return;
     }
     
@@ -222,7 +235,7 @@ const AddRecordModal = () => {
     try {
       let finalCatName = '';
       if (categoryId) {
-        finalCatName = tagTree.find(c => String(c.id) === String(categoryId))?.name || '분류 없음';
+        finalCatName = tagTree.find(c => String(c.id) === String(categoryId))?.name || (currentLang === 'zh' ? '未分类' : currentLang === 'en' ? 'Uncategorized' : '분류 없음');
       } else if (newCatName.trim()) {
         finalCatName = newCatName.trim();
       }
@@ -238,7 +251,7 @@ const AddRecordModal = () => {
       }
 
       if (visibilityLevel === 2 && !passcode.trim()) {
-        showToast('비밀 공개(2단계) 시 열람 비밀번호를 입력해주세요.');
+        showToast(t('passcode.enter_pin', '비밀 공개(2단계) 시 열람 비밀번호를 입력해주세요.'));
         return;
       }
 
@@ -263,15 +276,15 @@ const AddRecordModal = () => {
 
       if (res.ok) {
         await fetchAllData(true);
-        showToast('새로운 기록이 보관함에 추가되었습니다! ✨');
+        showToast(t('toast.saved', '새로운 기록이 보관함에 추가되었습니다! ✨'));
         setAddRecordModalOpen(false);
         setViewMode('archive');
       } else {
-         showToast('기록 추가에 실패했습니다.');
+         showToast(currentLang === 'zh' ? '添加记录失败' : currentLang === 'en' ? 'Failed to add record' : '기록 추가에 실패했습니다.');
       }
     } catch(err) {
       console.error(err);
-      showToast('서버 연결 중 오류가 발생했습니다.');
+      showToast(t('auth.server_error', '서버 연결 중 오류가 발생했습니다.'));
     } finally {
       setIsLoading(false);
     }
@@ -285,7 +298,7 @@ const AddRecordModal = () => {
       >
         <header className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between bg-white shrink-0">
           <h2 className="text-xl font-black text-zinc-900 flex items-center gap-2">
-            <Sparkles size={20} className="text-indigo-500"/> 새 기록 추가하기
+            <Sparkles size={20} className="text-indigo-500"/> {t('record.add_title', '새 기록 추가하기')}
           </h2>
           <button onClick={() => !isLoading && setAddRecordModalOpen(false)} className="p-2 text-zinc-400 hover:text-zinc-800 bg-zinc-50 hover:bg-zinc-100 rounded-full transition-colors"><CloseIcon size={20}/></button>
         </header>
@@ -293,12 +306,12 @@ const AddRecordModal = () => {
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-zinc-50/30">
           
           <div>
-            <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">제목 <span className="text-rose-500">*</span></label>
+            <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">{t('record.title_label', '제목')} <span className="text-rose-500">*</span></label>
             <input 
               type="text" 
               value={title} 
               onChange={e => setTitle(e.target.value)} 
-              placeholder="어떤 기록을 남길까요?" 
+              placeholder={t('record.title_placeholder', '어떤 기록을 남길까요?')} 
               className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-base font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" 
             />
           </div>
@@ -306,13 +319,13 @@ const AddRecordModal = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">카테고리 분류 <span className="text-rose-500">*</span></label>
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">{t('record.category_label', '카테고리 분류')} <span className="text-rose-500">*</span></label>
                 <button 
                   type="button" 
                   onClick={() => setIsAddingNewCat(!isAddingNewCat)} 
                   className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md transition-colors"
                 >
-                  {isAddingNewCat ? '기존 카테고리 선택' : '+ 새 카테고리 만들기'}
+                  {isAddingNewCat ? t('record.select_existing_cat', '기존 카테고리 선택') : t('record.new_cat_btn', '+ 새 카테고리 만들기')}
                 </button>
               </div>
               
@@ -324,7 +337,7 @@ const AddRecordModal = () => {
                     setNewCatName(e.target.value);
                     setCategoryId('');
                   }} 
-                  placeholder="새로운 카테고리 이름을 입력하세요" 
+                  placeholder={t('record.new_cat_placeholder', '새로운 카테고리 이름을 입력하세요')} 
                   className="w-full bg-indigo-50/50 border border-indigo-200 rounded-xl px-4 py-3 text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
                 />
               ) : (
@@ -339,7 +352,7 @@ const AddRecordModal = () => {
                     }} 
                     className="w-full bg-white border border-zinc-200 rounded-xl pl-11 pr-4 py-3 text-sm font-bold text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none transition-all shadow-sm"
                   >
-                    <option value="">보관할 폴더를 선택해주세요</option>
+                    <option value="">{t('record.select_folder_placeholder', '보관할 폴더를 선택해주세요')}</option>
                     {tagTree.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </select>
                   <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
@@ -348,7 +361,7 @@ const AddRecordModal = () => {
             </div>
 
             <div className="relative">
-              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">날짜 설정</label>
+              <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block mb-2">{t('record.date_setting', '날짜 설정')}</label>
               <div 
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className="w-full h-[46px] bg-white border border-zinc-200 rounded-xl px-4 py-2 text-sm font-bold text-zinc-700 cursor-pointer flex items-center gap-2 shadow-sm hover:border-indigo-400 transition-colors"
@@ -375,7 +388,7 @@ const AddRecordModal = () => {
                 className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-colors outline-none"
               >
                 <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">
-                  태그 연결 (선택: {tagIds.length}개, 새 태그: {newTags.length}개)
+                  {t('record.tag_connect', { selected: tagIds.length, newTags: newTags.length }, `태그 연결 (선택: ${tagIds.length}개, 새 태그: ${newTags.length}개)`)}
                 </span>
                 <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isTagExpanded ? 'rotate-180' : ''}`} />
               </button>
@@ -401,7 +414,7 @@ const AddRecordModal = () => {
 
                   <div>
                     <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-2">
-                        + 즉석 태그 만들기
+                        {t('record.tag_quick_add', '+ 즉석 태그 만들기')}
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
                       {newTags.map((tag, idx) => (
@@ -430,7 +443,7 @@ const AddRecordModal = () => {
                             if (val && !newTags.includes(val)) setNewTags([...newTags, val]);
                             setNewTagInput('');
                         }}
-                        placeholder="+ 새 태그 입력 후 Enter"
+                        placeholder={t('record.tag_quick_placeholder', '+ 새 태그 입력 후 Enter')}
                         className="flex-1 min-w-[150px] bg-white border border-dashed border-zinc-300 focus:border-solid focus:border-indigo-400 rounded-lg px-3 py-1.5 text-xs font-bold text-zinc-700 outline-none transition-all shadow-sm"
                       />
                     </div>
@@ -444,7 +457,7 @@ const AddRecordModal = () => {
           {isMusicCat ? (
             <div className="p-4 bg-red-50/50 border border-red-100 rounded-xl shadow-sm">
               <label className="text-xs font-black text-red-600 uppercase tracking-widest block mb-2 flex items-center gap-1.5">
-                <PlayCircle size={14}/> 유튜브 영상 링크 <span className="text-rose-500">*</span>
+                <PlayCircle size={14}/> {t('record.youtube_link', '유튜브 영상 링크')} <span className="text-rose-500">*</span>
               </label>
               <input 
                 type="text" 
@@ -453,31 +466,35 @@ const AddRecordModal = () => {
                 placeholder="https://www.youtube.com/watch?v=..." 
                 className="w-full bg-white border border-red-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-red-500 outline-none transition-all" 
               />
-               <p className="text-[10px] text-red-500/70 font-bold mt-2 ml-1">유튜브 영상 링크를 붙여넣으면 레코드판 디자인으로 렌더링됩니다. 🎵</p>
+               <p className="text-[10px] text-red-500/70 font-bold mt-2 ml-1">
+                 {currentLang === 'zh' ? '粘贴 YouTube 链接将自动渲染为专属黑胶唱片卡片。🎵' : currentLang === 'en' ? 'Pasting a YouTube link renders an interactive vinyl record card. 🎵' : '유튜브 영상 링크를 붙여넣으면 레코드판 디자인으로 렌더링됩니다. 🎵'}
+               </p>
             </div>
           ) : isUrlCat ? (
             <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl shadow-sm">
               <label className="text-xs font-black text-indigo-600 uppercase tracking-widest block mb-2 flex items-center gap-1.5">
-                <LinkIcon size={14}/> 웹사이트 링크 (URL) <span className="text-rose-500">*</span>
+                <LinkIcon size={14}/> {currentLang === 'zh' ? '网页链接 (URL)' : currentLang === 'en' ? 'Website Link (URL)' : '웹사이트 링크 (URL)'} <span className="text-rose-500">*</span>
               </label>
               <input 
                 type="text" 
                 value={youtubeUrl} 
                 onChange={e => setYoutubeUrl(e.target.value)} 
-                placeholder="https://velog.io/@... 등 저장할 링크" 
+                placeholder={currentLang === 'zh' ? 'https://... 等网页链接' : currentLang === 'en' ? 'https://... website link' : 'https://velog.io/@... 등 저장할 링크'} 
                 className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-3 text-sm font-bold text-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all" 
               />
-              <p className="text-[10px] text-indigo-500/70 font-bold mt-2 ml-1">저장하고 싶은 블로그, 아티클, 포트폴리오 등의 링크를 붙여넣으세요. 🔗</p>
+              <p className="text-[10px] text-indigo-500/70 font-bold mt-2 ml-1">
+                {currentLang === 'zh' ? '粘贴想保存的博客、文章、作品集网页链接。🔗' : currentLang === 'en' ? 'Paste links to articles, blogs, or portfolios you want to curate. 🔗' : '저장하고 싶은 블로그, 아티클, 포트폴리오 등의 링크를 붙여넣으세요. 🔗'}
+              </p>
             </div>
           ) : null}
 
           {!isMusicCat && !isUrlCat && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">사진 추가</label>
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">{t('record.cover_image', '사진 추가')}</label>
                 <div className="flex bg-zinc-100 p-0.5 rounded-lg">
-                    <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>파일 업로드</button>
-                    <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>웹 URL</button>
+                    <button type="button" onClick={() => setImageInputType('file')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'file' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>{t('record.upload_file', '파일 업로드')}</button>
+                    <button type="button" onClick={() => setImageInputType('url')} className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition ${imageInputType === 'url' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>{t('record.input_url', '웹 URL')}</button>
                 </div>
               </div>
               
@@ -506,7 +523,7 @@ const AddRecordModal = () => {
                               type="text" 
                               value={imageUrl} 
                               onChange={e => setImageUrl(e.target.value)} 
-                              placeholder="선택: 새 이미지 URL을 입력하거나 비워두세요." 
+                              placeholder={t('record.image_url_placeholder', '선택: 새 이미지 URL을 입력하거나 비워두세요.')} 
                               className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-bold text-zinc-900 focus:border-indigo-400 outline-none transition-colors" 
                           />
                       )}
@@ -518,15 +535,15 @@ const AddRecordModal = () => {
           {/* ⭐️ 글자 수 카운터 및 maxLength 추가 */}
           <div>
             <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">간단한 메모 (선택)</label>
-                <span className="text-[10px] font-bold text-zinc-400">{content.length} / 1000자</span>
+                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest block">{t('record.memo_label', '간단한 메모 (선택)')}</label>
+                <span className="text-[10px] font-bold text-zinc-400">{content.length} / 1000{currentLang === 'zh' ? '字' : currentLang === 'en' ? ' chars' : '자'}</span>
             </div>
             <textarea 
               value={content} 
               onChange={e => setContent(e.target.value)} 
               rows={3} 
               maxLength={1000}
-              placeholder="이 기록에 대해 남기고 싶은 이야기를 적어주세요."
+              placeholder={t('record.memo_placeholder', '이 기록에 대해 남기고 싶은 이야기를 적어주세요.')}
               className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all shadow-sm placeholder:text-zinc-400" 
             />
           </div>
@@ -536,23 +553,23 @@ const AddRecordModal = () => {
             <div className="flex items-center justify-between mb-3">
               <label className="text-xs font-black text-zinc-700 uppercase tracking-widest flex items-center gap-1.5">
                 <ShieldCheck size={16} className="text-indigo-600" />
-                공개 범위 설정
+                {t('record.visibility_title', '공개 범위 설정')}
               </label>
               <span className="text-[11px] font-bold text-zinc-500">
-                {visibilityLevel === 0 && '🌐 전체 공개 (누구나 열람 가능)'}
-                {visibilityLevel === 1 && '👥 팔로워 공개 (팔로워만 열람)'}
-                {visibilityLevel === 2 && '🔐 비밀번호 잠금 (PIN 입력 필요)'}
-                {visibilityLevel === 4 && '🔒 나만 보기 (비공개)'}
+                {visibilityLevel === 0 && t('record.vis_level0_detail', '🌐 전체 공개 (누구나 열람 가능)')}
+                {visibilityLevel === 1 && t('record.vis_level1_detail', '👥 팔로워 공개 (팔로워만 열람)')}
+                {visibilityLevel === 2 && t('record.vis_level2_detail', '🔐 비밀번호 잠금 (PIN 입력 필요)')}
+                {visibilityLevel === 4 && t('record.vis_level4_detail', '🔒 나만 보기 (비공개)')}
               </span>
             </div>
 
             {/* 4단계 선택 탭 버튼 그리드 */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { level: 0, label: '전체 공개', desc: '누구나', icon: Globe, activeBg: 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500' },
-                { level: 1, label: '팔로워 공개', desc: '팔로워만', icon: Users, activeBg: 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500' },
-                { level: 2, label: '비밀번호 잠금', desc: 'PIN 설정', icon: KeyRound, activeBg: 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' },
-                { level: 4, label: '나만 보기', desc: '비공개', icon: Lock, activeBg: 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' },
+                { level: 0, label: t('privacy.level0', '전체 공개'), desc: currentLang === 'zh' ? '公开' : currentLang === 'en' ? 'Public' : '누구나', icon: Globe, activeBg: 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500' },
+                { level: 1, label: t('privacy.level1', '팔로워 공개'), desc: currentLang === 'zh' ? '仅粉丝' : currentLang === 'en' ? 'Followers' : '팔로워만', icon: Users, activeBg: 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500' },
+                { level: 2, label: t('privacy.level2', '비밀번호 잠금'), desc: currentLang === 'zh' ? 'PIN保护' : currentLang === 'en' ? 'PIN Lock' : 'PIN 설정', icon: KeyRound, activeBg: 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' },
+                { level: 4, label: t('privacy.level4', '나만 보기'), desc: currentLang === 'zh' ? '私密' : currentLang === 'en' ? 'Private' : '비공개', icon: Lock, activeBg: 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' },
               ].map((item) => {
                 const Icon = item.icon;
                 const isSelected = visibilityLevel === item.level;
@@ -580,18 +597,18 @@ const AddRecordModal = () => {
               <div className="mt-3 p-3 bg-amber-50/70 border border-amber-200/90 rounded-xl animate-in fade-in duration-200">
                 <label className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5 mb-1.5">
                   <KeyRound size={13} className="text-amber-600" />
-                  열람 비밀번호 (Passcode) 입력 <span className="text-rose-500">*</span>
+                  {t('record.passcode_label', '열람 비밀번호 (Passcode) 입력')} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="접근용 비밀번호 (예: 1234)"
+                  placeholder={t('record.passcode_placeholder', '접근용 비밀번호 (예: 1234)')}
                   maxLength={20}
                   className="w-full bg-white border border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 rounded-lg px-3 py-2 text-xs font-bold text-zinc-800 outline-none transition-all shadow-2xs"
                 />
                 <p className="text-[10px] text-amber-800 font-medium mt-1">
-                  💡 비인가 방문자에게는 잠금 카드로 노출되며, 위 비밀번호를 입력해야 내용이 열람됩니다.
+                  {t('record.passcode_tip', '💡 비인가 방문자에게는 잠금 카드로 노출되며, 위 비밀번호를 입력해야 내용이 열람됩니다.')}
                 </p>
               </div>
             )}
@@ -604,7 +621,7 @@ const AddRecordModal = () => {
             onClick={() => !isLoading && setAddRecordModalOpen(false)} 
             className="px-5 py-2.5 bg-zinc-100 text-zinc-600 rounded-xl font-bold text-xs sm:text-sm hover:bg-zinc-200 transition-colors cursor-pointer"
           >
-            취소
+            {t('common.cancel', '취소')}
           </button>
           <button 
             onClick={handleSave} 
@@ -614,8 +631,8 @@ const AddRecordModal = () => {
             }`}
           >
             {isLoading && <Loader2 size={15} className="animate-spin" />}
-            {isLoading ? '저장 중...' : <Plus size={15} />}
-            {isLoading ? '저장 중...' : '보관함에 저장하기'}
+            {isLoading ? t('record.saving', '저장 중...') : <Plus size={15} />}
+            {isLoading ? t('record.saving', '저장 중...') : t('record.save_to_archive', '보관함에 저장하기')}
           </button>
         </footer>
 

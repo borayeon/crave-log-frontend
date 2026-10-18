@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAppStore } from '../../store/AppStore';
+
+const WEEKDAYS = {
+  ko: ['일', '월', '화', '수', '목', '금', '토'],
+  en: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  zh: ['日', '一', '二', '三', '四', '五', '六'],
+};
 
 const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
+  const { currentLang } = useAppStore();
   const [currentDate, setCurrentDate] = useState(startDate ? new Date(startDate) : new Date());
 
   const year = currentDate.getFullYear();
@@ -45,19 +53,23 @@ const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
     return d > new Date(startDate) && d < new Date(endDate);
   };
 
+  const weekLabels = WEEKDAYS[currentLang] || WEEKDAYS.ko;
+
   return (
     <div className="bg-white border border-zinc-200 p-4 rounded-2xl shadow-xl w-[280px] absolute z-[300] mt-2 left-0" onClick={e => e.stopPropagation()}>
       <div className="flex justify-between items-center mb-4">
         <button type="button" onClick={handlePrevMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors">
           <ChevronLeft size={16} />
         </button>
-        <span className="font-black text-sm text-zinc-800">{year}년 {month + 1}월</span>
+        <span className="font-black text-sm text-zinc-800">
+          {currentLang === 'zh' ? `${year}年 ${month + 1}月` : currentLang === 'en' ? `${currentDate.toLocaleString('en-US', { month: 'short' })} ${year}` : `${year}년 ${month + 1}월`}
+        </span>
         <button type="button" onClick={handleNextMonth} className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-500 transition-colors">
           <ChevronRight size={16} />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px] mb-2 text-zinc-400 font-bold uppercase">
-        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+        {weekLabels.map((lbl, idx) => <div key={idx}>{lbl}</div>)}
       </div>
       <div className="grid grid-cols-7 gap-y-1 text-sm">
         {blanks.map(b => <div key={`blank-${b}`} className="p-2" />)}
@@ -96,9 +108,13 @@ const CustomDateRangePicker = ({ startDate, endDate, onChange, onClose }) => {
         })}
       </div>
       <div className="mt-4 flex justify-between items-center border-t border-zinc-100 pt-3">
-        <span className="text-[10px] font-bold text-zinc-400">{startDate && endDate ? '기간 설정됨' : '날짜 선택'}</span>
+        <span className="text-[10px] font-bold text-zinc-400">
+          {startDate && endDate 
+            ? (currentLang === 'zh' ? '已设定区间' : currentLang === 'en' ? 'Range set' : '기간 설정됨') 
+            : (currentLang === 'zh' ? '选择日期' : currentLang === 'en' ? 'Select date' : '날짜 선택')}
+        </span>
         <button type="button" onClick={onClose} className="text-xs font-black text-white bg-zinc-900 px-4 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors">
-          적용
+          {currentLang === 'zh' ? '应用' : currentLang === 'en' ? 'Apply' : '적용'}
         </button>
       </div>
     </div>
