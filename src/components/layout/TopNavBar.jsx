@@ -35,8 +35,13 @@ const TopNavBar = () => {
     setIsMobileSearchOpen(false); 
   };
 
-  const handleGoToLanding = () => {
-    setViewMode('landing');
+  const handleHomeClick = () => {
+    if (isAdmin) {
+      if (visitedHandle) resetToMyProfile();
+      else setViewMode('profile');
+    } else {
+      setViewMode('landing');
+    }
   };
 
   const handleGoToProfile = () => {
@@ -82,18 +87,18 @@ const TopNavBar = () => {
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hidden md:flex w-9 h-9 rounded-xl bg-zinc-50 items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"><Menu size={18} /></button>
         
         <button 
-          onClick={handleGoToLanding}
+          onClick={handleHomeClick}
           className="md:hidden w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors"
-          title="홈 / 소개로 이동"
+          title={isAdmin ? "내 프로필로 이동" : "CraveLog 홈 / 소개로 이동"}
         >
           <Sparkles size={14} />
         </button>
 
         <h2 className="text-sm font-black text-zinc-800 tracking-tight flex items-center gap-2">
           <button 
-            onClick={handleGoToLanding}
-            className="hidden md:inline text-zinc-400 hover:text-indigo-600 transition-colors"
-            title="CraveLog 홈 / 소개"
+            onClick={handleHomeClick}
+            className="hidden md:inline text-zinc-400 hover:text-indigo-600 transition-colors cursor-pointer"
+            title={isAdmin ? "내 프로필로 이동" : "CraveLog 홈 / 소개로 이동"}
           >
             CraveLog
           </button>
@@ -192,6 +197,13 @@ const TopNavBar = () => {
                     </button>
 
                     <div className="h-px bg-zinc-100 my-1 mx-2"></div>
+
+                    <button 
+                      onClick={() => { setViewMode('landing'); setIsUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition text-left"
+                    >
+                      <Sparkles size={16} className="text-zinc-400" /> CraveLog 소개
+                    </button>
 
                     <button 
                       onClick={() => { handleLogout(); showToast("로그아웃 되었습니다. 👋"); setIsUserMenuOpen(false); }} 

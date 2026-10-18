@@ -73,7 +73,7 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    { id: 'landing', icon: <Sparkles size={20} />, label: '홈 / 소개', desc: 'CraveLog 시작하기' },
+    ...(!isAdmin ? [{ id: 'landing', icon: <Sparkles size={20} />, label: '홈 / 소개', desc: 'CraveLog 시작하기' }] : []),
     { id: 'profile', icon: <User size={20} />, label: '프로필', desc: '나를 소개하는 공간' },
     { id: 'archive', icon: <Network size={20} />, label: '컬렉션', desc: '내 취향 모아보기' },
     { id: 'timeline', icon: <History size={20} />, label: '타임라인', desc: '시간순 기록장' },
@@ -93,9 +93,16 @@ const Sidebar = () => {
           
           {/* 로고 영역 */}
           <div 
-            onClick={() => setViewMode('landing')}
+            onClick={() => {
+              if (isAdmin) {
+                if (visitedHandle) resetToMyProfile();
+                else setViewMode('profile');
+              } else {
+                setViewMode('landing');
+              }
+            }}
             className="h-20 flex items-center px-5 gap-3 mt-2 shrink-0 cursor-pointer group/logo"
-            title="CraveLog 홈 / 소개로 이동"
+            title={isAdmin ? "내 프로필로 이동" : "CraveLog 홈 / 소개로 이동"}
           >
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm bg-white text-indigo-600 border border-zinc-200 shrink-0 group-hover/logo:bg-indigo-50 transition-colors">
               <Sparkles size={18} className="group-hover/logo:scale-110 transition-transform" />
