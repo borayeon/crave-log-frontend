@@ -24,11 +24,11 @@ const LOADING_TIPS = [
 ];
 
 const DEFAULT_PERSONAS = {
-  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true },
-  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true },
-  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true },
-  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true },
-  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true }
+  portfolio: { id: 'portfolio', name: '💼 포트폴리오', desc: '기업/공적 프로필', tabs: ['developer', 'developer2', 'career', 'businessCard'], color: 'bg-blue-50 text-blue-600', activeColor: 'bg-blue-500 text-white border-blue-500', isVisible: true, visibilityLevel: 0, passcode: '' },
+  social: { id: 'social', name: '🍻 친목', desc: '친구/네트워킹용', tabs: ['addProfile', 'qna', 'hobby', 'art', 'memo'], color: 'bg-amber-50 text-amber-600', activeColor: 'bg-amber-500 text-white border-amber-500', isVisible: true, visibilityLevel: 0, passcode: '' },
+  dating: { id: 'dating', name: '💖 이성', desc: '이성 어필용 감성 프로필', tabs: ['addProfile', 'vision', 'qna', 'hobby'], color: 'bg-rose-50 text-rose-600', activeColor: 'bg-rose-500 text-white border-rose-500', isVisible: true, visibilityLevel: 0, passcode: '' },
+  fan: { id: 'fan', name: '🎨 덕질', desc: '취미/크리에이터용', tabs: ['hobby', 'art', 'memo', 'quotes', 'qna'], color: 'bg-purple-50 text-purple-600', activeColor: 'bg-purple-500 text-white border-purple-500', isVisible: true, visibilityLevel: 0, passcode: '' },
+  custom: { id: 'custom', name: '🛠️ 커스텀 페르소나', desc: '원하는 탭만 골라 만드는 커스텀 뷰', tabs: [], color: 'bg-teal-50 text-teal-600', activeColor: 'bg-teal-500 text-white border-teal-500', isVisible: true, visibilityLevel: 0, passcode: '' }
 };
 
 const ProfileView = () => {
@@ -51,6 +51,10 @@ const ProfileView = () => {
   // ⭐️ 2단계 비밀번호 서브 탭 잠금 해제 상태 관리
   const [unlockedTabs, setUnlockedTabs] = useState({});
   const [pinInputs, setPinInputs] = useState({});
+
+  // ⭐️ 페르소나 4단계 보안 레벨 및 PIN 잠금 해제 상태 관리
+  const [unlockedPersonas, setUnlockedPersonas] = useState({});
+  const [personaPinInputs, setPersonaPinInputs] = useState({});
 
   const randomTip = useMemo(() => LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)], []);
 
@@ -80,12 +84,43 @@ const ProfileView = () => {
   const CUSTOM_PERSONAS = useMemo(() => {
     const p = safeUser.addProfile?.personas || DEFAULT_PERSONAS;
     return {
-      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true },
+      all: { id: 'all', name: '✨ 전체', desc: '모든 프로필 보기', tabs: null, color: 'bg-zinc-100 text-zinc-600', activeColor: 'bg-zinc-800 text-white border-zinc-800', isVisible: true, visibilityLevel: 0 },
       ...p
     };
   }, [safeUser.addProfile?.personas]);
 
-  const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => p.id === 'all' || p.isVisible !== false);
+  // ⭐️ 페르소나 4단계 공개 범위 레벨 조회 헬퍼 (0: 전체공개, 1: 팔로워공개, 2: 비밀번호잠금, 4: 비공개)
+  const getPersonaLevel = (persona) => {
+    if (!persona || persona.id === 'all') return 0;
+    if (persona.visibilityLevel !== undefined && persona.visibilityLevel !== null) {
+      return Number(persona.visibilityLevel);
+    }
+    if (persona.isVisible === false) return 4;
+    return 0;
+  };
+
+  const isGuest = !isAdmin || isGuestMode;
+
+  // ⭐️ 2단계 페르소나 비밀번호(PIN) 검증 및 잠금 해제 핸들러
+  const handleUnlockPersona = (personaId) => {
+    const persona = CUSTOM_PERSONAS[personaId];
+    const expectedPin = persona?.passcode;
+    const inputPin = (personaPinInputs[personaId] || '').trim();
+    if (!expectedPin || inputPin === String(expectedPin).trim()) {
+      setUnlockedPersonas(prev => ({ ...prev, [personaId]: true }));
+      showToast(`[${persona?.name || '페르소나'}] 잠금이 해제되었습니다! 🔓`);
+    } else {
+      showToast('비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+    }
+  };
+
+  // 4단계(나만 보기) 비공개 페르소나는 게스트에게 기본적으로 숨김
+  const visiblePersonas = Object.values(CUSTOM_PERSONAS).filter(p => {
+    if (p.id === 'all') return true;
+    const level = getPersonaLevel(p);
+    if (isGuest && level === 4) return false;
+    return true;
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -98,7 +133,7 @@ const ProfileView = () => {
   const personaOrder = safeUser.addProfile?.personaOrder || ['all', ...Object.keys(DEFAULT_PERSONAS)];
   const displayPersonas = useMemo(() => {
     const list = [...visiblePersonas];
-    if (currentPersona !== 'all' && CUSTOM_PERSONAS[currentPersona]?.isVisible === false) {
+    if (currentPersona !== 'all' && getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 4) {
         if (!list.find(p => p.id === currentPersona)) {
             list.push(CUSTOM_PERSONAS[currentPersona]);
         }
@@ -133,8 +168,6 @@ const ProfileView = () => {
 
     return { isLongBio: isLong, displayBio: truncated };
   }, [safeUser.bio, isBioExpanded]);
-
-  const isGuest = !isAdmin || isGuestMode;
 
   useEffect(() => {
     if (!safeUser.handle) return;
@@ -202,9 +235,14 @@ const ProfileView = () => {
     }
 
     const finalUrl = `${baseUrl}&p=${personaId}`; 
+    const level = getPersonaLevel(persona);
+    let copyMsg = `${persona.name} 링크가 복사되었습니다! 🔗`;
+    if (level === 1) copyMsg = `${persona.name} 팔로워 전용 링크가 복사되었습니다! 👥`;
+    if (level === 2) copyMsg = `${persona.name} PIN 잠금 링크가 복사되었습니다! 🔐`;
+    if (level === 4) copyMsg = `${persona.name} 시크릿 링크가 복사되었습니다! 🔒`;
     
     navigator.clipboard.writeText(finalUrl).then(() => {
-      showToast(`${persona.name} 시크릿 링크가 복사되었습니다! 🔒`);
+      showToast(copyMsg);
       setShowShareModal(false);
     }).catch(_err => {
       showToast("링크 복사에 실패했습니다.");
@@ -410,16 +448,23 @@ const ProfileView = () => {
                     <div className="h-px bg-zinc-100 my-2 mx-2"></div>
                     {shareablePersonas.map(persona => {
                         if (persona.id === 'all') return null;
-                        const isSecret = persona.isVisible === false;
+                        const level = getPersonaLevel(persona);
                         return (
                           <button key={persona.id} onClick={() => handleCopyLink(persona.id)} className="w-full flex items-center justify-between p-4 rounded-2xl border border-zinc-100 hover:border-violet-300 hover:bg-violet-50/50 transition-all text-left group">
                               <div>
                                   <p className="text-sm font-black text-zinc-900 mb-0.5 flex items-center gap-1.5">
-                                      {isSecret && <Lock size={12} className="text-rose-500" title="비공개 시크릿 링크" />}
-                                      {persona.name}
+                                      {level === 0 && <Globe size={13} className="text-indigo-500" />}
+                                      {level === 1 && <Users size={13} className="text-emerald-500" />}
+                                      {level === 2 && <KeyRound size={13} className="text-amber-500" />}
+                                      {level === 4 && <Lock size={13} className="text-rose-500" />}
+                                      <span>{persona.name}</span>
                                   </p>
-                                  <p className="text-[10px] font-bold text-zinc-500">
-                                      {isSecret ? <span className="text-rose-500 font-black">[시크릿 링크]</span> : ''} {persona.desc}
+                                  <p className="text-[10px] font-bold text-zinc-500 flex items-center gap-1 flex-wrap">
+                                      {level === 0 && <span className="text-indigo-600 font-black">[전체 공개]</span>}
+                                      {level === 1 && <span className="text-emerald-600 font-black">[팔로워 공개]</span>}
+                                      {level === 2 && <span className="text-amber-600 font-black">[PIN 잠금]</span>}
+                                      {level === 4 && <span className="text-rose-500 font-black">[시크릿 링크]</span>}
+                                      <span>{persona.desc}</span>
                                   </p>
                               </div>
                               <Copy size={16} className="text-zinc-300 group-hover:text-violet-500 transition-colors" />
@@ -456,20 +501,40 @@ const ProfileView = () => {
         <div className="flex px-6 md:px-10 gap-1 md:gap-1.5 mb-[-8px] relative z-10 overflow-x-auto scrollbar-hide pt-2 items-end">
           {displayPersonas.map(p => {
             const isActive = currentPersona === p.id;
-            const isSecret = p.isVisible === false;
+            const level = getPersonaLevel(p);
+            const isUnlocked = unlockedPersonas[p.id];
 
             return (
               <button
                 key={p.id}
                 onClick={() => setCurrentPersona(p.id)}
-                className={`shrink-0 px-4 md:px-5 rounded-t-[14px] text-[11px] md:text-xs font-bold transition-all duration-200 border border-b-0 flex items-center gap-1.5
+                className={`shrink-0 px-3.5 md:px-4.5 rounded-t-[14px] text-[11px] md:text-xs font-bold transition-all duration-200 border border-b-0 flex items-center gap-1.5
                   ${isActive 
-                    ? `${p.activeColor || 'bg-indigo-500 text-white border-indigo-500'} pt-2.5 pb-4 -mt-1 shadow-sm z-20`
-                    : `${p.color || 'bg-zinc-50 text-zinc-500'} border-zinc-200/80 pt-2 pb-3 opacity-60 hover:opacity-100 hover:bg-white z-10 hover:pb-3.5 hover:-mt-0.5`}
+                    ? `${p.activeColor || 'bg-indigo-500 text-white border-indigo-500'} pt-2.5 pb-4 -mt-1 shadow-sm z-20 font-black`
+                    : `${p.color || 'bg-zinc-50 text-zinc-500'} border-zinc-200/80 pt-2 pb-3 opacity-70 hover:opacity-100 hover:bg-white z-10 hover:pb-3.5 hover:-mt-0.5`}
                 `}
               >
-                {isSecret && <Lock size={12} className={isActive ? "text-white/80" : "text-rose-400"} />}
-                {p.name}
+                {/* ⭐️ 페르소나 4단계 보안 레벨 아이콘/배지 */}
+                {level === 1 && (
+                  <span title={followStatus.isFollowing ? "1단계: 팔로워 확인됨" : "1단계: 팔로워 전용"}>
+                    <Users size={12} className={isActive ? "text-white" : (followStatus.isFollowing ? "text-emerald-600" : "text-emerald-500")} />
+                  </span>
+                )}
+                {level === 2 && (
+                  <span title={isUnlocked ? "2단계: 비밀번호 해제됨" : "2단계: 비밀번호 잠금"}>
+                    {isUnlocked ? (
+                      <ShieldCheck size={12} className={isActive ? "text-white" : "text-amber-600"} />
+                    ) : (
+                      <KeyRound size={12} className={isActive ? "text-white" : "text-amber-500"} />
+                    )}
+                  </span>
+                )}
+                {level === 4 && (
+                  <span title="4단계: 비공개 (나만 보기)">
+                    <Lock size={12} className={isActive ? "text-white/80" : "text-rose-500"} />
+                  </span>
+                )}
+                <span>{p.name}</span>
               </button>
             )
           })}
@@ -512,9 +577,16 @@ const ProfileView = () => {
                 )}
                 
                 {isGuest && currentPersona !== 'all' && (
-                  <div className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 border border-violet-200 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm">
-                      <span className="text-[10px] md:text-[11px] font-black tracking-widest uppercase">
-                          {CUSTOM_PERSONAS[currentPersona]?.isVisible === false && <Lock size={10} className="inline mr-1 -mt-0.5" />}
+                  <div className={`inline-flex items-center gap-1.5 px-3 py-1 md:py-1.5 rounded-2xl shadow-sm border ${
+                    getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 1 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 2 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                    getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 4 ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                    'bg-violet-50 text-violet-700 border-violet-200'
+                  }`}>
+                      <span className="text-[10px] md:text-[11px] font-black tracking-widest uppercase flex items-center gap-1">
+                          {getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 1 && <Users size={11} />}
+                          {getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 2 && <KeyRound size={11} />}
+                          {getPersonaLevel(CUSTOM_PERSONAS[currentPersona]) === 4 && <Lock size={11} />}
                           {CUSTOM_PERSONAS[currentPersona]?.name} 뷰 접속중
                       </span>
                   </div>
@@ -665,154 +737,215 @@ const ProfileView = () => {
 
           {!isProfileEmpty && (
             <>
-              <div className="mt-8 md:mt-10">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
-                  <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
-                </div>
-                
-                <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-2 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
-                  {availableTabs.map(tab => {
-                      const isActive = activeTab === tab.id;
-                      const level = getTabLevel(tab.id);
-                      const isUnlocked = unlockedTabs[tab.id];
-                      
-                      return (
-                        <button 
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`flex flex-col items-center gap-1.5 md:gap-2 shrink-0 group outline-none relative`}
-                        >
-                          <div className={`w-16 h-16 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
-                            {React.cloneElement(tab.icon, { className: 'w-6 h-6 md:w-7 md:h-7 transition-colors' })}
-
-                            {/* ⭐️ 서브 탭 4단계 보안 레벨 뱃지 */}
-                            {level === 1 && (
-                              <span 
-                                className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-xs border ${
-                                  followStatus.isFollowing ? 'bg-emerald-500 text-white border-white' : 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                }`} 
-                                title={followStatus.isFollowing ? "1단계: 팔로워 확인됨" : "1단계: 팔로워 전용"}
-                              >
-                                <Users size={11} />
-                              </span>
-                            )}
-                            {level === 2 && (
-                              <span 
-                                className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-xs border ${
-                                  isUnlocked ? 'bg-indigo-600 text-white border-white' : 'bg-amber-100 text-amber-700 border-amber-200'
-                                }`} 
-                                title={isUnlocked ? "2단계: 비밀번호 해제됨" : "2단계: 비밀번호 잠금"}
-                              >
-                                {isUnlocked ? <ShieldCheck size={11} /> : <KeyRound size={11} />}
-                              </span>
-                            )}
-                            {level === 4 && (
-                              <span 
-                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 flex items-center justify-center text-[10px] shadow-xs" 
-                                title="4단계: 비공개 (나만 보기)"
-                              >
-                                <Lock size={11} />
-                              </span>
-                            )}
-                          </div>
-                          <span className={`text-[10px] md:text-[11px] font-black transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 group-hover:text-zinc-600'}`}>{tab.label}</span>
-                        </button>
-                      );
-                  })}
-                </div>
-              </div>
-
-              {availableTabs.length === 0 ? (
-                  <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
-                      <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
-                      <h3 className="text-base md:text-lg font-black text-zinc-800">접근할 수 있는 데이터가 없습니다</h3>
-                      <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">비공개 처리되었거나 페르소나 설정에 의해 숨겨진 항목입니다.</p>
+              {/* ⭐️ 만약 현재 선택된 페르소나가 팔로워 전용인데 팔로우하지 않은 경우 */}
+              {isGuest && currentPersona !== 'all' && getPersonaLevel(activePersonaObj) === 1 && !followStatus.isFollowing ? (
+                <div className="mt-8 p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-inner">
+                    <Users size={32} />
                   </div>
+                  <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg mb-2">
+                    Level 1 · 팔로워 전용 페르소나
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
+                    [{activePersonaObj.name}] 페르소나는 팔로워에게만 공개되어 있습니다
+                  </h3>
+                  <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
+                    {safeUser.name || '작성자'} 님을 팔로우하시면 이 페르소나에 포함된 모든 서브 탭과 콘텐츠를 열람하실 수 있습니다.
+                  </p>
+                  <button
+                    onClick={handleToggleFollow}
+                    disabled={isFollowLoading}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  >
+                    <Users size={16} />
+                    <span>✦ 팔로우하고 바로 확인하기</span>
+                  </button>
+                </div>
+              ) : isGuest && currentPersona !== 'all' && getPersonaLevel(activePersonaObj) === 2 && !unlockedPersonas[currentPersona] ? (
+                /* ⭐️ 만약 현재 선택된 페르소나가 비밀번호 잠금인데 아직 해제되지 않은 경우 */
+                <div className="mt-8 p-8 sm:p-12 bg-white border border-amber-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-4 shadow-inner">
+                    <KeyRound size={32} />
+                  </div>
+                  <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg mb-2">
+                    Level 2 · 비밀번호 보호 페르소나
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
+                    [{activePersonaObj.name}] 페르소나는 열람 비밀번호가 필요합니다
+                  </h3>
+                  <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
+                    공유받은 PIN 또는 비밀번호를 입력하시면 이 페르소나의 구성 탭과 상세 정보를 즉시 확인하실 수 있습니다.
+                  </p>
+                  <div className="flex items-center gap-2 max-w-xs w-full">
+                    <input
+                      type="password"
+                      value={personaPinInputs[currentPersona] || ''}
+                      onChange={(e) => setPersonaPinInputs(prev => ({ ...prev, [currentPersona]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleUnlockPersona(currentPersona); }}
+                      placeholder="비밀번호(PIN) 입력"
+                      className="flex-1 bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl px-4 py-2.5 text-xs font-bold text-zinc-800 outline-none transition-all shadow-inner"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => handleUnlockPersona(currentPersona)}
+                      className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 shrink-0 cursor-pointer"
+                    >
+                      잠금 해제
+                    </button>
+                  </div>
+                </div>
               ) : (
-                  <div className="mt-2 pb-10">
-                      {/* ⭐️ 1단계: 팔로워 전용 서브 탭 잠금 화면 (게스트이면서 미팔로우 상태) */}
-                      {isGuest && getTabLevel(activeTab) === 1 && !followStatus.isFollowing ? (
-                        <div className="p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
-                          <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-inner">
-                            <Users size={32} />
-                          </div>
-                          <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg mb-2">
-                            Level 1 · 팔로워 전용 서브 탭
-                          </span>
-                          <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
-                            [{allTabsMap[activeTab]?.label || activeTab}] 탭은 팔로워에게만 공개되어 있습니다
-                          </h3>
-                          <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
-                            {safeUser.name || '작성자'} 님을 팔로우하시면 이 서브 탭에 담긴 소중한 데이터와 기록을 자유롭게 열람하실 수 있습니다.
-                          </p>
-                          <button
-                            onClick={handleToggleFollow}
-                            disabled={isFollowLoading}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                          >
-                            <Users size={16} />
-                            <span>✦ 팔로우하고 바로 확인하기</span>
-                          </button>
-                        </div>
-                      ) : isGuest && getTabLevel(activeTab) === 2 && !unlockedTabs[activeTab] ? (
-                        /* ⭐️ 2단계: 비밀번호 잠금 서브 탭 잠금 화면 (게스트이면서 미잠금해제 상태) */
-                        <div className="p-8 sm:p-12 bg-white border border-amber-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
-                          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-4 shadow-inner">
-                            <KeyRound size={32} />
-                          </div>
-                          <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg mb-2">
-                            Level 2 · 비밀번호 보호 서브 탭
-                          </span>
-                          <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
-                            [{allTabsMap[activeTab]?.label || activeTab}] 탭은 열람 비밀번호가 필요합니다
-                          </h3>
-                          <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
-                            공유받은 PIN 또는 비밀번호를 입력하시면 이 서브 탭의 상세 내용을 즉시 확인하실 수 있습니다.
-                          </p>
-                          <div className="flex items-center gap-2 max-w-xs w-full">
-                            <input
-                              type="password"
-                              value={pinInputs[activeTab] || ''}
-                              onChange={(e) => setPinInputs(prev => ({ ...prev, [activeTab]: e.target.value }))}
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleUnlockTab(activeTab); }}
-                              placeholder="비밀번호(PIN) 입력"
-                              className="flex-1 bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl px-4 py-2.5 text-xs font-bold text-zinc-800 outline-none transition-all shadow-inner"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleUnlockTab(activeTab)}
-                              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 shrink-0 cursor-pointer"
+                <>
+                  <div className="mt-8 md:mt-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-base md:text-lg font-black text-zinc-900 tracking-tight">데이터 탐색</h3>
+                      <ChevronRight size={18} className="text-zinc-400 md:hidden"/>
+                    </div>
+                    
+                    <div className="flex md:flex-wrap md:justify-start gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pt-2 pb-6 -mx-4 px-4 md:mx-0 md:px-0">
+                      {availableTabs.map(tab => {
+                          const isActive = activeTab === tab.id;
+                          const level = getTabLevel(tab.id);
+                          const isUnlocked = unlockedTabs[tab.id];
+                          
+                          return (
+                            <button 
+                              key={tab.id}
+                              onClick={() => setActiveTab(tab.id)}
+                              className={`flex flex-col items-center gap-1.5 md:gap-2 shrink-0 group outline-none relative`}
                             >
-                              잠금 해제
+                              <div className={`w-16 h-16 md:w-[76px] md:h-[76px] rounded-2xl md:rounded-[1.5rem] flex items-center justify-center relative transition-all duration-300 border ${isActive ? `${tab.color} border-current shadow-md scale-105` : 'bg-white border-zinc-200 text-zinc-400 shadow-sm group-hover:scale-105 group-hover:border-zinc-300'}`}>
+                                {React.cloneElement(tab.icon, { className: 'w-6 h-6 md:w-7 md:h-7 transition-colors' })}
+
+                                {/* ⭐️ 서브 탭 4단계 보안 레벨 뱃지 */}
+                                {level === 1 && (
+                                  <span 
+                                    className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-xs border ${
+                                      followStatus.isFollowing ? 'bg-emerald-500 text-white border-white' : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                    }`} 
+                                    title={followStatus.isFollowing ? "1단계: 팔로워 확인됨" : "1단계: 팔로워 전용"}
+                                  >
+                                    <Users size={11} />
+                                  </span>
+                                )}
+                                {level === 2 && (
+                                  <span 
+                                    className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-xs border ${
+                                      isUnlocked ? 'bg-indigo-600 text-white border-white' : 'bg-amber-100 text-amber-700 border-amber-200'
+                                    }`} 
+                                    title={isUnlocked ? "2단계: 비밀번호 해제됨" : "2단계: 비밀번호 잠금"}
+                                  >
+                                    {isUnlocked ? <ShieldCheck size={11} /> : <KeyRound size={11} />}
+                                  </span>
+                                )}
+                                {level === 4 && (
+                                  <span 
+                                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 flex items-center justify-center text-[10px] shadow-xs" 
+                                    title="4단계: 비공개 (나만 보기)"
+                                  >
+                                    <Lock size={11} />
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-[10px] md:text-[11px] font-black transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 group-hover:text-zinc-600'}`}>{tab.label}</span>
                             </button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* ⭐️ 정상 렌더링 */
-                        <>
-                          {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
-                          {activeTab === 'developer2' && availableTabs.some(t => t.id === 'developer2') && <Developer2Tab user={safeUser} />}
-                          {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
-                          {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={() => {}} />}
-                          {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
-                              <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                  <BusinessCard data={safeUser.addProfile?.businessCard} userName={safeUser.name} />
-                              </div>
-                          )}
-                          {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && <QnaTab data={safeUser.addProfile?.qna} />}
-                          {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && <HobbyTab data={safeUser.addProfile?.hobby} />}
-                          {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && (
-                              <div className="animate-in fade-in">
-                                  <Mandalart visionData={safeUser.addProfile?.vision} isEditMode={false} />
-                              </div>
-                          )}
-                          {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && <QuotesTab data={safeUser.addProfile?.quotes} />}
-                          {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && <MemoTab data={safeUser.addProfile?.memoArea} />}
-                          {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && <ArtTab data={safeUser.addProfile?.memoArea} />}
-                        </>
-                      )}
+                          );
+                      })}
+                    </div>
                   </div>
+
+                  {availableTabs.length === 0 ? (
+                      <div className="mt-4 md:mt-6 p-10 flex flex-col items-center justify-center bg-white rounded-3xl shadow-sm border border-zinc-100">
+                          <div className="w-16 h-16 bg-zinc-50 flex items-center justify-center rounded-full mb-4 shadow-inner"><Lock size={24} className="text-zinc-400" /></div>
+                          <h3 className="text-base md:text-lg font-black text-zinc-800">접근할 수 있는 데이터가 없습니다</h3>
+                          <p className="text-xs md:text-sm font-medium text-zinc-500 mt-2">비공개 처리되었거나 페르소나 설정에 의해 숨겨진 항목입니다.</p>
+                      </div>
+                  ) : (
+                      <div className="mt-2 pb-10">
+                          {/* ⭐️ 1단계: 팔로워 전용 서브 탭 잠금 화면 (게스트이면서 미팔로우 상태) */}
+                          {isGuest && getTabLevel(activeTab) === 1 && !followStatus.isFollowing ? (
+                            <div className="p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-inner">
+                                <Users size={32} />
+                              </div>
+                              <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg mb-2">
+                                Level 1 · 팔로워 전용 서브 탭
+                              </span>
+                              <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
+                                [{allTabsMap[activeTab]?.label || activeTab}] 탭은 팔로워에게만 공개되어 있습니다
+                              </h3>
+                              <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
+                                {safeUser.name || '작성자'} 님을 팔로우하시면 이 서브 탭에 담긴 소중한 데이터와 기록을 자유롭게 열람하실 수 있습니다.
+                              </p>
+                              <button
+                                onClick={handleToggleFollow}
+                                disabled={isFollowLoading}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                              >
+                                <Users size={16} />
+                                <span>✦ 팔로우하고 바로 확인하기</span>
+                              </button>
+                            </div>
+                          ) : isGuest && getTabLevel(activeTab) === 2 && !unlockedTabs[activeTab] ? (
+                            /* ⭐️ 2단계: 비밀번호 잠금 서브 탭 잠금 화면 (게스트이면서 미잠금해제 상태) */
+                            <div className="p-8 sm:p-12 bg-white border border-amber-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-4 shadow-inner">
+                                <KeyRound size={32} />
+                              </div>
+                              <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg mb-2">
+                                Level 2 · 비밀번호 보호 서브 탭
+                              </span>
+                              <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
+                                [{allTabsMap[activeTab]?.label || activeTab}] 탭은 열람 비밀번호가 필요합니다
+                              </h3>
+                              <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
+                                공유받은 PIN 또는 비밀번호를 입력하시면 이 서브 탭의 상세 내용을 즉시 확인하실 수 있습니다.
+                              </p>
+                              <div className="flex items-center gap-2 max-w-xs w-full">
+                                <input
+                                  type="password"
+                                  value={pinInputs[activeTab] || ''}
+                                  onChange={(e) => setPinInputs(prev => ({ ...prev, [activeTab]: e.target.value }))}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleUnlockTab(activeTab); }}
+                                  placeholder="비밀번호(PIN) 입력"
+                                  className="flex-1 bg-zinc-50 border border-zinc-200 focus:border-amber-500 focus:bg-white rounded-xl px-4 py-2.5 text-xs font-bold text-zinc-800 outline-none transition-all shadow-inner"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleUnlockTab(activeTab)}
+                                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 shrink-0 cursor-pointer"
+                                >
+                                  잠금 해제
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* ⭐️ 정상 렌더링 */
+                            <>
+                              {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
+                              {activeTab === 'developer2' && availableTabs.some(t => t.id === 'developer2') && <Developer2Tab user={safeUser} />}
+                              {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
+                              {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={() => {}} />}
+                              {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
+                                  <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                      <BusinessCard data={safeUser.addProfile?.businessCard} userName={safeUser.name} />
+                                  </div>
+                              )}
+                              {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && <QnaTab data={safeUser.addProfile?.qna} />}
+                              {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && <HobbyTab data={safeUser.addProfile?.hobby} />}
+                              {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && (
+                                  <div className="animate-in fade-in">
+                                      <Mandalart visionData={safeUser.addProfile?.vision} isEditMode={false} />
+                                  </div>
+                              )}
+                              {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && <QuotesTab data={safeUser.addProfile?.quotes} />}
+                              {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && <MemoTab data={safeUser.addProfile?.memoArea} />}
+                              {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && <ArtTab data={safeUser.addProfile?.memoArea} />}
+                            </>
+                          )}
+                      </div>
+                  )}
+                </>
               )}
             </>
           )}
