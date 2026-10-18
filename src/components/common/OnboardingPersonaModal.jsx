@@ -5,6 +5,7 @@ import {
   Grid, UserPlus, X as CloseIcon, Loader2, ShieldCheck, Heart, Layers
 } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
+import { DEFAULT_PERSONAS } from '../../pages/EditProfileView';
 
 // ⭐️ 시작 페르소나 프리셋 목록 정의
 export const ONBOARDING_PERSONAS = [
@@ -108,16 +109,57 @@ const OnboardingPersonaModal = () => {
 
   const currentPersona = ONBOARDING_PERSONAS.find(p => p.id === selectedPersonaId) || ONBOARDING_PERSONAS[0];
 
+  const ONBOARDING_TO_PERSONA_MAP = {
+    portfolio: 'portfolio',
+    social: 'social',
+    vision: 'dating',
+    creator: 'fan',
+    minimal: 'custom'
+  };
+
   const handleApplyPersona = async () => {
     setIsSubmitting(true);
     try {
-      // 1. 현재 사용자 객체를 복사하고 선택한 페르소나의 서브 탭 배열을 idol.tabOrder에 적용
       const safeUser = JSON.parse(JSON.stringify(user || {}));
+
+      // 1. 기존 페르소나 목록 또는 DEFAULT_PERSONAS 복사
+      const basePersonas = safeUser.idol?.personas 
+        ? JSON.parse(JSON.stringify(safeUser.idol.personas))
+        : JSON.parse(JSON.stringify(DEFAULT_PERSONAS));
+
+      const targetPersonaKey = ONBOARDING_TO_PERSONA_MAP[currentPersona.id] || currentPersona.id;
+
+      // 2. ⭐️ 선택한 페르소나만 활성화(isActive: true)하고 나머지는 모두 비활성화(isActive: false)!
+      const updatedPersonas = {};
+      Object.keys(basePersonas).forEach(pKey => {
+        if (pKey === 'all') return;
+        const pObj = { ...basePersonas[pKey] };
+        if (pKey === targetPersonaKey) {
+          pObj.isActive = true;
+          pObj.tabs = currentPersona.tabs;
+          if (currentPersona.id === 'vision' && pKey === 'dating') {
+            pObj.name = '💖 비전 & 성장';
+            pObj.desc = '목표와 비전을 시각화하는 성장 아카이브';
+          }
+        } else {
+          // ⭐️ 나머지 페르소나는 비활성화 처리
+          pObj.isActive = false;
+        }
+        updatedPersonas[pKey] = pObj;
+      });
+
+      // 3. 페르소나 순서도 선택한 페르소나를 우선 배치
+      const remainingPersonaKeys = Object.keys(updatedPersonas).filter(k => k !== targetPersonaKey);
+      const updatedPersonaOrder = ['all', targetPersonaKey, ...remainingPersonaKeys];
+
+      // 4. 서브 탭 tabOrder 및 페르소나 정보 업데이트
       const updatedIdol = {
         ...(safeUser.idol || {}),
         tabOrder: currentPersona.tabs,
+        personas: updatedPersonas,
+        personaOrder: updatedPersonaOrder,
         onboardingCompleted: true,
-        selectedPersona: currentPersona.id
+        selectedPersona: targetPersonaKey
       };
 
       const payload = {
@@ -125,7 +167,7 @@ const OnboardingPersonaModal = () => {
         idol: updatedIdol
       };
 
-      // 2. 백엔드 프로필 저장 API 호출
+      // 5. 백엔드 프로필 저장 API 호출
       const res = await apiFetch('/me/profile', {
         method: 'PUT',
         body: JSON.stringify(payload)
@@ -134,8 +176,8 @@ const OnboardingPersonaModal = () => {
       if (res.ok) {
         await fetchAllData();
         setOnboardingModalOpen(false);
-        setViewMode('edit_profile');
-        showToast(`🎉 '${currentPersona.name}' 모드로 설정되었습니다! ${currentPersona.tabs.length}개의 서브 탭이 활성화되었습니다.`);
+        setViewMode('profile');
+        showToast(`🎉 '${currentPersona.name}' 모드로 설정되었습니다! 선택한 페르소나 외 나머지는 비활성화되었습니다.`);
       } else {
         const err = await res.json().catch(() => ({}));
         showToast(err.message || '설정 저장에 실패했습니다. 다시 시도해주세요.');
@@ -259,34 +301,41 @@ const OnboardingPersonaModal = () => {
         </div>
 
         {/* 모달 하단 액션 버튼 */}
-        <div className="pt-4 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={isSubmitting}
-            className="text-xs font-bold text-zinc-400 hover:text-zinc-600 hover:underline transition-colors order-2 sm:order-1"
-          >
-            다음에 선택할게요 (기본으로 시작)
-          </button>
+        <div className="pt-4 border-t border-zinc-100 flex flex-col gap-3">
+          <p className="text-[11px] text-zinc-500 font-medium flex items-center gap-1.5 bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100/70">
+            <span className="text-indigo-600 font-black shrink-0">💡 알림:</span>
+            <span>선택하신 페르소나만 프로필에 활성화되며, 나머지 페르소나는 비활성화되어 심플하게 시작합니다. (프로필 편집에서 언제든 다시 켤 수 있어요!)</span>
+          </p>
 
-          <button
-            type="button"
-            onClick={handleApplyPersona}
-            disabled={isSubmitting}
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-900 hover:bg-indigo-600 text-white text-xs sm:text-sm font-black transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 order-1 sm:order-2 group"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin text-white" />
-                <span>서브 탭 구성 중...</span>
-              </>
-            ) : (
-              <>
-                <span>'{currentPersona.name}'으로 시작하기</span>
-                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-              </>
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={isSubmitting}
+              className="text-xs font-bold text-zinc-400 hover:text-zinc-600 hover:underline transition-colors order-2 sm:order-1 cursor-pointer"
+            >
+              다음에 선택할게요 (기본으로 시작)
+            </button>
+
+            <button
+              type="button"
+              onClick={handleApplyPersona}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-900 hover:bg-indigo-600 text-white text-xs sm:text-sm font-black transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 order-1 sm:order-2 group cursor-pointer"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin text-white" />
+                  <span>페르소나 구성 적용 중...</span>
+                </>
+              ) : (
+                <>
+                  <span>'{currentPersona.name}'으로 시작하기</span>
+                  <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
