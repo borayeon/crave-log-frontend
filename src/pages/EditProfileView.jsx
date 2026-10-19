@@ -3,7 +3,7 @@ import {
   Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  Layers, Terminal, Globe, Users, KeyRound, ShieldCheck, Plus, EyeOff 
+  Layers, Terminal, Globe, Users, KeyRound, ShieldCheck, Plus, EyeOff, Search 
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
@@ -34,7 +34,10 @@ const EditProfileView = () => {
     const safeUser = JSON.parse(JSON.stringify(user || {}));
     const qnaData = safeUser.qna?.length ? safeUser.qna : (safeUser.idol?.qna || safeUser.addProfile?.qna || []);
     
-    let parsedPrivacy = { developer: false, developer2: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false };
+    let parsedPrivacy = { 
+      developer: false, developer2: false, career: false, addProfile: false, businessCard: false, qna: false, hobby: false, vision: false, quotes: false, memo: false, art: false,
+      isSearchable: true, search_role: true, search_bio: true, search_tags: true
+    };
     if (safeUser.privacy) {
         if (typeof safeUser.privacy === 'string') {
             try { parsedPrivacy = { ...parsedPrivacy, ...JSON.parse(safeUser.privacy) }; } catch(e) { }
@@ -718,6 +721,91 @@ const EditProfileView = () => {
                     <button type="button" onClick={()=>{const arr=[...(formData.links||[]), {platform:"github", name:"", url:""}]; updateNested(["links"], arr);}} className="text-[10px] font-bold text-violet-600 bg-white border border-violet-200 px-3 py-1 rounded-md hover:bg-violet-50 transition-colors w-full mt-2 shadow-sm">
                         + {currentLang === 'zh' ? '添加' : currentLang === 'en' ? 'Add' : '추가'}
                     </button>
+                </div>
+
+                {/* ⭐️ 사용자 검색 노출 설정 패널 */}
+                <div className="bg-indigo-50/40 rounded-2xl p-4 border border-indigo-100/80 mt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${formData.privacy?.isSearchable !== false ? 'bg-indigo-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}>
+                        {formData.privacy?.isSearchable !== false ? <Search size={15} /> : <EyeOff size={15} />}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-zinc-900 flex items-center gap-1.5">
+                          {currentLang === 'zh' ? '个人资料搜索曝光设置' : currentLang === 'en' ? 'Profile Search Visibility' : '내 정보 검색 노출 설정'}
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${formData.privacy?.isSearchable !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-200 text-zinc-600'}`}>
+                            {formData.privacy?.isSearchable !== false
+                              ? (currentLang === 'zh' ? '允许搜索' : currentLang === 'en' ? 'Searchable' : '검색 허용됨')
+                              : (currentLang === 'zh' ? '隐藏搜索' : currentLang === 'en' ? 'Hidden' : '검색 비허용')}
+                          </span>
+                        </h4>
+                        <p className="text-[11px] font-medium text-zinc-500 mt-0.5">
+                          {formData.privacy?.isSearchable !== false
+                            ? (currentLang === 'zh' ? '其他用户可通过搜索或用户目录找到您的主页。' : currentLang === 'en' ? 'Other users can find your profile via search and user directory.' : '다른 사용자가 검색창이나 전체 사용자 탐색에서 내 프로필을 찾을 수 있습니다.')
+                            : (currentLang === 'zh' ? '您的主页不会出现在搜索结果中，仅可通过分享链接访问。' : currentLang === 'en' ? 'Your profile is hidden from search results and only accessible via direct link.' : '검색 결과 및 사용자 목록에서 숨겨지며, 직접 공유한 링크로만 방문할 수 있습니다.')}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => updateNested(['privacy', 'isSearchable'], formData.privacy?.isSearchable === false ? true : false)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                        formData.privacy?.isSearchable !== false ? 'bg-indigo-600' : 'bg-zinc-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          formData.privacy?.isSearchable !== false ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {formData.privacy?.isSearchable !== false && (
+                    <div className="mt-3 pt-3 border-t border-indigo-100/80 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {[
+                        {
+                          key: 'search_role',
+                          label: currentLang === 'zh' ? '职位 / 专业 / 地区' : currentLang === 'en' ? 'Role / Major / Location' : '직무 · 전공 · 지역 검색',
+                          desc: currentLang === 'zh' ? '允许按职业或地区搜索并显示' : currentLang === 'en' ? 'Searchable & visible on card' : '직무·전공 검색 및 카드 표시'
+                        },
+                        {
+                          key: 'search_tags',
+                          label: currentLang === 'zh' ? '关键词标签 (#Tag)' : currentLang === 'en' ? 'Keyword Tags (#Tag)' : '나의 키워드 태그 검색',
+                          desc: currentLang === 'zh' ? '允许按兴趣标签搜索并显示' : currentLang === 'en' ? 'Searchable by tags' : '태그 키워드 검색 및 카드 표시'
+                        },
+                        {
+                          key: 'search_bio',
+                          label: currentLang === 'zh' ? '简介与状态签名' : currentLang === 'en' ? 'Bio & Status Message' : '한 줄 소개 · 상태 메시지',
+                          desc: currentLang === 'zh' ? '允许按简介内容搜索并显示' : currentLang === 'en' ? 'Searchable by bio text' : '소개글 검색 및 카드 표시'
+                        }
+                      ].map(item => {
+                        const isChecked = formData.privacy?.[item.key] !== false;
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => updateNested(['privacy', item.key], !isChecked)}
+                            className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between gap-2 ${
+                              isChecked
+                                ? 'bg-white border-indigo-200 text-zinc-800 shadow-2xs'
+                                : 'bg-zinc-100/70 border-zinc-200 text-zinc-400'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-black truncate">{item.label}</p>
+                              <p className="text-[10px] text-zinc-400 font-medium truncate">{item.desc}</p>
+                            </div>
+                            <span className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
+                              isChecked ? 'bg-indigo-600 text-white' : 'bg-zinc-200 text-transparent'
+                            }`}>
+                              ✓
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
             </div>
           </div>

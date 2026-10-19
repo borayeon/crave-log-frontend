@@ -1,15 +1,77 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  ShieldCheck, Globe, Users, KeyRound, Lock, Eye, 
+  ShieldCheck, Globe, Users, KeyRound, Lock, Eye, EyeOff,
   UserCheck, UserMinus, UserX, Loader2, Search, Check, 
-  AlertCircle, Sparkles, RefreshCw, ChevronRight, X
+  AlertCircle, Sparkles, RefreshCw, ChevronRight, X, Briefcase, Hash, FileText
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const AccessControlView = () => {
-  const { apiFetch, showToast, records, fetchAllData, t, currentLang } = useAppStore();
-  const [activeTab, setActiveTab] = useState('records'); // 'records' | 'followers'
+  const { apiFetch, showToast, records, fetchAllData, user, currentUser, t, currentLang } = useAppStore();
+  const [activeTab, setActiveTab] = useState('records'); // 'records' | 'search_privacy' | 'followers'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ⭐️ 사용자 검색 노출 설정 상태 (내 프로필 privacy 동기화)
+  const myProfile = currentUser || user;
+  const parseInitialSearchPrivacy = useCallback(() => {
+    const rawPrivacy = myProfile?.privacy || {};
+    const p = typeof rawPrivacy === 'string' ? (() => { try { return JSON.parse(rawPrivacy); } catch { return {}; } })() : rawPrivacy;
+    return {
+      isSearchable: p.isSearchable !== false && p.isSearchable !== 'false',
+      searchRole: p.search_role !== false && p.search_role !== 'false',
+      searchBio: p.search_bio !== false && p.search_bio !== 'false',
+      searchTags: p.search_tags !== false && p.search_tags !== 'false',
+    };
+  }, [myProfile]);
+
+  const [searchPrivacy, setSearchPrivacy] = useState(parseInitialSearchPrivacy);
+  const [isSavingSearchPrivacy, setIsSavingSearchPrivacy] = useState(false);
+
+  useEffect(() => {
+    setSearchPrivacy(parseInitialSearchPrivacy());
+  }, [parseInitialSearchPrivacy]);
+
+  // ⭐️ 검색 노출 설정 즉시 저장 핸들러
+  const handleUpdateSearchPrivacy = async (nextState) => {
+    const updated = { ...searchPrivacy, ...nextState };
+    setSearchPrivacy(updated);
+    try {
+      setIsSavingSearchPrivacy(true);
+      const res = await apiFetch('/me/search-privacy', {
+        method: 'PATCH',
+        body: JSON.stringify(updated),
+      });
+      if (res?.ok) {
+        showToast(
+          currentLang === 'zh'
+            ? '🔍 搜索曝光设置已更新。'
+            : currentLang === 'en'
+            ? '🔍 Search visibility settings updated.'
+            : '🔍 내 정보 검색 노출 설정이 변경되었습니다.'
+        );
+        fetchAllData(true);
+      } else {
+        showToast(
+          currentLang === 'zh'
+            ? '保存设置失败。'
+            : currentLang === 'en'
+            ? 'Failed to save settings.'
+            : '설정 저장에 실패했습니다.'
+        );
+      }
+    } catch (err) {
+      console.error('Search privacy update error:', err);
+      showToast(
+        currentLang === 'zh'
+          ? '发生错误。'
+          : currentLang === 'en'
+          ? 'An error occurred.'
+          : '오류가 발생했습니다.'
+      );
+    } finally {
+      setIsSavingSearchPrivacy(false);
+    }
+  };
 
   // 팔로우 관련 상태
   const [followers, setFollowers] = useState([]);
@@ -259,8 +321,8 @@ const AccessControlView = () => {
           </p>
         </div>
 
-        {/* 메인 탭 전환 (기록 공개 관리 vs 팔로우 관리) */}
-        <div className="flex items-center bg-zinc-100 p-1.5 rounded-2xl border border-zinc-200/80 self-start md:self-auto">
+        {/* 메인 탭 전환 (기록 공개 관리 vs 검색 노출 설정 vs 팔로우 관리) */}
+        <div className="flex flex-wrap items-center bg-zinc-100 p-1.5 rounded-2xl border border-zinc-200/80 self-start md:self-auto gap-1">
           <button
             onClick={() => setActiveTab('records')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
@@ -270,7 +332,19 @@ const AccessControlView = () => {
             }`}
           >
             <Lock size={14} className={activeTab === 'records' ? 'text-indigo-600' : ''} />
-            {currentLang === 'zh' ? `记录公开设置 (${localRecords.length})` : currentLang === 'en' ? `Record Visibility (${localRecords.length})` : `기록 공개범위 설정 (${localRecords.length})`}
+            {currentLang === 'zh' ? `记录公开 (${localRecords.length})` : currentLang === 'en' ? `Records (${localRecords.length})` : `기록 공개범위 (${localRecords.length})`}
+          </button>
+          <button
+            onClick={() => setActiveTab('search_privacy')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'search_privacy'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <Search size={14} className={activeTab === 'search_privacy' ? 'text-indigo-600' : ''} />
+            {currentLang === 'zh' ? '搜索曝光设置' : currentLang === 'en' ? 'Search Privacy' : '검색 노출 설정'}
+            <span className={`w-2 h-2 rounded-full ${searchPrivacy.isSearchable ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
           </button>
           <button
             onClick={() => setActiveTab('followers')}
@@ -281,10 +355,168 @@ const AccessControlView = () => {
             }`}
           >
             <Users size={14} className={activeTab === 'followers' ? 'text-indigo-600' : ''} />
-            {currentLang === 'zh' ? `关注管理 (${followers.length})` : currentLang === 'en' ? `Follow Management (${followers.length})` : `팔로우 관리 (${followers.length})`}
+            {currentLang === 'zh' ? `关注管理 (${followers.length})` : currentLang === 'en' ? `Followers (${followers.length})` : `팔로우 관리 (${followers.length})`}
           </button>
         </div>
       </div>
+
+      {/* 탭 1-1: 내 프로필 검색 노출 설정 */}
+      {activeTab === 'search_privacy' && (
+        <div className="mt-8 space-y-6 animate-in fade-in duration-200">
+          {/* 메인 마스터 스위치 카드 */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-200/80 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100">
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  searchPrivacy.isSearchable
+                    ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                    : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                }`}>
+                  {searchPrivacy.isSearchable ? <Search size={22} /> : <EyeOff size={22} />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-zinc-900">
+                      {currentLang === 'zh' ? '允许搜索我的个人资料' : currentLang === 'en' ? 'Allow Profile Search & Discovery' : '내 프로필 검색 및 탐색 허용'}
+                    </h3>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
+                      searchPrivacy.isSearchable
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
+                    }`}>
+                      {searchPrivacy.isSearchable
+                        ? (currentLang === 'zh' ? '公开搜索中' : currentLang === 'en' ? 'Searchable' : '검색 허용됨')
+                        : (currentLang === 'zh' ? '已隐藏' : currentLang === 'en' ? 'Hidden' : '검색 비허용')}
+                    </span>
+                  </div>
+                  <p className="text-xs md:text-sm text-zinc-500 font-medium mt-1 leading-relaxed">
+                    {searchPrivacy.isSearchable
+                      ? (currentLang === 'zh'
+                          ? '其他用户可以通过顶部搜索栏或“所有用户”目录找到您的个人主页。'
+                          : currentLang === 'en'
+                          ? 'Other users can find your profile through the search bar or the "All Users" directory.'
+                          : '다른 사용자가 상단 검색창이나 전체 사용자 탐색 목록에서 내 프로필을 검색하고 방문할 수 있습니다.')
+                      : (currentLang === 'zh'
+                          ? '您的主页已从所有搜索结果和用户目录中隐藏，只有拥有您直接分享链接(?u=ID)的人才能访问。'
+                          : currentLang === 'en'
+                          ? 'Your profile is completely hidden from search results and user directories. Only people with your direct link (?u=handle) can visit.'
+                          : '모든 검색 결과 및 전체 사용자 목록에서 내 프로필이 숨겨집니다. 내가 직접 공유한 링크(?u=아이디)를 아는 사람만 방문할 수 있습니다.')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                <button
+                  type="button"
+                  disabled={isSavingSearchPrivacy}
+                  onClick={() => handleUpdateSearchPrivacy({ isSearchable: true })}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border ${
+                    searchPrivacy.isSearchable
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:text-zinc-800'
+                  }`}
+                >
+                  <Globe size={14} />
+                  {currentLang === 'zh' ? '允许搜索' : currentLang === 'en' ? 'Searchable' : '검색 허용'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isSavingSearchPrivacy}
+                  onClick={() => handleUpdateSearchPrivacy({ isSearchable: false })}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border ${
+                    !searchPrivacy.isSearchable
+                      ? 'bg-zinc-800 text-white border-zinc-800 shadow-sm'
+                      : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:text-zinc-800'
+                  }`}
+                >
+                  <EyeOff size={14} />
+                  {currentLang === 'zh' ? '禁止搜索' : currentLang === 'en' ? 'Hide from Search' : '검색 비허용'}
+                </button>
+              </div>
+            </div>
+
+            {/* 세부 항목별 검색 허용 설정 */}
+            <div className={`mt-6 transition-opacity ${searchPrivacy.isSearchable ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+              <div className="mb-4">
+                <h4 className="text-sm font-black text-zinc-900">
+                  {currentLang === 'zh' ? '细化搜索条件与结果卡片展示项' : currentLang === 'en' ? 'Searchable Fields & Result Card Details' : '세부 항목별 검색 및 결과 카드 노출 설정'}
+                </h4>
+                <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                  {currentLang === 'zh'
+                    ? '选择允许其他用户通过哪些关键词搜索到您，并在搜索结果卡片上展示对应信息。'
+                    : currentLang === 'en'
+                    ? 'Choose which profile fields can be matched in search queries and displayed on your search result card.'
+                    : '어떤 정보로 나를 검색할 수 있게 할지, 그리고 검색 결과 카드에 어떤 정보를 함께 보여줄지 개별적으로 선택할 수 있습니다.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    key: 'searchRole',
+                    icon: Briefcase,
+                    title: currentLang === 'zh' ? '职位 · 专业 · 地区' : currentLang === 'en' ? 'Role · Major · Location' : '직무 · 전공 · 지역 정보',
+                    desc: currentLang === 'zh' ? '允许通过职务(如: 后端开发)、专业或所在地区搜索到我，并在搜索卡片中展示。' : currentLang === 'en' ? 'Allow users to find you by role, major, or location, and show them on search cards.' : '직무(예: 백엔드 개발자), 전공/소속, 지역 키워드로 나를 검색할 수 있고 검색 카드에 표시합니다.',
+                    sample: myProfile?.role || myProfile?.major || (currentLang === 'zh' ? '例: 后端开发者 · 计算机科学' : currentLang === 'en' ? 'e.g. Backend Developer · CS' : '예: Backend Developer · 컴퓨터공학')
+                  },
+                  {
+                    key: 'searchTags',
+                    icon: Hash,
+                    title: currentLang === 'zh' ? '兴趣与技术标签 (#Tag)' : currentLang === 'en' ? 'Keyword Tags (#Tag)' : '나의 키워드 해시태그 (#Tag)',
+                    desc: currentLang === 'zh' ? '允许通过个人资料中登记的标签关键词搜索到我，并在搜索卡片中展示代表标签。' : currentLang === 'en' ? 'Allow users to find you by your profile tags and display top tags on search cards.' : '프로필에 등록한 키워드 태그(#React, #취미 등)로 나를 검색할 수 있고 카드 하단에 태그를 노출합니다.',
+                    sample: (myProfile?.tags?.length ? myProfile.tags.slice(0, 3).map(t => `#${t}`).join(' ') : '#React #Spring #CraveLog')
+                  },
+                  {
+                    key: 'searchBio',
+                    icon: FileText,
+                    title: currentLang === 'zh' ? '一句话简介与状态消息' : currentLang === 'en' ? 'Bio & Status Message' : '한 줄 소개 및 상태 메시지',
+                    desc: currentLang === 'zh' ? '允许通过个人简介或状态签名中的词句搜索到我，并在搜索卡片中预览简介。' : currentLang === 'en' ? 'Allow users to find you by words in your bio or status message and preview them on cards.' : '자기소개 문구나 상태 메시지에 포함된 단어로 나를 검색할 수 있고 카드에 소개글을 함께 표시합니다.',
+                    sample: myProfile?.bio || myProfile?.status || (currentLang === 'zh' ? '例: 记录每日成长的开发者 🚀' : currentLang === 'en' ? 'e.g. Recording daily growth 🚀' : '예: 매일의 성장을 기록하는 공간입니다 🚀')
+                  }
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const enabled = searchPrivacy[item.key];
+                  return (
+                    <div
+                      key={item.key}
+                      onClick={() => handleUpdateSearchPrivacy({ [item.key]: !enabled })}
+                      className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-4 ${
+                        enabled
+                          ? 'border-indigo-500/80 bg-indigo-50/20 shadow-xs'
+                          : 'border-zinc-200/80 bg-zinc-50/60 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                            enabled ? 'bg-indigo-600 text-white' : 'bg-zinc-200 text-zinc-500'
+                          }`}>
+                            <Icon size={17} />
+                          </div>
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black flex items-center gap-1 ${
+                            enabled ? 'bg-indigo-100 text-indigo-700' : 'bg-zinc-200 text-zinc-500'
+                          }`}>
+                            {enabled ? <Check size={11} /> : <EyeOff size={11} />}
+                            {enabled
+                              ? (currentLang === 'zh' ? '允许搜索与展示' : currentLang === 'en' ? 'Searchable' : '검색·노출 허용')
+                              : (currentLang === 'zh' ? '不公开' : currentLang === 'en' ? 'Excluded' : '검색·노출 제외')}
+                          </span>
+                        </div>
+                        <h5 className="text-sm font-black text-zinc-900">{item.title}</h5>
+                        <p className="text-xs text-zinc-500 font-medium mt-1.5 leading-relaxed">{item.desc}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-zinc-200/60">
+                        <p className="text-[11px] font-bold text-zinc-400 truncate">{item.sample}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 탭 1: 기록별 4단계 공개 범위 관리 */}
       {activeTab === 'records' && (

@@ -46,7 +46,7 @@ const getPersonaDefaults = (currentLang) => ({
 const DEFAULT_PERSONAS = getPersonaDefaults('ko');
 
 const ProfileView = () => {
-  const { setViewMode, user, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch, visitedHandle, setOnboardingModalOpen, t, currentLang } = useAppStore();
+  const { setViewMode, user, setUser, fetchAllData, showToast, isAdmin, setLoginModalOpen, isGuestMode, isLoading, apiFetch, visitedHandle, setOnboardingModalOpen, t, currentLang } = useAppStore();
 
   const [activeTab, setActiveTab] = useState(null); 
   const [viewHistoryItem, setViewHistoryItem] = useState(null);
@@ -121,16 +121,50 @@ const ProfileView = () => {
 
   const isGuest = !isAdmin || isGuestMode;
 
-  // ⭐️ 2단계 페르소나 비밀번호(PIN) 검증 및 잠금 해제 핸들러
-  const handleUnlockPersona = (personaId) => {
+  const getCurrentUnlockedTargets = () => [
+    ...Object.keys(unlockedTabs).filter(k => unlockedTabs[k]).map(k => `tab:${k}`),
+    ...Object.keys(unlockedPersonas).filter(k => unlockedPersonas[k]).map(k => `persona:${k}`)
+  ];
+
+  // ⭐️ 2단계 페르소나 비밀번호(PIN) 서버 사이드 검증 및 잠금 해제 핸들러
+  const handleUnlockPersona = async (personaId) => {
     const persona = CUSTOM_PERSONAS[personaId];
-    const expectedPin = persona?.passcode;
     const inputPin = (personaPinInputs[personaId] || '').trim();
-    if (!expectedPin || inputPin === String(expectedPin).trim()) {
+    if (!inputPin) {
+      showToast(currentLang === 'zh' ? '请输入密码。' : currentLang === 'en' ? 'Please enter a passcode.' : '비밀번호(PIN)를 입력해주세요.');
+      return;
+    }
+
+    // 소유자 미리보기 모드(isGuestMode && isAdmin)이고 로컬에 passcode가 있으면 즉시 확인
+    const localPin = persona?.passcode;
+    if (!visitedHandle && localPin && inputPin === String(localPin).trim()) {
       setUnlockedPersonas(prev => ({ ...prev, [personaId]: true }));
       showToast(`[${persona?.name || '페르소나'}] ${currentLang === 'zh' ? '已成功解锁！🔓' : currentLang === 'en' ? 'unlocked successfully! 🔓' : '잠금이 해제되었습니다! 🔓'}`);
-    } else {
-      showToast(currentLang === 'zh' ? '密码不正确，请重新输入。' : currentLang === 'en' ? 'Incorrect passcode. Please check again.' : '비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+      return;
+    }
+
+    try {
+      const res = await apiFetch(`/users/${safeUser.handle}/verify-pin`, {
+        method: 'POST',
+        body: JSON.stringify({
+          targetType: 'persona',
+          targetId: personaId,
+          passcode: inputPin,
+          personaId: currentPersona !== 'all' ? currentPersona : personaId,
+          unlockedTargets: getCurrentUnlockedTargets()
+        })
+      });
+      if (res?.ok) {
+        const unlockedProfile = await res.json();
+        setUser(unlockedProfile);
+        setUnlockedPersonas(prev => ({ ...prev, [personaId]: true }));
+        showToast(`[${persona?.name || '페르소나'}] ${currentLang === 'zh' ? '已成功解锁！🔓' : currentLang === 'en' ? 'unlocked successfully! 🔓' : '잠금이 해제되었습니다! 🔓'}`);
+      } else {
+        const errData = await res?.json().catch(() => ({}));
+        showToast(errData?.message || (currentLang === 'zh' ? '密码不正确，请重新输入。' : currentLang === 'en' ? 'Incorrect passcode. Please check again.' : '비밀번호가 일치하지 않습니다. 다시 확인해주세요.'));
+      }
+    } catch (_e) {
+      showToast(currentLang === 'zh' ? '验证过程中发生错误。' : currentLang === 'en' ? 'Verification failed.' : 'PIN 검증 중 오류가 발생했습니다.');
     }
   };
 
@@ -220,6 +254,7 @@ const ProfileView = () => {
             followerCount: Math.max(0, prev.followerCount - 1),
           }));
           showToast(`@${safeUser.handle} ${currentLang === 'zh' ? '已取消关注。' : currentLang === 'en' ? 'unfollowed.' : '팔로우를 취소했습니다.'}`);
+          await fetchAllData(true, safeUser.handle);
         }
       } else {
         const res = await apiFetch(`/users/${safeUser.handle}/follow`, { method: 'POST' });
@@ -230,6 +265,7 @@ const ProfileView = () => {
             followerCount: prev.followerCount + 1,
           }));
           showToast(`@${safeUser.handle} ${currentLang === 'zh' ? '已关注！🎉' : currentLang === 'en' ? 'followed! 🎉' : '님을 팔로우했습니다! 🎉'}`);
+          await fetchAllData(true, safeUser.handle);
         }
       }
     } catch (err) {
@@ -333,15 +369,44 @@ const ProfileView = () => {
       return getTabLevel(tabId) === 4;
   };
 
-  // ⭐️ 2단계 서브 탭 비밀번호(PIN) 검증 및 잠금 해제 핸들러
-  const handleUnlockTab = (tabId) => {
-      const expectedPin = safeUser.addProfile?.tabPasscodes?.[tabId] || safeUser.tabPasscodes?.[tabId] || safeUser.idol?.tabPasscodes?.[tabId];
+  // ⭐️ 2단계 서브 탭 비밀번호(PIN) 서버 사이드 검증 및 잠금 해제 핸들러
+  const handleUnlockTab = async (tabId) => {
       const inputPin = (pinInputs[tabId] || '').trim();
-      if (!expectedPin || inputPin === String(expectedPin).trim()) {
+      if (!inputPin) {
+          showToast(currentLang === 'zh' ? '请输入密码。' : currentLang === 'en' ? 'Please enter a passcode.' : '비밀번호(PIN)를 입력해주세요.');
+          return;
+      }
+
+      // 소유자 미리보기 모드(isGuestMode && isAdmin)이고 로컬에 passcode가 있으면 즉시 확인
+      const localPin = safeUser.addProfile?.tabPasscodes?.[tabId] || safeUser.tabPasscodes?.[tabId] || safeUser.idol?.tabPasscodes?.[tabId];
+      if (!visitedHandle && localPin && inputPin === String(localPin).trim()) {
           setUnlockedTabs(prev => ({ ...prev, [tabId]: true }));
           showToast(currentLang === 'zh' ? '密码验证成功，已解锁！🔓' : currentLang === 'en' ? 'Unlocked successfully! 🔓' : '비밀번호가 일치하여 잠금이 해제되었습니다! 🔓');
-      } else {
-          showToast(currentLang === 'zh' ? '密码不正确，请重新输入。' : currentLang === 'en' ? 'Incorrect passcode. Please check again.' : '비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+          return;
+      }
+
+      try {
+          const res = await apiFetch(`/users/${safeUser.handle}/verify-pin`, {
+              method: 'POST',
+              body: JSON.stringify({
+                  targetType: 'tab',
+                  targetId: tabId,
+                  passcode: inputPin,
+                  personaId: currentPersona !== 'all' ? currentPersona : null,
+                  unlockedTargets: getCurrentUnlockedTargets()
+              })
+          });
+          if (res?.ok) {
+              const unlockedProfile = await res.json();
+              setUser(unlockedProfile);
+              setUnlockedTabs(prev => ({ ...prev, [tabId]: true }));
+              showToast(currentLang === 'zh' ? '密码验证成功，已解锁！🔓' : currentLang === 'en' ? 'Unlocked successfully! 🔓' : '비밀번호가 일치하여 잠금이 해제되었습니다! 🔓');
+          } else {
+              const errData = await res?.json().catch(() => ({}));
+              showToast(errData?.message || (currentLang === 'zh' ? '密码不正确，请重新输入。' : currentLang === 'en' ? 'Incorrect passcode. Please check again.' : '비밀번호가 일치하지 않습니다. 다시 확인해주세요.'));
+          }
+      } catch (_e) {
+          showToast(currentLang === 'zh' ? '验证过程中发生错误。' : currentLang === 'en' ? 'Verification failed.' : 'PIN 검증 중 오류가 발생했습니다.');
       }
   };
 

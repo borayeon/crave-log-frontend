@@ -111,6 +111,7 @@ export const AppProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilter, setSearchFilter] = useState('all');
   const [searchResults, setSearchResults] = useState([]);
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
@@ -389,8 +390,8 @@ export const AppProvider = ({ children }) => {
   // -------------------------------------------------------
   const visitUserProfile = useCallback(
     async (targetHandle) => {
-      // ⭐️ 관리자(Admin) 계정 프로필 접근 원천 방어
-      if (targetHandle === 'admin_craver' || targetHandle?.toLowerCase().includes('admin')) {
+      // ⭐️ 관리자(Admin) 계정 프로필 접근 원천 방어 (일반 유저의 'admin' 포함 핸들 오탐 방지)
+      if (targetHandle === 'admin_craver') {
         showToast(currentLang === 'zh' ? '用户不存在。' : currentLang === 'en' ? 'User does not exist.' : '존재하지 않는 사용자입니다.');
         return;
       }
@@ -443,26 +444,29 @@ export const AppProvider = ({ children }) => {
   // 검색
   // -------------------------------------------------------
   const searchUsers = useCallback(
-    async (keyword) => {
+    async (keyword = '', filterOverride = null) => {
       try {
         setIsLoading(true);
+        const safeKeyword = (keyword || '').trim();
+        const activeFilter = filterOverride !== null ? filterOverride : searchFilter;
 
         const res = await apiFetch(
-          `/users/search?keyword=${encodeURIComponent(
-            keyword.trim()
-          )}`
+          `/users/search?keyword=${encodeURIComponent(safeKeyword)}&filter=${encodeURIComponent(activeFilter)}`
         );
 
         if (res?.ok) {
           const data = await res.json();
 
-          // ⭐️ 관리자 계정 프론트엔드 방어 필터링 (ROLE_ADMIN 및 admin_craver 원천 제외)
+          // ⭐️ 관리자 계정 프론트엔드 방어 필터링 (admin_craver 원천 제외, 일반 유저 핸들 오탐 제거)
           const filteredResults = Array.isArray(data)
-            ? data.filter(u => u.handle !== 'admin_craver' && !u.handle?.toLowerCase().includes('admin'))
+            ? data.filter(u => u.handle !== 'admin_craver')
             : [];
 
           setSearchResults(filteredResults);
-          setSearchQuery(keyword.trim());
+          setSearchQuery(safeKeyword);
+          if (filterOverride !== null) {
+            setSearchFilter(filterOverride);
+          }
           setViewMode('search');
         } else {
           setSearchResults([]);
@@ -477,7 +481,7 @@ export const AppProvider = ({ children }) => {
         setIsLoading(false);
       }
     },
-    [apiFetch, showToast, currentLang]
+    [apiFetch, showToast, currentLang, searchFilter, setViewMode]
   );
 
   // -------------------------------------------------------
@@ -661,6 +665,8 @@ export const AppProvider = ({ children }) => {
 
         searchQuery,
         setSearchQuery,
+        searchFilter,
+        setSearchFilter,
 
         searchResults,
         setSearchResults,

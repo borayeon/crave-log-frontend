@@ -41,7 +41,7 @@ export const translations = {
     'nav.access_short': '공개/팔로우',
 
     // Header & User Menu
-    'header.search_placeholder': '사용자 및 기록 검색...',
+    'header.search_placeholder': '이름, 아이디, 직무, #태그 검색...',
     'header.search_btn': '검색하기',
     'header.new_record': '새 기록',
     'header.login': '로그인',
@@ -453,7 +453,7 @@ export const translations = {
     'nav.access_short': 'Access',
 
     // Header & User Menu
-    'header.search_placeholder': 'Search users & records...',
+    'header.search_placeholder': 'Search name, @handle, role, #tag...',
     'header.search_btn': 'Search',
     'header.new_record': 'New Record',
     'header.login': 'Log In',
@@ -865,7 +865,7 @@ export const translations = {
     'nav.access_short': '权限/关注',
 
     // Header & User Menu
-    'header.search_placeholder': '搜索用户与记录...',
+    'header.search_placeholder': '搜索姓名、@账号、职位、#标签...',
     'header.search_btn': '搜索',
     'header.new_record': '新建记录',
     'header.login': '登录',
