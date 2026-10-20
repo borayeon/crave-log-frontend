@@ -62,6 +62,15 @@ export const DeveloperEditTab = ({ formData, updateNested }) => {
         : currentLang === 'en'
         ? 'Focused on performance optimization, low latency, and distributed architectures for high-traffic environments. Driven by metrics and continuous improvement.'
         : '대규모 트래픽 환경에서의 성능 최적화와 안정적인 분산 시스템 설계에 관심이 많습니다. 데이터 기반의 빠른 실험과 모니터링을 통한 개선을 추구합니다.'
+    },
+    {
+      id: 'timeline_summary',
+      label: currentLang === 'zh' ? '📋 履历沿革汇总' : currentLang === 'en' ? '📋 Milestone Timeline' : '📋 핵심 이력·연혁 요약',
+      text: currentLang === 'zh'
+        ? '2024.01 ~ 2024.12 | 核心项目全栈开发与云原生架构部署\n2025.01 ~ 当前 | 高并发后台与 AI 创新业务研发'
+        : currentLang === 'en'
+        ? '2024.01 ~ 2024.12 | Full Stack Engineering & Cloud Architecture\n2025.01 ~ Present | Backend & AI Systems Development'
+        : '2024.01 ~ 2024.12 | 핵심 서비스 개발 및 클라우드 배포 운영\n2025.01 ~ 현재 | 소프트웨어 엔지니어, 백엔드·AI 서비스 개발'
     }
   ];
 
@@ -337,31 +346,33 @@ export const DeveloperEditTab = ({ formData, updateNested }) => {
         /* ⭐️ 편집기 모드 (Editor Mode) */
         <div className="space-y-6">
           
-          {/* 1. IDE 터미널 스타일 About Me 편집기 */}
-          <div className="bg-[#0D1117] text-zinc-300 rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-800 relative overflow-hidden">
-            {/* macOS 윈도우 컨트롤 헤더 */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-zinc-800/80">
-              <div className="flex items-center gap-2.5">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
-                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
-                  <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
+          {/* 1. 모던 스튜디오 스타일 About Me 편집기 */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/80">
+            {/* 헤더: 타이틀, 안내 문구 및 글자 수 카운터 */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-zinc-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                  <UserPlus size={19} />
                 </div>
-                <span className="text-[11px] font-mono font-bold text-zinc-400 ml-2 flex items-center gap-1.5 bg-[#161B22] px-2.5 py-1 rounded-md border border-zinc-800">
-                  <Terminal size={12} className="text-emerald-400" /> developer_bio.ts
-                </span>
-                <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">git:(main)</span>
+                <div>
+                  <h3 className="text-base font-black text-zinc-900">
+                    {currentLang === 'zh' ? '个人简介与工程哲学 (About Me)' : currentLang === 'en' ? 'About Me & Engineering Philosophy' : '자기소개 및 엔지니어링 가치관 (About Me)'}
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 font-medium mt-0.5">
+                    {currentLang === 'zh' ? '展示在开发标签页与履历顶部的核心自我介绍或关键履历沿革。' : currentLang === 'en' ? 'Key introduction or milestone summary displayed at the top of your profile.' : '개발자 탭과 이력서 상단에 노출되는 대표 소개글 또는 핵심 이력/연혁 요약입니다.'}
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] font-mono text-zinc-500 font-medium self-end sm:self-auto">
+              <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-zinc-50 text-zinc-500 border border-zinc-200 shrink-0 self-start sm:self-auto">
                 {(devData.about || '').length} characters
               </span>
             </div>
 
             {/* 빠른 추천 템플릿 바 */}
             <div className="mb-4">
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">
-                <Sparkles size={12} className="text-amber-400" />
-                {currentLang === 'zh' ? '快捷灵感模板 (点击应用)' : currentLang === 'en' ? 'Quick Bio Starters (Click to apply)' : '빠른 추천 템플릿 (클릭 시 자동 적용)'}
+              <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-zinc-400 mb-2.5">
+                <Sparkles size={13} className="text-amber-500" />
+                {currentLang === 'zh' ? '快捷灵感模板 (点击快速填入)' : currentLang === 'en' ? 'Quick Bio Starters (Click to apply)' : '빠른 추천 템플릿 (클릭 시 자동 적용)'}
               </div>
               <div className="flex flex-wrap gap-2">
                 {BIO_TEMPLATES.map((tmpl) => (
@@ -369,7 +380,7 @@ export const DeveloperEditTab = ({ formData, updateNested }) => {
                     key={tmpl.id}
                     type="button"
                     onClick={() => applyBioTemplate(tmpl.text)}
-                    className="px-3 py-1.5 bg-[#161B22] hover:bg-[#21262D] border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 text-[11px] font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    className="px-3.5 py-1.5 bg-zinc-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 border border-zinc-200 text-zinc-700 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <span>{tmpl.label}</span>
                   </button>
@@ -379,16 +390,16 @@ export const DeveloperEditTab = ({ formData, updateNested }) => {
 
             {/* 에디터 텍스트 영역 */}
             <div className="relative mt-2">
-              <div className="text-zinc-500 font-mono text-[11px] font-bold mb-2">
-                {"// Who I am & What drives my engineering:"}
-              </div>
               <textarea 
                 value={devData.about || ''} 
                 onChange={e => updateNested(["developer", "about"], e.target.value)} 
-                rows={4} 
-                placeholder={currentLang === 'zh' ? '撰写作为开发者的自我介绍与工程哲学。' : currentLang === 'en' ? 'Write an introduction as a developer and your engineering philosophy.' : '개발자로서의 자기소개와 지향하는 엔지니어링 가치관을 작성해보세요.'}
-                className="w-full bg-[#161B22] border border-zinc-700 focus:border-emerald-500/80 rounded-2xl px-4 py-3.5 text-sm font-mono text-emerald-400 outline-none resize-none placeholder:text-emerald-900/50 transition-colors shadow-inner leading-relaxed" 
+                rows={6} 
+                placeholder={currentLang === 'zh' ? '撰写作为开发者的自我介绍、工程哲学或关键履历沿革 (支持换行)。' : currentLang === 'en' ? 'Write your introduction, engineering philosophy, or milestone bullets (line breaks supported).' : '개발자로서의 자기소개, 엔지니어링 가치관 또는 핵심 연혁 요약을 자유롭게 작성하세요 (줄바꿈 지원).'}
+                className="w-full bg-zinc-50/70 hover:bg-zinc-50 focus:bg-white border border-zinc-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl p-4 text-sm font-medium text-zinc-800 outline-none resize-y min-h-[160px] placeholder:text-zinc-400 transition-all leading-relaxed shadow-inner" 
               />
+              <div className="flex items-center justify-between text-[11px] text-zinc-400 font-medium mt-2 px-1">
+                <span>{currentLang === 'zh' ? '💡 支持自由换行，输入内容将在访客标签页完美保留排版。' : currentLang === 'en' ? '💡 Line breaks are preserved seamlessly on your public profile.' : '💡 줄바꿈(엔터)이 지원되며, 작성한 그대로 방문자 프로필에 깔끔하게 유지됩니다.'}</span>
+              </div>
             </div>
           </div>
 
