@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Edit2, Save, Eye, Lock, Upload, AtSign, Loader2, Sparkles, 
+  Edit2, Save, Lock, Upload, AtSign, Loader2, Sparkles, 
   GraduationCap, MapPin, X as CloseIcon, Link as LinkIcon, Trash2,
   Code, Briefcase, UserPlus, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
   Layers, Terminal, Globe, Users, KeyRound, ShieldCheck, Plus, EyeOff, Search 
@@ -27,7 +27,7 @@ export const getDefaultPersonas = (currentLang = 'ko') => ({
 export const DEFAULT_PERSONAS = getDefaultPersonas('ko');
 
 const EditProfileView = () => {
-  const { setViewMode, user, showToast, fetchAllData, apiFetch, setOnboardingModalOpen, t, currentLang } = useAppStore();
+  const { setViewMode, user, showToast, fetchAllData, apiFetch, setOnboardingModalOpen, currentLang } = useAppStore();
   const currentDefaultPersonas = getDefaultPersonas(currentLang);
   
   const [formData, setFormData] = useState(() => {
@@ -428,9 +428,14 @@ const EditProfileView = () => {
     setIsLoading(true);
 
     try {
+      const payload = {
+        ...formData,
+        addProfile: formData.idol
+      };
+
       const res = await apiFetch(`/me/profile`, {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       
       if (res.ok) {
@@ -441,7 +446,7 @@ const EditProfileView = () => {
         const data = await res.json();
         showToast(data.message || (currentLang === 'zh' ? '保存个人资料失败。' : currentLang === 'en' ? 'Failed to save profile.' : '프로필 저장에 실패했습니다.'));
       }
-    } catch (e) {
+    } catch (_err) {
       showToast(currentLang === 'zh' ? '服务器连接失败。' : currentLang === 'en' ? 'Failed to connect to server.' : '서버 연결에 실패했습니다.');
     } finally {
       setIsLoading(false);

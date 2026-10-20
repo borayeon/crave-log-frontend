@@ -330,19 +330,74 @@ const ProfileView = () => {
       }
   };
 
-  const allTabsMap = {
-    developer: { id: 'developer', icon: <Code strokeWidth={2}/>, label: 'Developer', color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' },
-    developer2: { id: 'developer2', icon: <Terminal strokeWidth={2}/>, label: 'Resume', color: 'bg-zinc-800 text-zinc-100 border-zinc-700' },
-    career: { id: 'career', icon: <Briefcase strokeWidth={2}/>, label: 'Career', color: 'bg-blue-50/80 text-blue-500 border-blue-100' },
-    addProfile: { id: 'addProfile', icon: <UserPlus strokeWidth={2}/>, label: 'Add Profile', color: 'bg-rose-50/80 text-rose-500 border-rose-100' },
-    businessCard: { id: 'businessCard', icon: <CreditCard strokeWidth={2}/>, label: 'Business Card', color: 'bg-emerald-50/80 text-emerald-500 border-emerald-100' },
-    qna: { id: 'qna', icon: <MessageSquare strokeWidth={2}/>, label: 'Q&A', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
-    hobby: { id: 'hobby', icon: <Palette strokeWidth={2}/>, label: 'Hobby', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
-    vision: { id: 'vision', icon: <Compass strokeWidth={2}/>, label: 'Vision', color: 'bg-violet-50/80 text-violet-500 border-violet-100' },
-    quotes: { id: 'quotes', icon: <Quote strokeWidth={2}/>, label: 'Quotes', color: 'bg-slate-100/80 text-slate-500 border-slate-200' },
-    memo: { id: 'memo', icon: <FileText strokeWidth={2}/>, label: 'Memo', color: 'bg-amber-50/80 text-amber-500 border-amber-100' },
-    art: { id: 'art', icon: <Grid strokeWidth={2}/>, label: 'Dot Art', color: 'bg-pink-50/80 text-pink-500 border-pink-100' }
-  };
+  const allTabsMap = useMemo(() => ({
+    developer: { 
+      id: 'developer', 
+      icon: <Code strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '开发者' : currentLang === 'en' ? 'Developer' : '개발자', 
+      color: 'bg-indigo-50/80 text-indigo-500 border-indigo-100' 
+    },
+    developer2: { 
+      id: 'developer2', 
+      icon: <Terminal strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '在线简历' : currentLang === 'en' ? 'Resume' : '상세 이력서', 
+      color: 'bg-zinc-800 text-zinc-100 border-zinc-700' 
+    },
+    career: { 
+      id: 'career', 
+      icon: <Briefcase strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '职业生涯' : currentLang === 'en' ? 'Career' : '커리어', 
+      color: 'bg-blue-50/80 text-blue-500 border-blue-100' 
+    },
+    addProfile: { 
+      id: 'addProfile', 
+      icon: <UserPlus strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '详细资料' : currentLang === 'en' ? 'Add Profile' : '상세 프로필', 
+      color: 'bg-rose-50/80 text-rose-500 border-rose-100' 
+    },
+    businessCard: { 
+      id: 'businessCard', 
+      icon: <CreditCard strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '数字名片' : currentLang === 'en' ? 'Business Card' : '디지털 명함', 
+      color: 'bg-emerald-50/80 text-emerald-500 border-emerald-100' 
+    },
+    qna: { 
+      id: 'qna', 
+      icon: <MessageSquare strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '问答集' : currentLang === 'en' ? 'Q&A' : '100문 100답', 
+      color: 'bg-violet-50/80 text-violet-500 border-violet-100' 
+    },
+    hobby: { 
+      id: 'hobby', 
+      icon: <Palette strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '兴趣爱好' : currentLang === 'en' ? 'Hobby' : '취미 생활', 
+      color: 'bg-amber-50/80 text-amber-500 border-amber-100' 
+    },
+    vision: { 
+      id: 'vision', 
+      icon: <Compass strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '曼陀罗计划' : currentLang === 'en' ? 'Vision' : '만다라트', 
+      color: 'bg-violet-50/80 text-violet-500 border-violet-100' 
+    },
+    quotes: { 
+      id: 'quotes', 
+      icon: <Quote strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '座右铭' : currentLang === 'en' ? 'Quotes' : '영감 & 명언', 
+      color: 'bg-slate-100/80 text-slate-500 border-slate-200' 
+    },
+    memo: { 
+      id: 'memo', 
+      icon: <FileText strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '随手记' : currentLang === 'en' ? 'Memo' : '자유 메모', 
+      color: 'bg-amber-50/80 text-amber-500 border-amber-100' 
+    },
+    art: { 
+      id: 'art', 
+      icon: <Grid strokeWidth={2}/>, 
+      label: currentLang === 'zh' ? '像素画布' : currentLang === 'en' ? 'Dot Art' : '도트 캔버스', 
+      color: 'bg-pink-50/80 text-pink-500 border-pink-100' 
+    }
+  }), [currentLang]);
 
   const privacyObj = useMemo(() => {
       let p = { developer: 0, developer2: 0, career: 0, addProfile: 0, businessCard: 0, qna: 0, hobby: 0, vision: 0, quotes: 0, memo: 0, art: 0 };
@@ -419,8 +474,21 @@ const ProfileView = () => {
   const isDataActuallyEmpty = (tabId) => {
     switch(tabId) {
       case 'developer':
-      case 'developer2': 
         return !safeUser.developer || (!safeUser.developer.about && (!safeUser.developer.projects || safeUser.developer.projects.length === 0));
+      case 'developer2': {
+        const d = safeUser.developer;
+        if (!d) return true;
+        const hasExp = Array.isArray(d.experiences) && d.experiences.length > 0;
+        const hasEdu = Array.isArray(d.educations) && d.educations.length > 0;
+        const hasProj = Array.isArray(d.projects) && d.projects.length > 0;
+        const hasArticle = Array.isArray(d.articles) && d.articles.length > 0;
+        const hasPres = Array.isArray(d.presentations) && d.presentations.length > 0;
+        const hasOs = Array.isArray(d.openSources) && d.openSources.length > 0;
+        const hasEtc = Array.isArray(d.etcs) && d.etcs.length > 0;
+        const hasAbout = Boolean(d.about && d.about.trim());
+        const hasSkill = d.techStack && Object.values(d.techStack).some(v => v && (Array.isArray(v) ? v.length > 0 : String(v).trim().length > 0));
+        return !(hasExp || hasEdu || hasProj || hasArticle || hasPres || hasOs || hasEtc || hasAbout || hasSkill);
+      }
       case 'career': return !safeUser.career || (!safeUser.career.targetJob && (!safeUser.career.strengths || safeUser.career.strengths.length === 0));
       case 'businessCard': return !safeUser.addProfile?.businessCard || !safeUser.addProfile.businessCard.email;
       case 'qna': return !safeUser.addProfile?.qna || safeUser.addProfile.qna.length === 0;
@@ -1022,22 +1090,22 @@ const ProfileView = () => {
                               {activeTab === 'developer' && availableTabs.some(t => t.id === 'developer') && <DeveloperTab data={safeUser.developer} />}
                               {activeTab === 'developer2' && availableTabs.some(t => t.id === 'developer2') && <Developer2Tab user={safeUser} />}
                               {activeTab === 'career' && availableTabs.some(t => t.id === 'career') && <CareerTab data={safeUser.career} />}
-                              {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.addProfile} setShowHistoryModal={() => {}} />}
+                               {activeTab === 'addProfile' && availableTabs.some(t => t.id === 'addProfile') && <AddProfileTab data={safeUser.idol || safeUser.addProfile} setShowHistoryModal={() => {}} />}
                               {activeTab === 'businessCard' && availableTabs.some(t => t.id === 'businessCard') && (
                                   <div className="py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                      <BusinessCard data={safeUser.addProfile?.businessCard} userName={safeUser.name} />
+                                      <BusinessCard data={safeUser.idol?.businessCard || safeUser.addProfile?.businessCard} userName={safeUser.name} />
                                   </div>
                               )}
-                              {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && <QnaTab data={safeUser.addProfile?.qna} />}
-                              {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && <HobbyTab data={safeUser.addProfile?.hobby} />}
+                              {activeTab === 'qna' && availableTabs.some(t => t.id === 'qna') && <QnaTab data={safeUser.idol?.qna || safeUser.addProfile?.qna || safeUser.qna} />}
+                              {activeTab === 'hobby' && availableTabs.some(t => t.id === 'hobby') && <HobbyTab data={safeUser.idol?.hobby || safeUser.addProfile?.hobby} />}
                               {activeTab === 'vision' && availableTabs.some(t => t.id === 'vision') && (
                                   <div className="animate-in fade-in">
-                                      <Mandalart visionData={safeUser.addProfile?.vision} isEditMode={false} />
+                                      <Mandalart visionData={safeUser.idol?.vision || safeUser.addProfile?.vision} isEditMode={false} />
                                   </div>
                               )}
-                              {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && <QuotesTab data={safeUser.addProfile?.quotes} />}
-                              {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && <MemoTab data={safeUser.addProfile?.memoArea} />}
-                              {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && <ArtTab data={safeUser.addProfile?.memoArea} />}
+                              {activeTab === 'quotes' && availableTabs.some(t => t.id === 'quotes') && <QuotesTab data={safeUser.idol?.quotes || safeUser.addProfile?.quotes} />}
+                              {activeTab === 'memo' && availableTabs.some(t => t.id === 'memo') && <MemoTab data={safeUser.idol?.memoArea || safeUser.addProfile?.memoArea} />}
+                              {activeTab === 'art' && availableTabs.some(t => t.id === 'art') && <ArtTab data={safeUser.idol?.memoArea || safeUser.addProfile?.memoArea} />}
                             </>
                           )}
                       </div>

@@ -39,7 +39,7 @@ const TimelineItem = ({ leftText, title, badges, subtitle, bullets, keywords }) 
               {displayBullets.map((b, i) => (
                 <li key={i} className="text-sm font-medium text-zinc-700 flex items-start gap-2.5 leading-relaxed break-keep">
                   <span className="w-1 h-1 rounded-full bg-zinc-400 mt-2 shrink-0" />
-                  <span dangerouslySetInnerHTML={{ __html: b }} />
+                  <span>{b}</span>
                 </li>
               ))}
             </ul>
@@ -164,44 +164,45 @@ export const Developer2Tab = ({ user }) => {
               <h2 className="text-2xl md:text-4xl font-black text-zinc-900 tracking-tight">{profile.name || (currentLang === 'zh' ? '无姓名' : currentLang === 'en' ? 'No Name' : '이름 없음')}</h2>
               <span className="text-sm font-bold text-zinc-400">(@{profile.handle || 'guest'})</span>
             </div>
-            <p className="text-sm md:text-base font-bold text-zinc-500 mb-5">
-              {profile.role || 'Backend Developer to Product Engineer'}
-            </p>
+            {profile.role && (
+              <p className="text-sm md:text-base font-bold text-zinc-500 mb-4">{profile.role}</p>
+            )}
 
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3 w-full text-xs font-bold text-zinc-600">
-              <a href="#" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"><Mail size={14} /> me@{profile.handle || 'dev'}.dev</a>
-              <span className="px-2 py-0.5 bg-zinc-100 rounded text-[10px] text-zinc-500 mx-1">Please contact me by email</span>
-              <a href="#" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"><LinkIcon size={14} /> wiki.{profile.handle || 'dev'}.dev</a>
+            {profile.email && (
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4 w-full text-xs font-bold text-zinc-600">
+                <a href={`mailto:${profile.email}`} className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors">
+                  <Mail size={14} /> {profile.email}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 알림 메시지 바 (사용자 입력값이 있을 때만 표시) */}
+        {devData.motto && (
+          <div className="bg-zinc-50 text-zinc-600 p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-bold border border-zinc-200/80 mb-12">
+            <Bell size={16} className="text-zinc-400 shrink-0" />
+            <p>{devData.motto}</p>
+          </div>
+        )}
+
+        {/* 주요 통계 영역 (사용자 입력 통계가 있을 때만 표시) */}
+        {devData.stats && (
+          <div className="grid grid-cols-3 gap-4 border-y border-zinc-100 py-10 mb-12">
+            <div className="flex flex-col items-center justify-center text-center">
+              <span className="text-3xl md:text-4xl font-black text-zinc-900 mb-2">{devData.stats.years || '1+'}</span>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{currentLang === 'zh' ? '工作年限' : currentLang === 'en' ? 'Years of Exp' : '경력 연차'}</span>
             </div>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-bold text-zinc-500">
-              <a href="#" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"><Terminal size={14} /> @{profile.handle}</a>
-              <a href="#" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"><MessageCircle size={14} /> fb.com/{profile.handle}</a>
-              <a href="#" className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"><Rss size={14} /> blog.{profile.handle}.dev</a>
+            <div className="flex flex-col items-center justify-center text-center border-x border-zinc-100">
+              <span className="text-3xl md:text-4xl font-black text-zinc-900 mb-2">{devData.stats.posts || '0'}</span>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{currentLang === 'zh' ? '技术文章' : currentLang === 'en' ? 'Tech Posts' : '기술 글'}</span>
+            </div>
+            <div className="flex flex-col items-center justify-center text-center">
+              <span className="text-3xl md:text-4xl font-black text-zinc-900 mb-2">{devData.stats.stars || '0'}</span>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Github Stars</span>
             </div>
           </div>
-        </div>
-
-        {/* 알림 메시지 바 */}
-        <div className="bg-zinc-50 text-zinc-600 p-4 rounded-xl flex items-center gap-3 text-xs md:text-sm font-bold border border-zinc-200/80 mb-12">
-          <Bell size={16} className="text-zinc-400 shrink-0" />
-          <p>{devData.motto || (currentLang === 'zh' ? '请通过邮件而非手机或社交软件联系。' : currentLang === 'en' ? 'Please contact me via email rather than phone or social media.' : '휴대전화나 페이스북 메시지 아닌 이메일로 연락 부탁드립니다.')}</p>
-        </div>
-
-        {/* 주요 통계 영역 */}
-        <div className="grid grid-cols-3 gap-4 border-y border-zinc-100 py-10 mb-12">
-          <div className="flex flex-col items-center justify-center text-center">
-            <span className="text-3xl md:text-4xl font-black text-zinc-900 mb-2">10+</span>
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Years of Experience</span>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center border-x border-zinc-100">
-            <span className="text-3xl md:text-4xl font-black text-zinc-900 mb-2">400+</span>
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Tech Post</span>
-          </div>
-          <div className="flex flex-col items-center justify-center text-center">
-            <span className="text-3xl md:text-4xl font-black text-zinc-900 mb-2">350+</span>
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Github Stars</span>
-          </div>
-        </div>
+        )}
 
         {/* 1. INTRODUCE */}
         <SectionHeader id="introduce" title="Introduce" />
@@ -209,22 +210,7 @@ export const Developer2Tab = ({ user }) => {
           {devData.about ? (
              <div className="whitespace-pre-line">{devData.about}</div>
           ) : (
-             currentLang === 'zh' ? (
-               <>
-                 <p>基于Web/App服务后端开发以及初创企业的丰富经验，目前负责大型电商服务的后端开发。具备设计和运营高扩展性与高可维护性架构的经验。</p>
-                 <p>在不断拓展后端开发者专业能力的同时，渴望成为与团队和组织共同成长的开发者。通过积极沟通与协作来解决问题并创造价值，持之以恒地学习并积累经验。</p>
-               </>
-             ) : currentLang === 'en' ? (
-               <>
-                 <p>Based on diverse experience in web/app backend development and startups, I am currently responsible for backend development for large-scale commerce services. Experienced in designing and operating architectures with high scalability and maintainability.</p>
-                 <p>While continuously expanding expertise as a backend engineer, I strive to grow alongside my team and organization. I am constantly learning to solve challenges and create value through proactive communication and collaboration.</p>
-               </>
-             ) : (
-               <>
-                 <p>웹/앱 서비스 백엔드 개발과 스타트업에서의 다양한 경험을 바탕으로, 현재는 대규모 커머스 서비스의 백엔드 개발을 담당하고 있습니다. 확장성과 유지 보수성이 높은 아키텍처를 설계하고 운영한 경험이 있습니다.</p>
-                 <p>백엔드 개발자로서 전문성을 계속 확장해 나가면서도, 팀과 조직과 함께 성장하는 개발자가 되고자 합니다. 적극적인 소통과 협력을 통해 문제를 해결하고 가치를 만들어내는 개발자가 되기 위해 끊임없이 학습하고 경험을 쌓고 있습니다.</p>
-               </>
-             )
+             <p className="text-sm text-zinc-400 font-medium">{currentLang === 'zh' ? '暂无自我介绍。' : currentLang === 'en' ? 'No introduction registered.' : '등록된 자기소개가 없습니다.'}</p>
           )}
         </div>
 
@@ -447,7 +433,7 @@ export const CareerTab = ({ data }) => {
           <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Target size={14}/> Target Job</h4>
           <p className="text-xl md:text-2xl font-black text-blue-600">{data?.targetJob || (currentLang === 'zh' ? '未输入' : currentLang === 'en' ? 'Not entered' : '미입력')}</p>
         </div>
-        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 flex-1">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100">
            <h4 className="text-[11px] md:text-xs font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><MapPin size={14}/> Career Goals</h4>
            <div className="flex flex-col gap-3">
              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
@@ -464,6 +450,32 @@ export const CareerTab = ({ data }) => {
              </div>
            </div>
         </div>
+
+        {/* ⭐️ 필요 기술 스택 & 관심 분야 (CareerEditTab에서 입력한 데이터 렌더링) */}
+        {((data?.techStack && data.techStack.length > 0) || (data?.interests && data.interests.length > 0)) && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 space-y-4">
+             {data?.techStack && data.techStack.length > 0 && (
+               <div>
+                 <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Code size={12} className="text-blue-500"/> Required Skills</h5>
+                 <div className="flex flex-wrap gap-1.5">
+                   {data.techStack.map((tech, i) => (
+                     <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-lg border border-blue-100">{tech}</span>
+                   ))}
+                 </div>
+               </div>
+             )}
+             {data?.interests && data.interests.length > 0 && (
+               <div>
+                 <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Compass size={12} className="text-indigo-500"/> Interests</h5>
+                 <div className="flex flex-wrap gap-1.5">
+                   {data.interests.map((it, i) => (
+                     <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-100">{it}</span>
+                   ))}
+                 </div>
+               </div>
+             )}
+          </div>
+        )}
       </div>
       <div className="md:col-span-2">
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">

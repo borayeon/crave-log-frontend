@@ -4,118 +4,755 @@ import {
   Calendar, History, ChevronDown, X as CloseIcon, UserPlus, 
   Image as ImageIcon, Upload, Loader2, Compass, Heart, 
   CreditCard, MessageSquare, Target, Quote, FileText, Grid, Eraser, 
-  Layers, Check, Rocket, Eye, Lock, GraduationCap, Mic, LayoutList,
-  Globe, Users, KeyRound, ShieldCheck, EyeOff
+  Layers, Check, Rocket, Lock, GraduationCap, Mic, LayoutList,
+  Globe, Users, KeyRound, EyeOff, Bell, Award,
+  ArrowUp, ArrowDown, Copy, Eye, Sparkles,
+  Server, Database, Monitor, Wrench
 } from 'lucide-react';
 import BusinessCard from './BusinessCard';
 import { useAppStore } from '../../../store/AppStore';
 
-export const DeveloperEditTab = ({ formData, updateNested, renderStringArrayInput }) => {
-  const { currentLang } = useAppStore();
+export const DeveloperEditTab = ({ formData, updateNested }) => {
+  const { currentLang, showToast } = useAppStore();
+  const [activeMode, setActiveMode] = useState('edit'); // 'edit' | 'preview'
+  const [customInputValues, setCustomInputValues] = useState({});
+
+  const devData = formData.developer || {};
+  const projects = devData.projects || [];
+
+  const TECH_CATEGORIES = [
+    { key: 'backend', label: 'Backend', icon: Server, color: 'text-sky-500', bg: 'bg-sky-50/70', border: 'border-sky-200', badgeColor: 'bg-sky-50 text-sky-700 border-sky-200' },
+    { key: 'frontend', label: 'Frontend', icon: Monitor, color: 'text-violet-500', bg: 'bg-violet-50/70', border: 'border-violet-200', badgeColor: 'bg-violet-50 text-violet-700 border-violet-200' },
+    { key: 'db', label: 'Database & Cache', icon: Database, color: 'text-emerald-500', bg: 'bg-emerald-50/70', border: 'border-emerald-200', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    { key: 'tools', label: 'DevOps & Tools', icon: Wrench, color: 'text-amber-500', bg: 'bg-amber-50/70', border: 'border-amber-200', badgeColor: 'bg-amber-50 text-amber-700 border-amber-200' },
+  ];
+
+  const TECH_PRESETS = {
+    backend: ['Java', 'Spring Boot', 'Node.js', 'Python', 'FastAPI', 'NestJS', 'Go', 'Kotlin', 'Django', 'Express'],
+    frontend: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'Vue.js', 'Redux', 'Zustand', 'HTML/CSS'],
+    db: ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Oracle', 'SQLite', 'DynamoDB', 'Prisma', 'JPA'],
+    tools: ['Docker', 'Kubernetes', 'AWS', 'Git', 'GitHub Actions', 'Linux', 'Nginx', 'Vercel', 'Figma', 'Postman'],
+    learning: ['AI / LLM', 'Rust', 'WebAssembly', 'GraphQL', 'Kafka', 'Microservices', 'Cybersecurity', 'Golang']
+  };
+
+  const BIO_TEMPLATES = [
+    {
+      id: 'problem_solver',
+      label: currentLang === 'zh' ? '💡 解决问题导向' : currentLang === 'en' ? '💡 Problem Solver' : '💡 문제 해결 중심',
+      text: currentLang === 'zh' 
+        ? '专注于用技术解决真实的业务问题，重视用户体验与高可用扩展架构。追求编写高内聚、低耦合且整洁易读的代码。' 
+        : currentLang === 'en' 
+        ? 'Passionate about solving real-world business problems through technology. I prioritize user experience and scalable, resilient architectures.' 
+        : '비즈니스 문제를 기술로 풀어내는 것에 열정을 가진 개발자입니다. 사용자 경험과 확장 가능한 아키텍처를 고민하며, 단단하고 읽기 쉬운 코드를 지향합니다.'
+    },
+    {
+      id: 'growth_team',
+      label: currentLang === 'zh' ? '🤝 团队协作与成长' : currentLang === 'en' ? '🤝 Growth & Teamwork' : '🤝 성장과 협업',
+      text: currentLang === 'zh'
+        ? '热爱学习前沿技术并乐于与团队分享。倡导积极的代码评审和开放透明的技术交流，共同打造高效协作的工程团队。'
+        : currentLang === 'en'
+        ? 'I enjoy learning emerging technologies and sharing knowledge with peers. I advocate for active code reviews, open communication, and team synergy.'
+        : '새로운 기술을 학습하고 동료와 지식을 나누는 것을 즐깁니다. 적극적인 코드 리뷰와 투명한 소통을 통해 팀 전체의 시너지를 만듭니다.'
+    },
+    {
+      id: 'performance_arch',
+      label: currentLang === 'zh' ? '⚡ 架构与性能优化' : currentLang === 'en' ? '⚡ High Performance' : '⚡ 성능 및 아키텍처',
+      text: currentLang === 'zh'
+        ? '专注于高并发海量数据环境下的系统性能调优与分布式微服务架构。坚持用数据和监控驱动迭代与持续重构。'
+        : currentLang === 'en'
+        ? 'Focused on performance optimization, low latency, and distributed architectures for high-traffic environments. Driven by metrics and continuous improvement.'
+        : '대규모 트래픽 환경에서의 성능 최적화와 안정적인 분산 시스템 설계에 관심이 많습니다. 데이터 기반의 빠른 실험과 모니터링을 통한 개선을 추구합니다.'
+    }
+  ];
+
+  const getCategoryArray = (catKey) => {
+    const val = (devData.techStack || {})[catKey];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string' && val.trim()) return val.split(',').map(s => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  const getLearningArray = () => {
+    const val = devData.learning;
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string' && val.trim()) return val.split(',').map(s => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  const toggleSkill = (catKey, skillName) => {
+    if (catKey === 'learning') {
+      const arr = getLearningArray();
+      const exists = arr.includes(skillName);
+      const newArr = exists ? arr.filter(s => s !== skillName) : [...arr, skillName];
+      updateNested(["developer", "learning"], newArr.join(', '));
+    } else {
+      const arr = getCategoryArray(catKey);
+      const exists = arr.includes(skillName);
+      const newArr = exists ? arr.filter(s => s !== skillName) : [...arr, skillName];
+      updateNested(["developer", "techStack", catKey], newArr.join(', '));
+    }
+  };
+
+  const handleCustomInputKeyDown = (catKey, e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = (customInputValues[catKey] || '').trim();
+      if (val) {
+        toggleSkill(catKey, val);
+        setCustomInputValues(prev => ({ ...prev, [catKey]: '' }));
+      }
+    }
+  };
+
+  const handleCustomInputBlur = (catKey) => {
+    const val = (customInputValues[catKey] || '').trim();
+    if (val) {
+      toggleSkill(catKey, val);
+      setCustomInputValues(prev => ({ ...prev, [catKey]: '' }));
+    }
+  };
+
+  const applyBioTemplate = (templateText) => {
+    const current = devData.about || '';
+    if (current.trim().length > 0 && !window.confirm(currentLang === 'zh' ? '当前已写有自我介绍，是否要覆盖为所选模板？' : currentLang === 'en' ? 'Overwrite your existing introduction with this template?' : '현재 작성된 자기소개가 있습니다. 선택한 템플릿으로 변경하시겠습니까?')) {
+      return;
+    }
+    updateNested(["developer", "about"], templateText);
+    showToast(currentLang === 'zh' ? '模板已应用！✨' : currentLang === 'en' ? 'Template applied! ✨' : '템플릿이 적용되었습니다! ✨');
+  };
+
+  const moveProject = (index, direction) => {
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= projects.length) return;
+    const arr = [...projects];
+    const [item] = arr.splice(index, 1);
+    arr.splice(targetIdx, 0, item);
+    updateNested(["developer", "projects"], arr);
+  };
+
+  const duplicateProject = (index) => {
+    const item = projects[index];
+    if (!item) return;
+    const copy = { 
+      ...item, 
+      name: `${item.name || (currentLang === 'zh' ? '项目' : currentLang === 'en' ? 'Project' : '프로젝트')} (Copy)`
+    };
+    const arr = [...projects];
+    arr.splice(index + 1, 0, copy);
+    updateNested(["developer", "projects"], arr);
+    showToast(currentLang === 'zh' ? '项目已复制。' : currentLang === 'en' ? 'Project duplicated.' : '프로젝트가 복사되었습니다.');
+  };
+
+  const deleteProject = (index) => {
+    const arr = [...projects];
+    arr.splice(index, 1);
+    updateNested(["developer", "projects"], arr);
+  };
+
+  const addProject = () => {
+    const newProj = {
+      name: "",
+      date: "",
+      role: "",
+      desc: "",
+      githubUrl: "",
+      liveUrl: ""
+    };
+    updateNested(["developer", "projects"], [...projects, newProj]);
+  };
+
+  const totalTechCount = TECH_CATEGORIES.reduce((acc, cat) => acc + getCategoryArray(cat.key).length, 0) + getLearningArray().length;
 
   return (
-  <div className="space-y-4">
-      <div className="bg-[#0D1117] text-zinc-300 p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-800 relative overflow-hidden">
-          <div className="absolute top-4 left-4 flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+    <div className="space-y-6 animate-in fade-in">
+      
+      {/* ⭐️ 상단 스튜디오 컨트롤 바 (요약 통계 & 모드 전환) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-3xl border border-zinc-200/80 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+            <Terminal size={20} />
           </div>
-          <div className="mt-4 mb-6">
-             <span className="text-zinc-500 font-mono text-[11px] font-bold">{"// About Me"}</span>
-             <textarea 
-                value={formData.developer?.about || ''} 
-                onChange={e => updateNested(["developer", "about"], e.target.value)} 
-                rows={3} 
-                placeholder={currentLang === 'zh' ? '撰写作为开发者的自我介绍。' : currentLang === 'en' ? 'Write an introduction as a developer.' : '개발자로서의 자기소개를 작성해보세요.'}
-                className="w-full mt-2 bg-[#161B22] border border-zinc-700 rounded-xl px-4 py-3 text-sm font-mono text-emerald-400 focus:border-emerald-500 outline-none resize-none placeholder:text-emerald-900/50 transition-colors" 
-              />
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-black text-zinc-900 tracking-tight">
+                {currentLang === 'zh' ? '开发者工作台 (Developer Studio)' : currentLang === 'en' ? 'Developer Studio' : '개발자 스튜디오 (Developer Studio)'}
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                v2.0
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 text-[11px] font-bold text-zinc-400">
+              <span>{totalTechCount} {currentLang === 'zh' ? '项技术栈' : currentLang === 'en' ? 'Skills' : '개 기술 스택'}</span>
+              <span>·</span>
+              <span>{projects.length} {currentLang === 'zh' ? '个项目' : currentLang === 'en' ? 'Projects' : '개 프로젝트'}</span>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800">
-                  <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Tech Stack</h4>
-                  <div className="space-y-4">
-                      {renderStringArrayInput("Backend", ["developer", "techStack", "backend"], currentLang === 'zh' ? '添加' : currentLang === 'en' ? 'Add' : '추가')}
-                      {renderStringArrayInput("Database", ["developer", "techStack", "db"], currentLang === 'zh' ? '添加' : currentLang === 'en' ? 'Add' : '추가')}
-                      {renderStringArrayInput("Frontend", ["developer", "techStack", "frontend"], currentLang === 'zh' ? '添加' : currentLang === 'en' ? 'Add' : '추가')}
-                      {renderStringArrayInput("Tools", ["developer", "techStack", "tools"], currentLang === 'zh' ? '添加' : currentLang === 'en' ? 'Add' : '추가')}
-                  </div>
-              </div>
-              <div className="bg-[#161B22] p-5 rounded-2xl border border-zinc-800 flex flex-col">
-                  <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5"><Code size={14}/> Currently Learning</h4>
-                  <div className="flex-1">
-                     {renderStringArrayInput(null, ["developer", "learning"], currentLang === 'zh' ? '输入正在学习的技术后按 Enter' : currentLang === 'en' ? 'Enter learning tech and press Enter' : '학습 중인 기술 입력 후 Enter')}
-                  </div>
-              </div>
-          </div>
+        </div>
+
+        {/* 편집기 vs 실시간 미리보기 토글 버튼 */}
+        <div className="flex bg-zinc-100 p-1 rounded-2xl shrink-0 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setActiveMode('edit')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+              activeMode === 'edit'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <Code size={13} className={activeMode === 'edit' ? 'text-indigo-600' : ''} />
+            <span>{currentLang === 'zh' ? '编辑器' : currentLang === 'en' ? 'Editor' : '에디터'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMode('preview')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+              activeMode === 'preview'
+                ? 'bg-white text-zinc-900 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <Eye size={13} className={activeMode === 'preview' ? 'text-indigo-600' : ''} />
+            <span>{currentLang === 'zh' ? '实时预览' : currentLang === 'en' ? 'Live Preview' : '실시간 미리보기'}</span>
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
-          <h3 className="text-base font-black text-zinc-900 mb-1 ml-1 flex items-center gap-2"><Rocket size={16} className="text-violet-500" /> Featured Projects</h3>
-          <p className="text-[11px] text-zinc-500 font-medium ml-1 mb-5">
-            {currentLang === 'zh' ? '注册代表性项目并连接链接以完善作品集。' : currentLang === 'en' ? 'Register key projects and add links to complete your portfolio.' : '대표 프로젝트를 등록하고 링크를 연결해 포트폴리오를 완성하세요.'}
-          </p>
-          
-          <div className="grid grid-cols-1 gap-4">
-              {(formData.developer?.projects || []).map((proj, idx) => (
-                  <div key={idx} className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 shadow-sm flex flex-col md:flex-row gap-4 group relative">
-                      <button 
-                          onClick={()=>{const arr=[...(formData.developer?.projects||[])]; arr.splice(idx,1); updateNested(["developer","projects"], arr);}} 
-                          className="absolute top-4 right-4 text-zinc-400 hover:text-rose-500 bg-white hover:bg-rose-50 border border-zinc-200 p-1.5 rounded-lg transition-colors z-10"
-                      >
-                          <Trash2 size={14}/>
-                      </button>
-                      
-                      <div className="flex-1 flex flex-col gap-2">
-                        <input 
-                            value={proj.name} 
-                            onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
-                            className="w-full md:w-2/3 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-sm font-black outline-none focus:border-violet-400 pr-10 transition-colors" 
-                            placeholder={currentLang === 'zh' ? '项目名称' : currentLang === 'en' ? 'Project Name' : '프로젝트명'} 
-                        />
-                        <textarea 
-                            value={proj.desc} 
-                            onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
-                            className="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-medium outline-none resize-none focus:border-violet-400 transition-colors" 
-                            placeholder={currentLang === 'zh' ? '项目一句话简介及担任角色' : currentLang === 'en' ? 'One-line project description and your role' : '프로젝트 한 줄 설명 및 담당 역할'} 
-                            rows={2}
-                        />
-                      </div>
-                      <div className="md:w-1/3 flex flex-col justify-end gap-2">
-                        <div className="flex items-center gap-2">
-                            <Terminal size={14} className="text-zinc-400 shrink-0"/>
-                            <input 
-                                value={proj.githubUrl || ''} 
-                                onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
-                                className="w-full bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-[11px] outline-none focus:border-violet-400 transition-colors" 
-                                placeholder={currentLang === 'zh' ? 'GitHub URL (可选)' : currentLang === 'en' ? 'GitHub URL (Optional)' : 'GitHub URL (선택)'} 
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <ExternalLink size={14} className="text-violet-400 shrink-0"/>
-                            <input 
-                                value={proj.liveUrl || ''} 
-                                onChange={e => { const arr=[...(formData.developer?.projects||[])]; arr[idx].liveUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
-                                className="w-full bg-white border border-zinc-200 rounded-md px-2.5 py-1.5 text-[11px] outline-none focus:border-violet-400 transition-colors" 
-                                placeholder={currentLang === 'zh' ? '线上(Live) URL (可选)' : currentLang === 'en' ? 'Live URL (Optional)' : '배포(Live) URL (선택)'} 
-                            />
-                        </div>
-                      </div>
-                  </div>
-              ))}
-              
-              <button 
-                  type="button"
-                  onClick={()=>{const arr=[...(formData.developer?.projects||[]), {name:"", desc:"", githubUrl:"", liveUrl:""}]; updateNested(["developer","projects"], arr);}} 
-                  className="py-6 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-zinc-200 rounded-2xl text-zinc-400 hover:text-violet-600 hover:border-violet-300 hover:bg-violet-50 transition-colors"
-              >
-                  <Plus size={24} />
-                  <span className="font-bold text-xs">{currentLang === 'zh' ? '添加新项目' : currentLang === 'en' ? 'Add New Project' : '새 프로젝트 추가'}</span>
-              </button>
+      {/* ⭐️ 실시간 미리보기 모드 */}
+      {activeMode === 'preview' ? (
+        <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-indigo-50 text-indigo-800 p-3.5 rounded-2xl border border-indigo-200/80 text-xs font-bold flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Sparkles size={15} className="text-indigo-600" />
+              {currentLang === 'zh' ? '访客实际看到的开发者标签页实时效果。' : currentLang === 'en' ? 'This is how your Developer Tab appears to profile visitors.' : '방문자에게 실제로 노출되는 개발자 탭의 실시간 렌더링 화면입니다.'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveMode('edit')}
+              className="text-[11px] underline font-black text-indigo-700 hover:text-indigo-900"
+            >
+              {currentLang === 'zh' ? '返回编辑' : currentLang === 'en' ? 'Back to Editor' : '수정하러 가기'}
+            </button>
           </div>
-      </div>
-  </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+            {/* 좌측 소개 & 기술 스택 */}
+            <div className="md:col-span-1 flex flex-col gap-4">
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
+                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <UserPlus size={14}/> About Me
+                </h4>
+                <p className="text-sm text-zinc-700 leading-relaxed font-medium whitespace-pre-line">
+                  {devData.about || (currentLang === 'zh' ? '暂无自我介绍。' : currentLang === 'en' ? 'No about me entered.' : '입력된 자기소개가 없습니다.')}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
+                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                  <Code size={14}/> Tech Stack
+                </h4>
+                <div className="space-y-4">
+                  {TECH_CATEGORIES.map(cat => {
+                    const list = getCategoryArray(cat.key);
+                    if (list.length === 0) return null;
+                    return (
+                      <div key={cat.key}>
+                        <span className="block text-[10px] font-black text-zinc-400 uppercase mb-2">{cat.label}</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {list.map((tech, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-[11px] font-bold shadow-2xs">
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {getLearningArray().length > 0 && (
+                    <div>
+                      <span className="block text-[10px] font-black text-rose-400 uppercase mb-2">Currently Learning</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {getLearningArray().map((tech, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-[11px] font-bold shadow-2xs">
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 우측 프로젝트 목록 */}
+            <div className="md:col-span-2">
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-100 h-full">
+                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-5 flex items-center gap-1.5">
+                  <Rocket size={14}/> Featured Projects
+                </h4>
+                <div className="grid grid-cols-1 gap-4">
+                  {projects.map((proj, idx) => (
+                    <div key={idx} className="p-5 bg-zinc-50/70 rounded-2xl border border-zinc-200/70 hover:bg-white hover:shadow-md transition-all">
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h5 className="text-base font-black text-zinc-900">{proj.name || 'Untitled Project'}</h5>
+                            {proj.role && (
+                              <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-200">
+                                {proj.role}
+                              </span>
+                            )}
+                          </div>
+                          {proj.date && <p className="text-[10px] font-bold text-zinc-400 mt-0.5">{proj.date}</p>}
+                        </div>
+                        <div className="flex gap-1.5 text-zinc-400 shrink-0">
+                          {proj.githubUrl && (
+                            <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 p-1.5 rounded-lg hover:text-zinc-900 transition shadow-2xs">
+                              <Terminal size={14} />
+                            </a>
+                          )}
+                          {proj.liveUrl && (
+                            <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="bg-white border border-zinc-200 p-1.5 rounded-lg hover:text-violet-600 transition shadow-2xs">
+                              <ExternalLink size={14} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-zinc-600 font-medium leading-relaxed whitespace-pre-line mt-2">
+                        {proj.desc || (currentLang === 'zh' ? '暂无项目简介。' : currentLang === 'en' ? 'No project description.' : '프로젝트 설명이 없습니다.')}
+                      </p>
+                    </div>
+                  ))}
+                  {projects.length === 0 && (
+                    <p className="text-sm text-zinc-400 font-medium text-center py-12 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                      {currentLang === 'zh' ? '暂无登记的项目。' : currentLang === 'en' ? 'No projects registered.' : '등록된 프로젝트가 없습니다.'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ⭐️ 편집기 모드 (Editor Mode) */
+        <div className="space-y-6">
+          
+          {/* 1. IDE 터미널 스타일 About Me 편집기 */}
+          <div className="bg-[#0D1117] text-zinc-300 rounded-3xl p-6 md:p-8 shadow-sm border border-zinc-800 relative overflow-hidden">
+            {/* macOS 윈도우 컨트롤 헤더 */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-zinc-800/80">
+              <div className="flex items-center gap-2.5">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
+                </div>
+                <span className="text-[11px] font-mono font-bold text-zinc-400 ml-2 flex items-center gap-1.5 bg-[#161B22] px-2.5 py-1 rounded-md border border-zinc-800">
+                  <Terminal size={12} className="text-emerald-400" /> developer_bio.ts
+                </span>
+                <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">git:(main)</span>
+              </div>
+              <span className="text-[11px] font-mono text-zinc-500 font-medium self-end sm:self-auto">
+                {(devData.about || '').length} characters
+              </span>
+            </div>
+
+            {/* 빠른 추천 템플릿 바 */}
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">
+                <Sparkles size={12} className="text-amber-400" />
+                {currentLang === 'zh' ? '快捷灵感模板 (点击应用)' : currentLang === 'en' ? 'Quick Bio Starters (Click to apply)' : '빠른 추천 템플릿 (클릭 시 자동 적용)'}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {BIO_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => applyBioTemplate(tmpl.text)}
+                    className="px-3 py-1.5 bg-[#161B22] hover:bg-[#21262D] border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 text-[11px] font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <span>{tmpl.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 에디터 텍스트 영역 */}
+            <div className="relative mt-2">
+              <div className="text-zinc-500 font-mono text-[11px] font-bold mb-2">
+                {"// Who I am & What drives my engineering:"}
+              </div>
+              <textarea 
+                value={devData.about || ''} 
+                onChange={e => updateNested(["developer", "about"], e.target.value)} 
+                rows={4} 
+                placeholder={currentLang === 'zh' ? '撰写作为开发者的自我介绍与工程哲学。' : currentLang === 'en' ? 'Write an introduction as a developer and your engineering philosophy.' : '개발자로서의 자기소개와 지향하는 엔지니어링 가치관을 작성해보세요.'}
+                className="w-full bg-[#161B22] border border-zinc-700 focus:border-emerald-500/80 rounded-2xl px-4 py-3.5 text-sm font-mono text-emerald-400 outline-none resize-none placeholder:text-emerald-900/50 transition-colors shadow-inner leading-relaxed" 
+              />
+            </div>
+          </div>
+
+          {/* 2. 인터랙티브 기술 스택 매트릭스 (Tech Stack Matrix) */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-zinc-100">
+              <div>
+                <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+                  <Code size={18} className="text-indigo-600" />
+                  {currentLang === 'zh' ? '技术栈矩阵 (Tech Stack Matrix)' : currentLang === 'en' ? 'Tech Stack Matrix' : '기술 스택 매트릭스 (Tech Stack Matrix)'}
+                </h3>
+                <p className="text-[11px] text-zinc-500 font-medium mt-0.5">
+                  {currentLang === 'zh' ? '点击推荐技术栈快速添加，或在输入框中直接输入回车添加。' : currentLang === 'en' ? 'Click recommended stacks to add quickly, or type and press Enter.' : '자주 사용하는 기술 칩을 클릭해 빠르게 담거나, 직접 입력하여 엔터(Enter)를 누르세요.'}
+                </p>
+              </div>
+              <div className="text-xs font-black px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 self-start sm:self-auto border border-indigo-200">
+                {totalTechCount} {currentLang === 'zh' ? '项已选技术' : currentLang === 'en' ? 'Selected' : '개 등록됨'}
+              </div>
+            </div>
+
+            {/* 4대 주요 기술 영역 그리드 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {TECH_CATEGORIES.map(cat => {
+                const Icon = cat.icon;
+                const selectedList = getCategoryArray(cat.key);
+                const presets = TECH_PRESETS[cat.key] || [];
+                const inputValue = customInputValues[cat.key] || '';
+
+                return (
+                  <div key={cat.key} className="bg-zinc-50/70 p-5 rounded-2xl border border-zinc-200/80 flex flex-col justify-between hover:border-zinc-300 transition-colors">
+                    <div>
+                      {/* 카테고리 헤더 */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-black text-zinc-800 flex items-center gap-1.5">
+                          <Icon size={15} className={cat.color} /> {cat.label}
+                        </span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-zinc-600 border border-zinc-200">
+                          {selectedList.length}
+                        </span>
+                      </div>
+
+                      {/* 등록된 기술 스택 칩 목록 */}
+                      <div className="flex flex-wrap gap-1.5 mb-3 min-h-[32px] p-2 bg-white rounded-xl border border-zinc-200/80 shadow-2xs">
+                        {selectedList.length === 0 ? (
+                          <span className="text-[11px] text-zinc-400 font-medium py-0.5 px-1">
+                            {currentLang === 'zh' ? '暂未添加技术' : currentLang === 'en' ? 'No tech added yet' : '등록된 기술이 없습니다'}
+                          </span>
+                        ) : (
+                          selectedList.map((skill, idx) => (
+                            <span 
+                              key={idx}
+                              onClick={() => toggleSkill(cat.key, skill)}
+                              className="group flex items-center gap-1 px-2.5 py-1 bg-zinc-900 text-zinc-100 hover:bg-rose-500 hover:text-white rounded-lg text-[11px] font-bold cursor-pointer transition-all shadow-2xs"
+                              title={currentLang === 'zh' ? '点击移除' : currentLang === 'en' ? 'Click to remove' : '클릭하여 삭제'}
+                            >
+                              <span>{skill}</span>
+                              <CloseIcon size={11} className="text-zinc-400 group-hover:text-white" />
+                            </span>
+                          ))
+                        )}
+                      </div>
+
+                      {/* 추천 칩 목록 (클릭 토글) */}
+                      <div className="mb-3">
+                        <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-wider mb-1.5">
+                          {currentLang === 'zh' ? '💡 快捷推荐' : currentLang === 'en' ? '💡 Quick Presets' : '💡 원클릭 추천 스택'}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {presets.map(preset => {
+                            const isSelected = selectedList.includes(preset);
+                            return (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => toggleSkill(cat.key, preset)}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-zinc-800 text-white border-zinc-800'
+                                    : 'bg-white text-zinc-600 border-zinc-200 hover:border-indigo-400 hover:text-indigo-600'
+                                }`}
+                              >
+                                {isSelected ? `✓ ${preset}` : `+ ${preset}`}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 직접 텍스트 입력창 */}
+                    <div className="pt-2 border-t border-zinc-200/60 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={inputValue}
+                        onChange={e => setCustomInputValues(prev => ({ ...prev, [cat.key]: e.target.value }))}
+                        onKeyDown={e => handleCustomInputKeyDown(cat.key, e)}
+                        onBlur={() => handleCustomInputBlur(cat.key)}
+                        placeholder={currentLang === 'zh' ? `+ 自定义输入后按 Enter` : currentLang === 'en' ? `+ Type and press Enter` : `+ 직접 입력 후 Enter`}
+                        className="flex-1 px-3 py-1.5 bg-white border border-dashed border-zinc-300 focus:border-solid focus:border-indigo-400 rounded-xl text-xs font-bold text-zinc-800 outline-none transition-all placeholder:text-zinc-400"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Currently Learning (현재 학습 중인 기술) 카드 */}
+            <div className="mt-4 bg-rose-50/40 p-5 rounded-2xl border border-rose-200/80">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-black text-rose-800 flex items-center gap-1.5">
+                  <Rocket size={15} className="text-rose-500" />
+                  Currently Learning (R&D)
+                </span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-rose-700 border border-rose-200">
+                  {getLearningArray().length}
+                </span>
+              </div>
+
+              {/* 선택된 러닝 칩 */}
+              <div className="flex flex-wrap gap-1.5 mb-3 min-h-[32px] p-2 bg-white rounded-xl border border-rose-200/60 shadow-2xs">
+                {getLearningArray().length === 0 ? (
+                  <span className="text-[11px] text-zinc-400 font-medium py-0.5 px-1">
+                    {currentLang === 'zh' ? '暂未添加正在学习的技术' : currentLang === 'en' ? 'No learning tech added yet' : '현재 집중 탐구 중인 새로운 기술을 추가해보세요'}
+                  </span>
+                ) : (
+                  getLearningArray().map((skill, idx) => (
+                    <span 
+                      key={idx}
+                      onClick={() => toggleSkill('learning', skill)}
+                      className="group flex items-center gap-1 px-2.5 py-1 bg-rose-500 text-white hover:bg-rose-600 rounded-lg text-[11px] font-bold cursor-pointer transition-all shadow-2xs"
+                    >
+                      <span>{skill}</span>
+                      <CloseIcon size={11} className="text-rose-200 group-hover:text-white" />
+                    </span>
+                  ))
+                )}
+              </div>
+
+              {/* 추천 칩 & 커스텀 인풋 */}
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                {TECH_PRESETS.learning.map(preset => {
+                  const isSelected = getLearningArray().includes(preset);
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => toggleSkill('learning', preset)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-rose-500 text-white border-rose-500'
+                          : 'bg-white text-zinc-600 border-rose-200 hover:border-rose-400 hover:text-rose-600'
+                      }`}
+                    >
+                      {isSelected ? `✓ ${preset}` : `+ ${preset}`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <input
+                type="text"
+                value={customInputValues.learning || ''}
+                onChange={e => setCustomInputValues(prev => ({ ...prev, learning: e.target.value }))}
+                onKeyDown={e => handleCustomInputKeyDown('learning', e)}
+                onBlur={() => handleCustomInputBlur('learning')}
+                placeholder={currentLang === 'zh' ? '+ 学习中的新技术输入后按 Enter' : currentLang === 'en' ? '+ Enter learning tech and press Enter' : '+ 학습 중인 기술 직접 입력 후 Enter'}
+                className="w-full mt-1 px-3 py-1.5 bg-white border border-dashed border-rose-300 focus:border-solid focus:border-rose-500 rounded-xl text-xs font-bold text-zinc-800 outline-none transition-all placeholder:text-zinc-400"
+              />
+            </div>
+          </div>
+
+          {/* 3. 대표 프로젝트 & 포트폴리오 (Featured Projects) */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-zinc-100">
+              <div>
+                <h3 className="text-base font-black text-zinc-900 flex items-center gap-2">
+                  <Rocket size={18} className="text-violet-600" />
+                  {currentLang === 'zh' ? '精选项目与作品集 (Featured Projects)' : currentLang === 'en' ? 'Featured Projects & Portfolio' : '대표 프로젝트 & 포트폴리오'}
+                </h3>
+                <p className="text-[11px] text-zinc-500 font-medium mt-0.5">
+                  {currentLang === 'zh' ? '登记代表作并附上 GitHub 或体验链接，可上下调整展示顺序。' : currentLang === 'en' ? 'Showcase key projects with GitHub & live links. Reorder as needed.' : '핵심 프로젝트와 배포 링크를 등록하고, 화살표를 눌러 우선 노출 순서를 변경해보세요.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addProject}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-black transition-all shadow-sm active:scale-95 self-start sm:self-auto cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>{currentLang === 'zh' ? '添加新项目' : currentLang === 'en' ? 'Add Project' : '새 프로젝트 등록'}</span>
+              </button>
+            </div>
+
+            {/* 프로젝트 카드 목록 */}
+            <div className="space-y-4">
+              {projects.map((proj, idx) => (
+                <div key={idx} className="bg-zinc-50/70 p-5 rounded-2xl border border-zinc-200/80 hover:border-violet-300 transition-all shadow-2xs group relative">
+                  
+                  {/* 상단 툴바: 번호 배지 & 정렬/복사/삭제 액션 */}
+                  <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-zinc-200/60">
+                    <span className="px-2.5 py-0.5 bg-zinc-200/80 text-zinc-800 text-[10px] font-black rounded-full uppercase tracking-wider">
+                      Project #{idx + 1}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => moveProject(idx, 'up')}
+                        title={currentLang === 'zh' ? '上移' : currentLang === 'en' ? 'Move Up' : '위로 이동'}
+                        className="p-1.5 bg-white border border-zinc-200 text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      >
+                        <ArrowUp size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === projects.length - 1}
+                        onClick={() => moveProject(idx, 'down')}
+                        title={currentLang === 'zh' ? '下移' : currentLang === 'en' ? 'Move Down' : '아래로 이동'}
+                        className="p-1.5 bg-white border border-zinc-200 text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      >
+                        <ArrowDown size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => duplicateProject(idx)}
+                        title={currentLang === 'zh' ? '复制项目' : currentLang === 'en' ? 'Duplicate' : '프로젝트 복사'}
+                        className="p-1.5 bg-white border border-zinc-200 text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer ml-1"
+                      >
+                        <Copy size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteProject(idx)}
+                        title={currentLang === 'zh' ? '删除项目' : currentLang === 'en' ? 'Delete' : '삭제'}
+                        className="p-1.5 bg-white border border-zinc-200 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer ml-1"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 1행: 프로젝트명, 진행 기간, 담당 역할 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+                    <div className="sm:col-span-1">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">
+                        {currentLang === 'zh' ? '项目名称' : currentLang === 'en' ? 'Project Name' : '프로젝트명'} <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        value={proj.name || ''} 
+                        onChange={e => { const arr=[...projects]; arr[idx].name=e.target.value; updateNested(["developer","projects"], arr); }} 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-black text-zinc-900 outline-none focus:border-violet-500 transition-colors shadow-2xs" 
+                        placeholder={currentLang === 'zh' ? '例: CraveLog 社交平台' : currentLang === 'en' ? 'e.g. CraveLog Platform' : '예: CraveLog 소셜 플랫폼'} 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">
+                        {currentLang === 'zh' ? '进行周期' : currentLang === 'en' ? 'Period' : '진행 기간'}
+                      </label>
+                      <input 
+                        value={proj.date || ''} 
+                        onChange={e => { const arr=[...projects]; arr[idx].date=e.target.value; updateNested(["developer","projects"], arr); }} 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-violet-500 transition-colors shadow-2xs" 
+                        placeholder={currentLang === 'zh' ? '例: 2025.01 ~ 2025.06' : currentLang === 'en' ? 'e.g. 2025.01 ~ 2025.06' : '예: 2025.01 ~ 2025.06'} 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">
+                        {currentLang === 'zh' ? '担任角色' : currentLang === 'en' ? 'Role / Title' : '담당 역할'}
+                      </label>
+                      <input 
+                        value={proj.role || ''} 
+                        onChange={e => { const arr=[...projects]; arr[idx].role=e.target.value; updateNested(["developer","projects"], arr); }} 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-violet-500 transition-colors shadow-2xs" 
+                        placeholder={currentLang === 'zh' ? '例: 리드 백엔드 개발' : currentLang === 'en' ? 'e.g. Lead Backend' : '예: 풀스택 / 백엔드 리드'} 
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2행: 프로젝트 설명 및 핵심 성과 */}
+                  <div className="mb-3">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1 block">
+                      {currentLang === 'zh' ? '项目简介与核心成果' : currentLang === 'en' ? 'Description & Achievements' : '프로젝트 한 줄 설명 및 담당 역할 / 성과'}
+                    </label>
+                    <textarea 
+                      value={proj.desc || ''} 
+                      onChange={e => { const arr=[...projects]; arr[idx].desc=e.target.value; updateNested(["developer","projects"], arr); }} 
+                      className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-zinc-700 outline-none resize-none focus:border-violet-500 transition-colors shadow-2xs leading-relaxed" 
+                      placeholder={currentLang === 'zh' ? '请简述项目目标、采用技术以及您所负责的核心成果。' : currentLang === 'en' ? 'Summarize project goal, tech applied, and your key achievements.' : '프로젝트 목표, 적용 기술 및 담당하여 달성한 핵심 성과를 설명하세요.'} 
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* 3행: GitHub 링크 & Live 배포 링크 (원클릭 테스트 버튼 포함) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="flex items-center gap-1.5 bg-white border border-zinc-200 rounded-xl px-2.5 py-1.5 focus-within:border-violet-500 shadow-2xs transition-colors">
+                      <Terminal size={14} className="text-zinc-400 shrink-0"/>
+                      <input 
+                        value={proj.githubUrl || ''} 
+                        onChange={e => { const arr=[...projects]; arr[idx].githubUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
+                        className="w-full bg-transparent text-[11px] font-bold text-zinc-700 outline-none" 
+                        placeholder={currentLang === 'zh' ? 'GitHub URL (https://...)' : currentLang === 'en' ? 'GitHub URL (https://...)' : 'GitHub URL (https://...)'} 
+                      />
+                      {proj.githubUrl && (
+                        <a 
+                          href={proj.githubUrl.startsWith('http') ? proj.githubUrl : `https://${proj.githubUrl}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="p-1 text-zinc-400 hover:text-indigo-600 hover:bg-zinc-100 rounded-md transition-colors shrink-0" 
+                          title={currentLang === 'zh' ? '测试链接' : currentLang === 'en' ? 'Test link' : '링크 테스트'}
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-white border border-zinc-200 rounded-xl px-2.5 py-1.5 focus-within:border-violet-500 shadow-2xs transition-colors">
+                      <ExternalLink size={14} className="text-violet-500 shrink-0"/>
+                      <input 
+                        value={proj.liveUrl || ''} 
+                        onChange={e => { const arr=[...projects]; arr[idx].liveUrl=e.target.value; updateNested(["developer","projects"], arr); }} 
+                        className="w-full bg-transparent text-[11px] font-bold text-zinc-700 outline-none" 
+                        placeholder={currentLang === 'zh' ? '线上演示 URL (https://...)' : currentLang === 'en' ? 'Live Demo URL (https://...)' : '배포(Live) URL (https://...)'} 
+                      />
+                      {proj.liveUrl && (
+                        <a 
+                          href={proj.liveUrl.startsWith('http') ? proj.liveUrl : `https://${proj.liveUrl}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="p-1 text-zinc-400 hover:text-violet-600 hover:bg-zinc-100 rounded-md transition-colors shrink-0" 
+                          title={currentLang === 'zh' ? '测试链接' : currentLang === 'en' ? 'Test link' : '링크 테스트'}
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {projects.length === 0 && (
+                <div className="py-12 border-2 border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center text-center p-6 bg-zinc-50/50">
+                  <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center mb-3">
+                    <Rocket size={22} />
+                  </div>
+                  <h4 className="text-sm font-black text-zinc-800 mb-1">
+                    {currentLang === 'zh' ? '尚未登记精选项目' : currentLang === 'en' ? 'No featured projects added yet' : '등록된 대표 프로젝트가 없습니다'}
+                  </h4>
+                  <p className="text-xs text-zinc-400 font-medium mb-4 max-w-sm">
+                    {currentLang === 'zh' ? '添加个人代表作，展示您的工程技术能力与实际产出。' : currentLang === 'en' ? 'Add your top projects to demonstrate your technical prowess.' : '내가 직접 만들거나 참여한 대표 프로젝트를 추가하여 방문자에게 기술력을 증명하세요.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={addProject}
+                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-black transition-all shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    + {currentLang === 'zh' ? '添加第一个项目' : currentLang === 'en' ? 'Add First Project' : '첫 번째 프로젝트 등록'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -550,8 +1187,23 @@ export const ArtEditTab = ({ formData, updateNested }) => {
   const [isEraser, setIsEraser] = useState(false);
   const isDrawingRef = useRef(false);
 
+  // 마우스 버튼을 캔버스 밖에서 뗐을 때 드로잉 상태가 고착되는 현상 방지
+  React.useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      isDrawingRef.current = false;
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
   const gridSize = formData.idol?.memoArea?.gridSize || 15;
   const dots = formData.idol?.memoArea?.dots || Array(gridSize * gridSize).fill("");
+
+  const paintDot = (idx) => {
+    const newDots = [...dots];
+    newDots[idx] = isEraser ? "" : activeColor;
+    updateNested(["idol", "memoArea", "dots"], newDots);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in">
@@ -614,17 +1266,14 @@ export const ArtEditTab = ({ formData, updateNested }) => {
                         <button
                             key={idx}
                             type="button"
+                            onClick={() => paintDot(idx)}
                             onMouseDown={() => {
                                 isDrawingRef.current = true;
-                                const newDots = [...dots];
-                                newDots[idx] = isEraser ? "" : activeColor;
-                                updateNested(["idol", "memoArea", "dots"], newDots);
+                                paintDot(idx);
                             }}
                             onMouseEnter={() => {
                                 if (isDrawingRef.current) {
-                                    const newDots = [...dots];
-                                    newDots[idx] = isEraser ? "" : activeColor;
-                                    updateNested(["idol", "memoArea", "dots"], newDots);
+                                    paintDot(idx);
                                 }
                             }}
                             style={{ backgroundColor: dotColor || 'transparent' }}
@@ -944,6 +1593,70 @@ export const ResumeEditTab = ({ formData, updateNested }) => {
          </p>
       </div>
 
+      {/* ⭐️ 0. 이력서 상단 헤더 문구 및 주요 지표 (Motto & Quick Stats) */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
+        <h3 className="text-base font-black text-zinc-900 mb-1 flex items-center gap-2">
+          <Award className="text-indigo-500" size={16} /> {currentLang === 'zh' ? '简历代表语录与主要指标' : currentLang === 'en' ? 'Resume Headline & Key Stats' : '이력서 대표 문구 및 주요 지표'}
+        </h3>
+        <p className="text-[11px] text-zinc-500 font-medium mb-5">
+          {currentLang === 'zh' ? '在简历顶部醒目展示您的工作哲学与核心成果指标。' : currentLang === 'en' ? 'Prominently display your motto and key achievement metrics at the top of your resume.' : '이력서 상단에 나만의 모토와 핵심 성과 수치를 눈에 띄게 강조할 수 있습니다.'}
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+              <Bell size={12} className="text-indigo-500"/> {currentLang === 'zh' ? '代表语录 / 状态信息 (Motto)' : currentLang === 'en' ? 'Headline Motto / Notice' : '대표 문구 / 알림 메시지 (Motto)'}
+            </label>
+            <input 
+              type="text"
+              value={devData.motto || ''}
+              onChange={(e) => updateNested(["developer", "motto"], e.target.value)}
+              placeholder={currentLang === 'zh' ? '例: 以敏捷迭代和稳定架构追求卓越价值' : currentLang === 'en' ? 'e.g. Pursuing excellence through agile iteration & robust architecture' : '예: 빠른 실험과 단단한 아키텍처로 비즈니스 가치를 만듭니다'}
+              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold text-zinc-800 outline-none focus:border-indigo-400 focus:bg-white transition-colors"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div>
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                {currentLang === 'zh' ? '工作年限 (Years of Exp)' : currentLang === 'en' ? 'Years of Exp' : '경력 연차 (Years of Exp)'}
+              </label>
+              <input 
+                type="text"
+                value={devData.stats?.years || ''}
+                onChange={(e) => updateNested(["developer", "stats", "years"], e.target.value)}
+                placeholder={currentLang === 'zh' ? '例: 5+ Years' : currentLang === 'en' ? 'e.g. 5+ Years' : '예: 5+ Years'}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-indigo-400 focus:bg-white transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                {currentLang === 'zh' ? '技术文章 (Tech Posts)' : currentLang === 'en' ? 'Tech Posts' : '기술 글 수 (Tech Posts)'}
+              </label>
+              <input 
+                type="text"
+                value={devData.stats?.posts || ''}
+                onChange={(e) => updateNested(["developer", "stats", "posts"], e.target.value)}
+                placeholder={currentLang === 'zh' ? '例: 24' : currentLang === 'en' ? 'e.g. 24' : '예: 24'}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-indigo-400 focus:bg-white transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                {currentLang === 'zh' ? 'Github Stars' : currentLang === 'en' ? 'Github Stars' : 'Github Stars'}
+              </label>
+              <input 
+                type="text"
+                value={devData.stats?.stars || ''}
+                onChange={(e) => updateNested(["developer", "stats", "stars"], e.target.value)}
+                placeholder={currentLang === 'zh' ? '例: 1.2k' : currentLang === 'en' ? 'e.g. 1.2k' : '예: 1.2k'}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 outline-none focus:border-indigo-400 focus:bg-white transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 1. 경력 (Experience) */}
       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-zinc-200/60">
         <div className="flex justify-between items-center mb-5">
@@ -1061,10 +1774,11 @@ export const ResumeEditTab = ({ formData, updateNested }) => {
         </div>
         <div className="space-y-4">
           {(devData.articles || []).map((art, idx) => (
-            <div key={idx} className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center gap-3 relative pr-12">
-              <input type="text" value={art.date || ''} onChange={(e) => updateItemField('articles', idx, 'date', e.target.value)} className="w-24 text-xs p-2 rounded-lg border border-zinc-200 bg-white outline-none focus:border-blue-400 text-center font-bold" placeholder="2026.03.17" />
+            <div key={idx} className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 relative pr-12">
+              <input type="text" value={art.date || ''} onChange={(e) => updateItemField('articles', idx, 'date', e.target.value)} className="w-full sm:w-28 text-xs p-2 rounded-lg border border-zinc-200 bg-white outline-none focus:border-blue-400 text-center font-bold" placeholder="2026.03.17" />
               <input type="text" value={art.title || ''} onChange={(e) => updateItemField('articles', idx, 'title', e.target.value)} className="flex-1 text-sm p-2 rounded-lg border border-zinc-200 bg-white outline-none focus:border-blue-400 font-medium" placeholder={currentLang === 'zh' ? '文章标题 (例: 多语言国际化实战)' : currentLang === 'en' ? 'Article Title (e.g. Building i18n support)' : '글 제목 (예: 다국어 도메인 구축기)'} />
-              <button type="button" onClick={() => removeArrayItem('articles', idx)} className="absolute right-4 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
+              <input type="text" value={art.url || ''} onChange={(e) => updateItemField('articles', idx, 'url', e.target.value)} className="w-full sm:w-48 text-xs p-2 rounded-lg border border-zinc-200 bg-white outline-none focus:border-blue-400 font-mono text-zinc-600" placeholder="https://..." />
+              <button type="button" onClick={() => removeArrayItem('articles', idx)} className="absolute right-3 top-3 sm:top-1/2 sm:-translate-y-1/2 text-zinc-400 hover:text-rose-500 bg-white p-1.5 rounded-lg border border-zinc-200 shadow-sm"><Trash2 size={14} /></button>
             </div>
           ))}
           {(devData.articles || []).length === 0 && <p className="text-xs text-zinc-400 font-medium text-center py-6">{currentLang === 'zh' ? '暂无登记的项目。' : currentLang === 'en' ? 'No items listed yet.' : '등록된 항목이 없습니다.'}</p>}

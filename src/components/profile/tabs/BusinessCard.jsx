@@ -24,10 +24,35 @@ const BusinessCard = ({ data, userName }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-1.5 sm:gap-3 text-[9px] sm:text-xs font-medium opacity-90 relative z-10">
-            <div className="flex items-center gap-1.5 truncate min-w-0"><Mail size={12} className="shrink-0"/> <span className="truncate">{data?.email || 'email@example.com'}</span></div>
-            <div className="flex items-center gap-1.5 truncate min-w-0"><Phone size={12} className="shrink-0"/> <span className="truncate">{data?.phone || '+82 10-0000-0000'}</span></div>
-            <div className="flex items-center gap-1.5 truncate min-w-0"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data?.address || 'Seoul, Republic of Korea'}</span></div>
-            <div className="flex items-center gap-1.5 truncate min-w-0"><Globe size={12} className="shrink-0"/> <span className="truncate">{data?.website || 'www.example.com'}</span></div>
+            {data?.email ? (
+                <a href={`mailto:${data.email}`} className="flex items-center gap-1.5 truncate min-w-0 hover:underline hover:opacity-100 transition-opacity">
+                    <Mail size={12} className="shrink-0"/> <span className="truncate">{data.email}</span>
+                </a>
+            ) : (
+                <div className="flex items-center gap-1.5 truncate min-w-0 opacity-40"><Mail size={12} className="shrink-0"/> <span className="truncate">email@example.com</span></div>
+            )}
+
+            {data?.phone ? (
+                <a href={`tel:${data.phone.replace(/[^0-9+]/g, '')}`} className="flex items-center gap-1.5 truncate min-w-0 hover:underline hover:opacity-100 transition-opacity">
+                    <Phone size={12} className="shrink-0"/> <span className="truncate">{data.phone}</span>
+                </a>
+            ) : (
+                <div className="flex items-center gap-1.5 truncate min-w-0 opacity-40"><Phone size={12} className="shrink-0"/> <span className="truncate">+82 10-0000-0000</span></div>
+            )}
+
+            {data?.address ? (
+                <div className="flex items-center gap-1.5 truncate min-w-0"><MapPin size={12} className="shrink-0"/> <span className="truncate">{data.address}</span></div>
+            ) : (
+                <div className="flex items-center gap-1.5 truncate min-w-0 opacity-40"><MapPin size={12} className="shrink-0"/> <span className="truncate">Seoul, Republic of Korea</span></div>
+            )}
+
+            {data?.website ? (
+                <a href={data.website.startsWith('http') ? data.website : `https://${data.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 truncate min-w-0 hover:underline hover:opacity-100 transition-opacity">
+                    <Globe size={12} className="shrink-0"/> <span className="truncate">{data.website.replace(/^https?:\/\//, '')}</span>
+                </a>
+            ) : (
+                <div className="flex items-center gap-1.5 truncate min-w-0 opacity-40"><Globe size={12} className="shrink-0"/> <span className="truncate">www.example.com</span></div>
+            )}
         </div>
     </div>
   );

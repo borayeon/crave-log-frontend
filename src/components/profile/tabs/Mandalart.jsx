@@ -7,8 +7,10 @@ const Mandalart = ({ visionData, isEditMode = false, updateNested }) => {
   const defaultVision = { core: "", subs: Array(8).fill(""), details: Array.from({length: 8}, () => Array(8).fill("")) };
   const v = {
       core: visionData?.core || defaultVision.core,
-      subs: visionData?.subs?.length === 8 ? visionData.subs : defaultVision.subs,
-      details: visionData?.details?.length === 8 ? visionData.details : defaultVision.details
+      subs: Array(8).fill("").map((_, i) => visionData?.subs?.[i] || ""),
+      details: Array.from({length: 8}, (_, subIdx) => 
+        Array(8).fill("").map((_, detailIdx) => visionData?.details?.[subIdx]?.[detailIdx] || "")
+      )
   };
   
   const handleCoreChange = (val) => updateNested && updateNested(['idol', 'vision', 'core'], val);
@@ -18,9 +20,7 @@ const Mandalart = ({ visionData, isEditMode = false, updateNested }) => {
     updateNested && updateNested(['idol', 'vision', 'subs'], newSubs);
   };
   const handleDetailChange = (subIdx, detailIdx, val) => {
-    const newDetails = [...v.details];
-    if (!newDetails[subIdx]) newDetails[subIdx] = Array(8).fill("");
-    else newDetails[subIdx] = [...newDetails[subIdx]]; 
+    const newDetails = v.details.map(row => [...row]);
     newDetails[subIdx][detailIdx] = val;
     updateNested && updateNested(['idol', 'vision', 'details'], newDetails);
   };
@@ -76,6 +76,7 @@ const Mandalart = ({ visionData, isEditMode = false, updateNested }) => {
                           } else if (cell.t === 'sub-readonly') {
                               bg = isEditMode ? "bg-violet-200/80 cursor-not-allowed" : "bg-violet-50";
                               textClass = "text-violet-900 font-black text-[8px] sm:text-[10px] md:text-sm";
+                              placeholder = currentLang === 'zh' ? '(核心要素自动同步)' : currentLang === 'en' ? '(Core sub-goal)' : '(핵심 요건 자동 반영)';
                               disabled = true;
                           } else if (cell.t === 'detail') {
                               onChange = (e) => handleDetailChange(cell.subIdx, cell.idx, e.target.value);
