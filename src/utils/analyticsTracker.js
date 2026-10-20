@@ -197,3 +197,45 @@ export const trackOutboundClick = (url = '', title = '') => {
     }
   }
 };
+
+// 4. 페이지 이탈(탭 닫기, 백그라운드 전환) 시 마지막 화면 체류 시간 비콘 자동 전송
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  let hasSentExit = false;
+
+  const sendExitDuration = () => {
+    if (!lastTrackedPath || hasSentExit) return;
+    const now = Date.now();
+    const durationSeconds = Math.min(Math.max(Math.round((now - pageEnterTime) / 1000), 1), 1800);
+    if (durationSeconds < 2) return; // 2초 미만의 순간 이탈은 제외
+
+    hasSentExit = true;
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    const beaconUrl = `${apiUrl}/analytics/track`;
+    const payload = {
+      path: lastTrackedPath,
+      referer: document.referrer || '',
+      durationSeconds: durationSeconds,
+      eventType: 'PAGE_VIEW',
+    };
+
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon(beaconUrl, blob);
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      sendExitDuration();
+    } else if (document.visibilityState === 'visible') {
+      hasSentExit = false;
+      pageEnterTime = Date.now();
+    }
+  });
+
+  window.addEventListener('pagehide', sendExitDuration);
+}
