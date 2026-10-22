@@ -27,7 +27,11 @@ const TimelineItemCard = ({ item, isEditing, safeTagTree, onSelectRecord, onUnlo
               <span className="text-[11px] font-bold text-zinc-400">{item.date}</span>
             </div>
             <h4 className="text-sm font-black text-zinc-800 truncate mb-1">{item.title}</h4>
-            <p className="text-xs text-zinc-500 line-clamp-1">{item.content}</p>
+            <p className="text-xs text-zinc-500 line-clamp-1">
+              {isFollowerLocked 
+                ? (currentLang === 'zh' ? '经作者关注审批后方可查看完整内容。' : currentLang === 'en' ? 'Viewable after author approves your follow.' : '호스트의 팔로우 승인 후 열람하실 수 있습니다.')
+                : item.content}
+            </p>
           </div>
           {isFollowerLocked ? (
             onFollowHost && (

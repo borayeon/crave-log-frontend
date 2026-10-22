@@ -228,13 +228,20 @@ const ArchiveView = () => {
   const handleFollowHost = async () => {
     if (!isAdmin) {
       setLoginModalOpen(true);
+      showToast(t('toast.login_required', '로그인이 필요한 서비스입니다. 🔒'));
       return;
     }
     if (visitedHandle) {
       try {
         const res = await apiFetch(`/users/${visitedHandle}/follow`, { method: 'POST' });
         if (res?.ok) {
-          showToast(currentLang === 'zh' ? `@${visitedHandle} 已关注！现在可查看关注者专属记录。🎉` : currentLang === 'en' ? `@${visitedHandle} followed! You can now view follower-only records. 🎉` : `@${visitedHandle}님을 팔로우했습니다! 이제 팔로워 공개 기록을 열람할 수 있습니다. 🎉`);
+          const resData = await res.json().catch(() => ({}));
+          const isFollowingNow = resData.isFollowing !== undefined ? !!resData.isFollowing : !!resData.following;
+          showToast(
+            isFollowingNow
+              ? `@${visitedHandle}${currentLang === 'zh' ? ' 已关注！现在可查看关注者专属记录。🎉' : currentLang === 'en' ? ' followed! You can now view follower-only records. 🎉' : '님을 팔로우했습니다! 이제 팔로워 공개 기록을 열람할 수 있습니다. 🎉'}`
+              : t('profile.follow_requested', '팔로우를 신청했습니다. 호스트의 수락 후 팔로워 공개 기록이 열람됩니다.')
+          );
           await fetchAllData(true);
         } else {
           showToast(currentLang === 'zh' ? '关注失败。' : currentLang === 'en' ? 'Failed to follow.' : '팔로우 처리에 실패했습니다.');

@@ -37,13 +37,28 @@ const TimelineView = () => {
   };
 
   const handleFollowHost = async () => {
+    if (!isAdmin) {
+      setLoginModalOpen(true);
+      showToast(t('toast.login_required', '로그인이 필요한 서비스입니다. 🔒'));
+      return;
+    }
     if (!hostUser?.handle) return;
     try {
-      await apiFetch(`/api/v1/users/${hostUser.handle}/follow`, { method: 'POST' });
-      showToast(`${hostUser.nickname || hostUser.handle}${currentLang === 'zh' ? ' 已关注。正在刷新时间线。' : currentLang === 'en' ? ' followed. Refreshing timeline.' : '님을 팔로우했습니다. 타임라인을 새로고침합니다.'}`, 'success');
-      await fetchAllData(true);
+      const res = await apiFetch(`/users/${hostUser.handle}/follow`, { method: 'POST' });
+      if (res?.ok) {
+        const resData = await res.json().catch(() => ({}));
+        const isFollowingNow = resData.isFollowing !== undefined ? !!resData.isFollowing : !!resData.following;
+        showToast(
+          isFollowingNow
+            ? `${hostUser.nickname || hostUser.handle}${currentLang === 'zh' ? ' 关注成功！✨' : currentLang === 'en' ? ' followed! ✨' : '님을 팔로우했습니다! ✨'}`
+            : t('profile.follow_requested', '팔로우를 신청했습니다. 호스트의 수락 후 팔로워 공개 기록이 열람됩니다.')
+        );
+        await fetchAllData(true);
+      } else {
+        showToast(currentLang === 'zh' ? '请求失败。' : currentLang === 'en' ? 'Request failed.' : '요청 처리에 실패했습니다.');
+      }
     } catch (err) {
-      showToast(err.message || (currentLang === 'zh' ? '关注失败。' : currentLang === 'en' ? 'Follow failed.' : '팔로우에 실패했습니다.'), 'error');
+      showToast(err.message || (currentLang === 'zh' ? '发生错误。' : currentLang === 'en' ? 'An error occurred.' : '오류가 발생했습니다.'));
     }
   };
   const [expandedFolders, setExpandedFolders] = useState({});

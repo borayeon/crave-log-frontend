@@ -74,12 +74,15 @@ const Sidebar = () => {
     else prevBanner();
   };
 
+  // ⭐️ 다른 사람 프로필 탐색 중(visitedHandle)이거나 사용자 검색 뷰(viewMode === 'search')일 때는 내 전용 '공개 & 팔로우' 메뉴 숨김
+  const canShowAccessControl = isAdmin && !visitedHandle && viewMode !== 'search';
+
   const navItems = [
     ...(!isAdmin ? [{ id: 'landing', icon: <Sparkles size={20} />, label: t('nav.home', '홈 / 소개'), desc: t('sidebar.desc_home', 'CraveLog 시작하기') }] : []),
     { id: 'profile', icon: <User size={20} />, label: t('nav.profile', '프로필'), desc: t('sidebar.desc_profile', '나를 소개하는 공간') },
     { id: 'archive', icon: <Network size={20} />, label: t('nav.archive', '컬렉션'), desc: t('sidebar.desc_archive', '내 취향 모아보기') },
     { id: 'timeline', icon: <History size={20} />, label: t('nav.timeline', '타임라인'), desc: t('sidebar.desc_timeline', '시간순 기록장') },
-    ...(isAdmin ? [{ id: 'access_control', icon: <ShieldCheck size={20} />, label: t('nav.access_short', '공개 & 팔로우'), desc: t('sidebar.desc_access', '기록 보안 및 인맥 관리') }] : []),
+    ...(canShowAccessControl ? [{ id: 'access_control', icon: <ShieldCheck size={20} />, label: t('nav.access_short', '공개 & 팔로우'), desc: t('sidebar.desc_access', '기록 보안 및 인맥 관리') }] : []),
   ];
 
   return (

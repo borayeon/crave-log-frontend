@@ -66,8 +66,8 @@ const MobileBottomNav = () => {
             <span className="text-[9px] font-bold">{t('nav.timeline', '타임라인')}</span>
         </button>
 
-        {/* 로그인 회원 전용: 공개 & 팔로우 관리 */}
-        {isAdmin && (
+        {/* 로그인 회원 전용: 공개 & 팔로우 관리 (내 프로필/기록 탐색 중일 때만 노출) */}
+        {isAdmin && !visitedHandle && viewMode !== 'search' && (
           <button 
             onClick={() => setViewMode('access_control')} 
             className={`flex flex-col items-center justify-center gap-1 w-14 h-full transition-all rounded-2xl ${viewMode === 'access_control' ? 'text-indigo-600 scale-105' : 'text-zinc-400 hover:text-zinc-600'}`}

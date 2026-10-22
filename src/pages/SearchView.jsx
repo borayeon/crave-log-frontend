@@ -236,17 +236,6 @@ const SearchView = () => {
               {t('search.found_count', { count: sortedResults.length })}
             </p>
           </div>
-
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setViewMode('access_control')}
-              className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-xs font-black text-zinc-600 hover:text-indigo-600 transition-all flex items-center gap-1.5 shadow-2xs"
-            >
-              <ShieldCheck size={15} className="text-indigo-600" />
-              {currentLang === 'zh' ? '我的搜索曝光设置' : currentLang === 'en' ? 'My Search Privacy' : '내 정보 검색 노출 설정'}
-            </button>
-          )}
         </div>
 
         {/* 페이지 내 통합 검색바 */}

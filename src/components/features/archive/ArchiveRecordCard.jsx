@@ -68,7 +68,7 @@ const ArchiveRecordCard = ({
           <p className="text-[11px] text-zinc-400 font-bold break-keep">
             {isSecret 
               ? (currentLang === 'zh' ? '请输入访问密码(PIN)进行解锁。' : currentLang === 'en' ? 'Enter PIN passcode to unlock.' : '비밀번호(PIN)를 입력하여 잠금을 해제하세요.') 
-              : (currentLang === 'zh' ? '关注作者即可浏览该记录。' : currentLang === 'en' ? 'Follow the author to view this record.' : '작성자를 팔로우하면 기록을 열람할 수 있습니다.')}
+              : (currentLang === 'zh' ? '经作者关注审批后即可浏览该记录。' : currentLang === 'en' ? 'Viewable after author approves your follow.' : '호스트의 팔로우 승인 후 기록을 열람할 수 있습니다.')}
           </p>
         </div>
 
@@ -92,7 +92,7 @@ const ArchiveRecordCard = ({
               }}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1.5"
             >
-              <Users size={13} /> {currentLang === 'zh' ? '关注并查看' : currentLang === 'en' ? 'Follow & View' : '팔로우하고 보기'}
+              <Users size={13} /> {currentLang === 'zh' ? '申请关注' : currentLang === 'en' ? 'Request Follow' : '팔로우 신청하기'}
             </button>
           )}
         </div>
