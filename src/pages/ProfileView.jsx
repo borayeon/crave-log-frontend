@@ -4,7 +4,7 @@ import {
   ChevronRight, Loader2, History, X as CloseIcon, Lock, Copy, Heart,
   Link, Terminal, PlayCircle, Camera, Hash, Users, Tv, MessageCircle, Globe,
   Code, Briefcase, UserPlus, UserCheck, CreditCard, MessageSquare, Palette, Compass, Quote, FileText, Grid,
-  KeyRound, ShieldCheck
+  KeyRound, ShieldCheck, Clock
 } from 'lucide-react';
 
 import { useAppStore } from '../store/AppStore';
@@ -56,7 +56,7 @@ const ProfileView = () => {
   const [currentPersona, setCurrentPersona] = useState('all');
   
   // 팔로우 상태 관리
-  const [followStatus, setFollowStatus] = useState({ isFollowing: false, followerCount: 0, followingCount: 0 });
+  const [followStatus, setFollowStatus] = useState({ isFollowing: false, isPending: false, followerCount: 0, followingCount: 0 });
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   
   // 자기소개 더보기/접기 상태 관리
@@ -232,7 +232,19 @@ const ProfileView = () => {
     if (!safeUser.handle) return;
     apiFetch(`/users/${safeUser.handle}/follow-status`)
       .then(res => res?.ok && res.json())
-      .then(data => data && setFollowStatus(data))
+      .then(data => {
+        if (data) {
+          const isFollowing = data.isFollowing !== undefined ? !!data.isFollowing : !!data.following;
+          const isPending = data.isPending !== undefined ? !!data.isPending : !!data.pending;
+          setFollowStatus({
+            ...data,
+            isFollowing,
+            following: isFollowing,
+            isPending,
+            pending: isPending,
+          });
+        }
+      })
       .catch(() => {});
   }, [safeUser.handle, apiFetch]);
 
@@ -245,26 +257,54 @@ const ProfileView = () => {
 
     try {
       setIsFollowLoading(true);
-      if (followStatus.isFollowing) {
+      const currentlyFollowing = followStatus.isFollowing !== undefined 
+        ? !!followStatus.isFollowing 
+        : !!followStatus.following;
+      const currentlyPending = !currentlyFollowing && (followStatus.isPending !== undefined 
+        ? !!followStatus.isPending 
+        : !!followStatus.pending);
+
+      if (currentlyFollowing || currentlyPending) {
+        // 팔로우 취소 또는 신청 취소 (DELETE)
         const res = await apiFetch(`/users/${safeUser.handle}/follow`, { method: 'DELETE' });
         if (res?.ok) {
           setFollowStatus(prev => ({
             ...prev,
             isFollowing: false,
-            followerCount: Math.max(0, prev.followerCount - 1),
+            following: false,
+            isPending: false,
+            pending: false,
+            followerCount: Math.max(0, (prev.followerCount || (currentlyFollowing ? 1 : 0)) - (currentlyFollowing ? 1 : 0)),
           }));
-          showToast(`@${safeUser.handle} ${currentLang === 'zh' ? '已取消关注。' : currentLang === 'en' ? 'unfollowed.' : '팔로우를 취소했습니다.'}`);
+          showToast(
+            currentlyFollowing
+              ? `@${safeUser.handle} ${currentLang === 'zh' ? '已取消关注。' : currentLang === 'en' ? 'unfollowed.' : '팔로우를 취소했습니다.'}`
+              : `@${safeUser.handle} ${currentLang === 'zh' ? '已取消关注申请。' : currentLang === 'en' ? 'Follow request cancelled.' : '팔로우 신청을 취소했습니다.'}`
+          );
           await fetchAllData(true, safeUser.handle);
         }
       } else {
+        // 팔로우 신청 (POST -> PENDING)
         const res = await apiFetch(`/users/${safeUser.handle}/follow`, { method: 'POST' });
         if (res?.ok) {
+          const resData = await res.json().catch(() => ({}));
+          const isFollowingNow = resData.isFollowing !== undefined ? !!resData.isFollowing : !!resData.following;
+          const isPendingNow = resData.isPending !== undefined ? !!resData.isPending : !isFollowingNow;
+
           setFollowStatus(prev => ({
             ...prev,
-            isFollowing: true,
-            followerCount: prev.followerCount + 1,
+            isFollowing: isFollowingNow,
+            following: isFollowingNow,
+            isPending: isPendingNow,
+            pending: isPendingNow,
+            followerCount: isFollowingNow ? (prev.followerCount || 0) + 1 : (prev.followerCount || 0),
           }));
-          showToast(`@${safeUser.handle} ${currentLang === 'zh' ? '已关注！🎉' : currentLang === 'en' ? 'followed! 🎉' : '님을 팔로우했습니다! 🎉'}`);
+
+          showToast(
+            isFollowingNow
+              ? `@${safeUser.handle} ${currentLang === 'zh' ? '已关注！🎉' : currentLang === 'en' ? 'followed! 🎉' : '님을 팔로우했습니다! 🎉'}`
+              : t('profile.follow_requested', '팔로우를 신청했습니다. 호스트의 수락 후 팔로우됩니다.')
+          );
           await fetchAllData(true, safeUser.handle);
         }
       }
@@ -755,21 +795,49 @@ const ProfileView = () => {
               </div>
               
               <div className="flex justify-end items-center gap-1.5 shrink-0">
-                {/* ⭐️ 타 사용자 프로필 열람 시 팔로우/팔로잉 버튼 */}
-                {isGuest && safeUser.handle && (
-                  <button 
-                    onClick={handleToggleFollow} 
-                    disabled={isFollowLoading}
-                    className={`h-7 md:h-8 px-3 rounded-full text-[10px] md:text-[11px] font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
-                      followStatus.isFollowing 
-                        ? 'bg-zinc-100 text-zinc-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-zinc-200' 
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    }`}
-                  >
-                    {followStatus.isFollowing ? <UserCheck size={13} /> : <UserPlus size={13} />}
-                    {currentLang === 'zh' ? (followStatus.isFollowing ? '已关注' : '关注') : currentLang === 'en' ? (followStatus.isFollowing ? 'Following' : 'Follow') : (followStatus.isFollowing ? '팔로잉' : '팔로우')}
-                  </button>
-                )}
+                {/* ⭐️ 타 사용자 프로필 열람 시 팔로우/요청됨/팔로잉 버튼 (3단계 상태) */}
+                {isGuest && safeUser.handle && (() => {
+                  const isFollowing = !!(followStatus.isFollowing || followStatus.following);
+                  const isPending = !isFollowing && !!(followStatus.isPending || followStatus.pending);
+
+                  return (
+                    <button 
+                      onClick={handleToggleFollow} 
+                      disabled={isFollowLoading}
+                      className={`h-7 md:h-8 px-3 rounded-full text-[10px] md:text-[11px] font-black transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                        isFollowing
+                          ? 'bg-zinc-100 text-zinc-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-zinc-200' 
+                          : isPending
+                          ? 'bg-amber-50 text-amber-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-amber-200'
+                          : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                      }`}
+                      title={
+                        isFollowing
+                          ? t('profile.unfollow', '팔로우 취소')
+                          : isPending
+                          ? t('profile.cancel_request', '신청 취소')
+                          : t('profile.follow', '팔로우')
+                      }
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserCheck size={13} />
+                          <span>{t('profile.following', '팔로잉')}</span>
+                        </>
+                      ) : isPending ? (
+                        <>
+                          <Clock size={13} className="text-amber-600" />
+                          <span>{t('profile.requested', '요청됨')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={13} />
+                          <span>{t('profile.follow', '팔로우')}</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
 
                 {!isProfileEmpty && (
                   <button onClick={() => setShowShareModal(true)} className="w-7 h-7 md:w-8 md:h-8 bg-white hover:bg-zinc-50 text-zinc-600 rounded-full flex items-center justify-center transition shadow-sm border border-zinc-200" title={t('common.share', '공유')}>
@@ -899,30 +967,44 @@ const ProfileView = () => {
           {!isProfileEmpty && (
             <>
               {/* ⭐️ 만약 현재 선택된 페르소나가 팔로워 전용인데 팔로우하지 않은 경우 */}
-              {isGuest && currentPersona !== 'all' && getPersonaLevel(activePersonaObj) === 1 && !followStatus.isFollowing ? (
-                <div className="mt-8 p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-inner">
-                    <Users size={32} />
+              {isGuest && currentPersona !== 'all' && getPersonaLevel(activePersonaObj) === 1 && !(followStatus.isFollowing || followStatus.following) ? (() => {
+                const isPending = !!(followStatus.isPending || followStatus.pending);
+
+                return (
+                  <div className="mt-8 p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-inner ${
+                      isPending ? 'bg-amber-50 border border-amber-100 text-amber-600' : 'bg-emerald-50 border border-emerald-100 text-emerald-600'
+                    }`}>
+                      {isPending ? <Clock size={32} /> : <Users size={32} />}
+                    </div>
+                    <span className={`text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-lg mb-2 ${
+                      isPending ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      {t('profile.level1_title', 'Level 1 · 팔로워 전용 페르소나')}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
+                      [{activePersonaObj.name}] {currentLang === 'zh' ? '角色仅限关注者查看' : currentLang === 'en' ? 'Persona is for followers only' : '페르소나는 팔로워에게만 공개되어 있습니다'}
+                    </h3>
+                    <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
+                      {isPending 
+                        ? t('profile.pending_notice', '호스트의 팔로우 승인 대기 중입니다. 수락되면 자동으로 열람하실 수 있습니다.')
+                        : t('profile.level1_desc', '이 페르소나는 호스트를 팔로우한 사용자에게만 공개됩니다.')}
+                    </p>
+                    <button
+                      onClick={handleToggleFollow}
+                      disabled={isFollowLoading}
+                      className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50 ${
+                        isPending 
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
+                    >
+                      {isPending ? <Clock size={16} /> : <Users size={16} />}
+                      <span>{isPending ? t('profile.cancel_request', '신청 취소') : t('profile.follow_btn', '✦ 팔로우 신청하기')}</span>
+                    </button>
                   </div>
-                  <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg mb-2">
-                    {t('profile.level1_title', 'Level 1 · 팔로워 전용 페르소나')}
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
-                    [{activePersonaObj.name}] {currentLang === 'zh' ? '角色仅限关注者查看' : currentLang === 'en' ? 'Persona is for followers only' : '페르소나는 팔로워에게만 공개되어 있습니다'}
-                  </h3>
-                  <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
-                    {t('profile.level1_desc', '이 페르소나는 호스트를 팔로우한 사용자에게만 공개됩니다.')}
-                  </p>
-                  <button
-                    onClick={handleToggleFollow}
-                    disabled={isFollowLoading}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                  >
-                    <Users size={16} />
-                    <span>{t('profile.follow_btn', '✦ 팔로우하고 바로 확인하기')}</span>
-                  </button>
-                </div>
-              ) : isGuest && currentPersona !== 'all' && getPersonaLevel(activePersonaObj) === 2 && !unlockedPersonas[currentPersona] ? (
+                );
+              })() : isGuest && currentPersona !== 'all' && getPersonaLevel(activePersonaObj) === 2 && !unlockedPersonas[currentPersona] ? (
                 /* ⭐️ 만약 현재 선택된 페르소나가 비밀번호 잠금인데 아직 해제되지 않은 경우 */
                 <div className="mt-8 p-8 sm:p-12 bg-white border border-amber-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
                   <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-4 shadow-inner">
@@ -1028,30 +1110,44 @@ const ProfileView = () => {
                   ) : (
                       <div className="mt-2 pb-10">
                           {/* ⭐️ 1단계: 팔로워 전용 서브 탭 잠금 화면 (게스트이면서 미팔로우 상태) */}
-                          {isGuest && getTabLevel(activeTab) === 1 && !followStatus.isFollowing ? (
-                            <div className="p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
-                              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-inner">
-                                <Users size={32} />
+                          {isGuest && getTabLevel(activeTab) === 1 && !(followStatus.isFollowing || followStatus.following) ? (() => {
+                            const isPending = !!(followStatus.isPending || followStatus.pending);
+
+                            return (
+                              <div className="p-8 sm:p-12 bg-white border border-emerald-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-inner ${
+                                  isPending ? 'bg-amber-50 border border-amber-100 text-amber-600' : 'bg-emerald-50 border border-emerald-100 text-emerald-600'
+                                }`}>
+                                  {isPending ? <Clock size={32} /> : <Users size={32} />}
+                                </div>
+                                <span className={`text-[11px] font-black tracking-wider uppercase px-2.5 py-1 rounded-lg mb-2 ${
+                                  isPending ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                }`}>
+                                  {currentLang === 'zh' ? 'Level 1 · 关注者专属子标签' : currentLang === 'en' ? 'Level 1 · Followers Only Sub-tab' : 'Level 1 · 팔로워 전용 서브 탭'}
+                                </span>
+                                <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
+                                  [{allTabsMap[activeTab]?.label || activeTab}] {currentLang === 'zh' ? '标签仅限关注者查看' : currentLang === 'en' ? 'Tab is for followers only' : '탭은 팔로워에게만 공개되어 있습니다'}
+                                </h3>
+                                <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
+                                  {isPending
+                                    ? t('profile.pending_notice', '호스트의 팔로우 승인 대기 중입니다. 수락되면 자동으로 열람하실 수 있습니다.')
+                                    : (currentLang === 'zh' ? `关注 ${safeUser.name || '作者'} 即可自由浏览此标签中的所有内容。` : currentLang === 'en' ? `Follow ${safeUser.name || 'the host'} to view all data and records in this sub-tab.` : `${safeUser.name || '작성자'} 님을 팔로우하시면 이 서브 탭에 담긴 소중한 데이터와 기록을 자유롭게 열람하실 수 있습니다.`)}
+                                </p>
+                                <button
+                                  onClick={handleToggleFollow}
+                                  disabled={isFollowLoading}
+                                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50 ${
+                                    isPending 
+                                      ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  }`}
+                                >
+                                  {isPending ? <Clock size={16} /> : <Users size={16} />}
+                                  <span>{isPending ? t('profile.cancel_request', '신청 취소') : t('profile.follow_btn', '✦ 팔로우 신청하기')}</span>
+                                </button>
                               </div>
-                              <span className="text-[11px] font-black tracking-wider uppercase px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg mb-2">
-                                {currentLang === 'zh' ? 'Level 1 · 关注者专属子标签' : currentLang === 'en' ? 'Level 1 · Followers Only Sub-tab' : 'Level 1 · 팔로워 전용 서브 탭'}
-                              </span>
-                              <h3 className="text-lg sm:text-xl font-black text-zinc-900 mb-1.5">
-                                [{allTabsMap[activeTab]?.label || activeTab}] {currentLang === 'zh' ? '标签仅限关注者查看' : currentLang === 'en' ? 'Tab is for followers only' : '탭은 팔로워에게만 공개되어 있습니다'}
-                              </h3>
-                              <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-md mb-6 leading-relaxed">
-                                {currentLang === 'zh' ? `关注 ${safeUser.name || '作者'} 即可自由浏览此标签中的所有内容。` : currentLang === 'en' ? `Follow ${safeUser.name || 'the host'} to view all data and records in this sub-tab.` : `${safeUser.name || '작성자'} 님을 팔로우하시면 이 서브 탭에 담긴 소중한 데이터와 기록을 자유롭게 열람하실 수 있습니다.`}
-                              </p>
-                              <button
-                                onClick={handleToggleFollow}
-                                disabled={isFollowLoading}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                              >
-                                <Users size={16} />
-                                <span>{t('profile.follow_btn', '✦ 팔로우하고 바로 확인하기')}</span>
-                              </button>
-                            </div>
-                          ) : isGuest && getTabLevel(activeTab) === 2 && !unlockedTabs[activeTab] ? (
+                            );
+                          })() : isGuest && getTabLevel(activeTab) === 2 && !unlockedTabs[activeTab] ? (
                             /* ⭐️ 2단계: 비밀번호 잠금 서브 탭 잠금 화면 (게스트이면서 미잠금해제 상태) */
                             <div className="p-8 sm:p-12 bg-white border border-amber-100 rounded-3xl text-center shadow-xs flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
                               <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-4 shadow-inner">

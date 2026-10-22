@@ -1,7 +1,31 @@
 import React, { useState } from 'react';
-import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, ShieldCheck, Globe, Check } from 'lucide-react';
+import { Menu, Sparkles, Search, User, LogOut, Lock, Plus, Eye, EyeOff, X, Settings, ShieldCheck, Globe, Check, Bell, Trash2 } from 'lucide-react';
 import { useAppStore } from '../../store/AppStore';
 import { trackSearchEvent } from '../../utils/analyticsTracker';
+
+const formatRelativeTime = (dateString, lang) => {
+  if (!dateString) return '';
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffSec = Math.floor((now - date) / 1000);
+
+  if (diffSec < 60) {
+    return lang === 'zh' ? '刚刚' : lang === 'en' ? 'Just now' : '방금 전';
+  }
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return lang === 'zh' ? `${diffMin}分钟前` : lang === 'en' ? `${diffMin}m ago` : `${diffMin}분 전`;
+  }
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) {
+    return lang === 'zh' ? `${diffHour}小时前` : lang === 'en' ? `${diffHour}h ago` : `${diffHour}시간 전`;
+  }
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) {
+    return lang === 'zh' ? `${diffDay}天前` : lang === 'en' ? `${diffDay}d ago` : `${diffDay}일 전`;
+  }
+  return date.toLocaleDateString();
+};
 
 const TopNavBar = () => {
   const { 
@@ -9,13 +33,17 @@ const TopNavBar = () => {
     setLoginModalOpen, setAddRecordModalOpen, showToast, handleLogout, 
     isGuestMode, setIsGuestMode, searchQuery, setSearchQuery, searchUsers,
     visitedHandle, resetToMyProfile, visitUserProfile,
-    t, currentLang, setLanguage, SUPPORTED_LANGS 
+    t, currentLang, setLanguage, SUPPORTED_LANGS,
+    notifications, unreadNotificationCount, fetchNotifications,
+    markNotificationAsRead, markAllNotificationsAsRead, deleteNotification,
+    acceptFollowRequest, rejectFollowRequest
   } = useAppStore();
 
-  // 상태 관리: 모바일 검색창 & 사용자 드롭다운 메뉴 & 언어 선택 드롭다운
+  // 상태 관리: 모바일 검색창 & 사용자 드롭다운 메뉴 & 언어 선택 드롭다운 & 알림 드롭다운
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false); 
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const currentLangObj = SUPPORTED_LANGS?.find(l => l.code === currentLang) || { code: 'ko', short: 'KO', flag: '🇰🇷', label: '한국어' };
 
@@ -195,11 +223,175 @@ const TopNavBar = () => {
                 <Plus size={14} /> <span className="hidden md:inline">{t('header.new_record', '새 기록')}</span>
               </button>
             )}
+
+            {/* 🔔 팔로우 및 시스템 알림 드롭다운 */}
+            <div className="relative">
+              <button 
+                onClick={() => { 
+                  setIsNotificationOpen(!isNotificationOpen); 
+                  setIsUserMenuOpen(false); 
+                  setIsLangMenuOpen(false); 
+                  if (!isNotificationOpen) fetchNotifications();
+                }} 
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition shadow-sm border relative ${
+                  isNotificationOpen 
+                    ? 'bg-indigo-50 text-indigo-600 border-indigo-200' 
+                    : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-indigo-600 hover:bg-indigo-50'
+                }`}
+                title={t('header.notifications_tooltip', '알림 확인')}
+              >
+                <Bell size={16} />
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
+                    {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationOpen && (
+                <>
+                  {/* 드롭다운 외부 영역 클릭 시 닫히도록 하는 투명 배경 */}
+                  <div className="fixed inset-0 z-40" onClick={() => setIsNotificationOpen(false)}></div>
+                  
+                  <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white border border-zinc-200/90 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* 알림 드롭다운 헤더 */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 bg-zinc-50/70">
+                      <div className="flex items-center gap-2">
+                        <Bell size={15} className="text-indigo-600" />
+                        <span className="text-sm font-black text-zinc-900">{t('header.notifications', '알림')}</span>
+                        {unreadNotificationCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-700">
+                            {unreadNotificationCount}
+                          </span>
+                        )}
+                      </div>
+
+                      {unreadNotificationCount > 0 && (
+                        <button
+                          onClick={markAllNotificationsAsRead}
+                          className="text-[11px] font-black text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                        >
+                          {t('header.mark_all_read', '모두 읽음')}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 알림 목록 */}
+                    <div className="max-h-80 overflow-y-auto divide-y divide-zinc-100">
+                      {notifications.length > 0 ? (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              if (!n.isRead) markNotificationAsRead(n.id);
+                              if (n.actor?.handle) {
+                                visitUserProfile(n.actor.handle);
+                              }
+                              setIsNotificationOpen(false);
+                            }}
+                            className={`p-3.5 hover:bg-zinc-50 transition-colors flex items-start gap-3 cursor-pointer group relative ${
+                              !n.isRead ? 'bg-indigo-50/30' : ''
+                            }`}
+                          >
+                            {/* 발신자 아바타 */}
+                            <div className="w-9 h-9 rounded-full bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200 mt-0.5">
+                              {n.actor?.profileImageUrl ? (
+                                <img src={n.actor.profileImageUrl} alt="avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center font-black text-xs text-zinc-500 bg-indigo-50 text-indigo-600">
+                                  {n.actor?.name?.charAt(0) || n.actor?.handle?.charAt(0) || '?'}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 알림 내용 */}
+                            <div className="flex-1 min-w-0 pr-6">
+                              <p className="text-xs text-zinc-800 leading-snug">
+                                <span className="font-black text-zinc-900 mr-1 hover:underline">
+                                  {n.actor?.name || `@${n.actor?.handle || '알 수 없음'}`}
+                                </span>
+                                <span>
+                                  {n.type === 'FOLLOW_REQUEST'
+                                    ? (currentLang === 'zh' ? '申请关注您。' : currentLang === 'en' ? 'requested to follow you.' : '님이 팔로우를 요청했습니다.')
+                                    : n.type === 'FOLLOW_ACCEPT'
+                                    ? (currentLang === 'zh' ? '已同意您的关注申请。' : currentLang === 'en' ? 'accepted your follow request.' : '님이 회원님의 팔로우 요청을 수락했습니다.')
+                                    : n.type === 'FOLLOW'
+                                    ? (currentLang === 'zh' ? '关注了您。' : currentLang === 'en' ? 'started following you.' : '님이 회원님을 팔로우하기 시작했습니다.')
+                                    : n.message}
+                                </span>
+                              </p>
+                              
+                              {/* 👥 팔로우 요청 알림일 경우 즉시 수락/거절 액션 버튼 노출 */}
+                              {n.type === 'FOLLOW_REQUEST' && n.actor?.id && (
+                                <div className="flex items-center gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      await acceptFollowRequest(n.actor.id);
+                                      if (!n.isRead) markNotificationAsRead(n.id);
+                                    }}
+                                    className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-black transition-colors shadow-xs flex items-center gap-1"
+                                  >
+                                    <Check size={12} />
+                                    <span>{t('profile.accept', '수락')}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      await rejectFollowRequest(n.actor.id);
+                                      if (!n.isRead) markNotificationAsRead(n.id);
+                                    }}
+                                    className="px-2.5 py-1 bg-zinc-100 hover:bg-rose-50 hover:text-rose-600 text-zinc-700 rounded-lg text-[11px] font-black transition-colors flex items-center gap-1"
+                                  >
+                                    <X size={12} />
+                                    <span>{t('profile.reject', '거절')}</span>
+                                  </button>
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                <span className="text-[10px] font-bold text-zinc-400">
+                                  {formatRelativeTime(n.createdAt, currentLang)}
+                                </span>
+                                {!n.isRead && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block" />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 알림 삭제 버튼 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNotification(n.id);
+                              }}
+                              className="absolute top-3 right-3 p-1 text-zinc-300 hover:text-rose-500 rounded-lg hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title={t('common.delete', '삭제')}
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center flex flex-col items-center justify-center">
+                          <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-300 mb-2.5">
+                            <Bell size={20} />
+                          </div>
+                          <p className="text-xs font-bold text-zinc-400">
+                            {t('header.no_notifications', '새로운 알림이 없습니다')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             
             {/* ⭐️ 나머지 메뉴를 깔끔하게 통합한 사용자 드롭다운 */}
             <div className="relative">
               <button 
-                onClick={() => { setIsUserMenuOpen(!isUserMenuOpen); setIsLangMenuOpen(false); }} 
+                onClick={() => { setIsUserMenuOpen(!isUserMenuOpen); setIsLangMenuOpen(false); setIsNotificationOpen(false); }} 
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition shadow-sm border ${isUserMenuOpen ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-indigo-600 hover:bg-indigo-50'}`}
                 title={t('header.user_menu', '사용자 메뉴')}
               >

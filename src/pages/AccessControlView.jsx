@@ -2,14 +2,37 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ShieldCheck, Globe, Users, KeyRound, Lock, Eye, EyeOff,
   UserCheck, UserMinus, UserX, Loader2, Search, Check, 
-  AlertCircle, Sparkles, RefreshCw, ChevronRight, X, Briefcase, Hash, FileText
+  AlertCircle, Sparkles, RefreshCw, ChevronRight, X, Briefcase, Hash, FileText, Clock
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 
 const AccessControlView = () => {
-  const { apiFetch, showToast, records, fetchAllData, user, currentUser, t, currentLang } = useAppStore();
+  const { 
+    apiFetch, showToast, records, fetchAllData, user, currentUser, 
+    isAdmin, setViewMode, setLoginModalOpen, visitedHandle, resetToMyProfile,
+    t, currentLang,
+    followRequests, followRequestCount, fetchFollowRequests, acceptFollowRequest, rejectFollowRequest
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState('records'); // 'records' | 'search_privacy' | 'followers'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 🔒 비로그인 사용자 및 타인 방문 상태의 접근 원천 방어
+  useEffect(() => {
+    if (!isAdmin) {
+      showToast(t('toast.login_required', '로그인이 필요한 서비스입니다. 🔒'), 'error');
+      setLoginModalOpen(true);
+      setViewMode('landing');
+      return;
+    }
+    if (visitedHandle && resetToMyProfile) {
+      resetToMyProfile();
+    }
+  }, [isAdmin, visitedHandle, resetToMyProfile, setLoginModalOpen, setViewMode, showToast, t]);
+
+  // 비로그인 상태일 때는 화면 노출을 완전히 차단
+  if (!isAdmin) {
+    return null;
+  }
 
   // ⭐️ 사용자 검색 노출 설정 상태 (내 프로필 privacy 동기화)
   const myProfile = currentUser || user;
@@ -76,7 +99,7 @@ const AccessControlView = () => {
   // 팔로우 관련 상태
   const [followers, setFollowers] = useState([]);
   const [followings, setFollowings] = useState([]);
-  const [followSubTab, setFollowSubTab] = useState('followers'); // 'followers' | 'followings'
+  const [followSubTab, setFollowSubTab] = useState('requests'); // 'requests' | 'followers' | 'followings'
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   // 비밀번호 설정 팝업 상태 (2단계 비밀 공개 설정 시 사용)
@@ -91,13 +114,14 @@ const AccessControlView = () => {
     setLocalRecords(records || []);
   }, [records]);
 
-  // 팔로우 목록 불러오기
+  // 팔로우 및 요청 목록 불러오기
   const loadFollowData = useCallback(async () => {
     try {
       setIsFollowLoading(true);
       const [followersRes, followingsRes] = await Promise.all([
         apiFetch('/me/followers'),
         apiFetch('/me/followings'),
+        fetchFollowRequests(),
       ]);
 
       if (followersRes?.ok) {
@@ -111,7 +135,7 @@ const AccessControlView = () => {
     } finally {
       setIsFollowLoading(false);
     }
-  }, [apiFetch]);
+  }, [apiFetch, fetchFollowRequests]);
 
   useEffect(() => {
     if (activeTab === 'followers') {
@@ -356,6 +380,11 @@ const AccessControlView = () => {
           >
             <Users size={14} className={activeTab === 'followers' ? 'text-indigo-600' : ''} />
             {currentLang === 'zh' ? `关注管理 (${followers.length})` : currentLang === 'en' ? `Followers (${followers.length})` : `팔로우 관리 (${followers.length})`}
+            {followRequestCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black leading-none">
+                {followRequestCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -689,9 +718,25 @@ const AccessControlView = () => {
       {activeTab === 'followers' && (
         <div className="mt-8 space-y-6">
           
-          {/* 상단 서브탭 (팔로워 vs 팔로잉) */}
+          {/* 상단 서브탭 (팔로우 요청 vs 팔로워 vs 팔로잉) */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setFollowSubTab('requests')}
+                className={`text-sm font-black pb-2 border-b-2 transition-all flex items-center gap-1.5 ${
+                  followSubTab === 'requests'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-700'
+                }`}
+              >
+                <Clock size={14} />
+                <span>{t('access.follow_requests', '팔로우 요청')}</span>
+                {followRequests.length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black leading-none">
+                    {followRequests.length}
+                  </span>
+                )}
+              </button>
               <button
                 onClick={() => setFollowSubTab('followers')}
                 className={`text-sm font-black pb-2 border-b-2 transition-all ${
@@ -723,6 +768,74 @@ const AccessControlView = () => {
               <RefreshCw size={16} className={isFollowLoading ? 'animate-spin text-indigo-600' : ''} />
             </button>
           </div>
+
+          {/* 목록: 1. 팔로우 요청 대기 목록 */}
+          {followSubTab === 'requests' && (
+            <div className="space-y-3">
+              {followRequests.length > 0 ? (
+                followRequests.map(r => (
+                  <div 
+                    key={r.id} 
+                    className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-sm flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-full bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200">
+                        {r.profileImageUrl ? (
+                          <img src={r.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-black text-sm text-zinc-500">
+                            {r.name?.charAt(0) || '?'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-black text-zinc-900 truncate">{r.name}</h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+                            {t('profile.requested', '요청됨')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 font-bold truncate">@{r.handle}</p>
+                        {r.statusMessage && (
+                          <p className="text-xs text-zinc-500 font-medium truncate mt-0.5">{r.statusMessage}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const ok = await acceptFollowRequest(r.id);
+                          if (ok) {
+                            loadFollowData();
+                          }
+                        }}
+                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Check size={14} /> {t('profile.accept', '수락')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await rejectFollowRequest(r.id);
+                        }}
+                        className="px-3 py-1.5 bg-zinc-50 hover:bg-rose-50 border border-zinc-200 hover:border-rose-200 text-zinc-600 hover:text-rose-600 rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
+                      >
+                        <X size={14} /> {t('profile.reject', '거절')}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-white rounded-2xl p-12 text-center border border-zinc-200/80">
+                  <p className="text-sm font-bold text-zinc-400">
+                    {t('access.no_requests', '대기 중인 팔로우 요청이 없습니다.')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 목록 */}
           {followSubTab === 'followers' && (

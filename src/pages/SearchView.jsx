@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, Globe, Briefcase, GraduationCap, MapPin, Sparkles, 
   Users, Eye, UserPlus, UserCheck, Hash, X, SlidersHorizontal, 
-  ShieldCheck, ChevronDown, FileText
+  ShieldCheck, ChevronDown, FileText, Clock
 } from 'lucide-react';
 import { useAppStore } from '../store/AppStore';
 import { trackSearchEvent } from '../utils/analyticsTracker';
@@ -102,7 +102,7 @@ const SearchView = () => {
     return sortedResults.slice(0, visibleCount);
   }, [sortedResults, visibleCount]);
 
-  // 검색 카드에서 즉시 팔로우 / 언팔로우 토글
+  // 검색 카드에서 즉시 팔로우 신청 / 언팔로우 / 신청 취소
   const handleToggleFollow = async (e, targetUser) => {
     e.stopPropagation();
     if (!isAdmin) {
@@ -114,33 +114,87 @@ const SearchView = () => {
     const handle = targetUser.handle;
     if (followLoadingMap[handle]) return;
 
-    const currentlyFollowing = !!targetUser.isFollowing;
+    const currentlyFollowing = targetUser.isFollowing !== undefined 
+      ? !!targetUser.isFollowing 
+      : !!targetUser.following;
+    const currentlyPending = targetUser.isPending !== undefined
+      ? !!targetUser.isPending
+      : !!targetUser.pending;
+
     setFollowLoadingMap(prev => ({ ...prev, [handle]: true }));
 
     try {
-      const res = await apiFetch(`/users/${handle}/follow`, {
-        method: currentlyFollowing ? 'DELETE' : 'POST',
-      });
+      if (currentlyFollowing || currentlyPending) {
+        // 팔로우 취소 또는 신청 취소 (DELETE)
+        const res = await apiFetch(`/users/${handle}/follow`, { method: 'DELETE' });
+        if (res?.ok) {
+          const resData = await res.json().catch(() => ({}));
+          const isFollowingNow = resData.isFollowing !== undefined ? !!resData.isFollowing : false;
+          const isPendingNow = resData.isPending !== undefined ? !!resData.isPending : false;
+          const followerCountNow = typeof resData.followerCount === 'number'
+            ? resData.followerCount
+            : Math.max(0, (targetUser.followerCount || 0) - (currentlyFollowing ? 1 : 0));
 
-      if (res?.ok) {
-        setSearchResults(prev =>
-          prev.map(u =>
-            u.handle === handle
-              ? {
-                  ...u,
-                  isFollowing: !currentlyFollowing,
-                  followerCount: Math.max(0, (u.followerCount || 0) + (currentlyFollowing ? -1 : 1)),
-                }
-              : u
-          )
-        );
-        showToast(
-          currentlyFollowing
-            ? `@${handle} ${currentLang === 'zh' ? '已取消关注。' : currentLang === 'en' ? 'unfollowed.' : '팔로우를 취소했습니다.'}`
-            : `@${handle} ${currentLang === 'zh' ? '关注成功！✨' : currentLang === 'en' ? 'followed! ✨' : '님을 팔로우했습니다! ✨'}`
-        );
+          setSearchResults(prev =>
+            prev.map(u =>
+              u.handle === handle
+                ? {
+                    ...u,
+                    isFollowing: isFollowingNow,
+                    following: isFollowingNow,
+                    isPending: isPendingNow,
+                    pending: isPendingNow,
+                    followerCount: followerCountNow,
+                  }
+                : u
+            )
+          );
+          showToast(
+            currentlyFollowing
+              ? `@${handle} ${currentLang === 'zh' ? '已取消关注。' : currentLang === 'en' ? 'unfollowed.' : '팔로우를 취소했습니다.'}`
+              : `@${handle} ${currentLang === 'zh' ? '已取消关注申请。' : currentLang === 'en' ? 'Follow request cancelled.' : '팔로우 신청을 취소했습니다.'}`
+          );
+        } else {
+          showToast(currentLang === 'zh' ? '请求失败。' : currentLang === 'en' ? 'Request failed.' : '요청 처리에 실패했습니다.');
+        }
       } else {
-        showToast(currentLang === 'zh' ? '请求失败。' : currentLang === 'en' ? 'Request failed.' : '요청 처리에 실패했습니다.');
+        // 팔로우 신청 (POST -> PENDING)
+        const res = await apiFetch(`/users/${handle}/follow`, { method: 'POST' });
+        if (res?.ok) {
+          const resData = await res.json().catch(() => ({}));
+          const isFollowingNow = resData.isFollowing !== undefined 
+            ? !!resData.isFollowing 
+            : !!resData.following;
+          const isPendingNow = resData.isPending !== undefined 
+            ? !!resData.isPending 
+            : (resData.following === undefined ? true : !!resData.pending);
+          const followerCountNow = typeof resData.followerCount === 'number'
+            ? resData.followerCount
+            : (isFollowingNow ? (targetUser.followerCount || 0) + 1 : (targetUser.followerCount || 0));
+
+          setSearchResults(prev =>
+            prev.map(u =>
+              u.handle === handle
+                ? {
+                    ...u,
+                    isFollowing: isFollowingNow,
+                    following: isFollowingNow,
+                    isPending: isPendingNow,
+                    pending: isPendingNow,
+                    followerCount: followerCountNow,
+                  }
+                : u
+            )
+          );
+
+          showToast(
+            isFollowingNow
+              ? `@${handle} ${currentLang === 'zh' ? '关注成功！✨' : currentLang === 'en' ? 'followed! ✨' : '님을 팔로우했습니다! ✨'}`
+              : t('profile.follow_requested', '팔로우를 신청했습니다. 호스트의 수락 후 팔로우됩니다.')
+          );
+        } else {
+          showToast(currentLang === 'zh' ? '请求失败。' : currentLang === 'en' ? 'Request failed.' : '요청 처리에 실패했습니다.');
+        }
       }
     } catch (err) {
       console.error('Follow toggle error:', err);
@@ -397,31 +451,50 @@ const SearchView = () => {
                         </div>
                       </div>
 
-                      {/* 팔로우 / 언팔로우 버튼 (본인 제외) */}
-                      {!isMe && (
-                        <button
-                          type="button"
-                          disabled={!!followLoadingMap[u.handle]}
-                          onClick={(e) => handleToggleFollow(e, u)}
-                          className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 shrink-0 border ${
-                            u.isFollowing
-                              ? 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
-                              : 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600'
-                          }`}
-                        >
-                          {u.isFollowing ? (
-                            <>
-                              <UserCheck size={13} />
-                              <span>{currentLang === 'zh' ? '已关注' : currentLang === 'en' ? 'Following' : '팔로잉'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus size={13} />
-                              <span>{currentLang === 'zh' ? '关注' : currentLang === 'en' ? 'Follow' : '팔로우'}</span>
-                            </>
-                          )}
-                        </button>
-                      )}
+                      {/* 팔로우 / 신청 취소 / 언팔로우 버튼 (본인 제외) */}
+                      {!isMe && (() => {
+                        const isFollowing = !!(u.isFollowing || u.following);
+                        const isPending = !isFollowing && !!(u.isPending || u.pending);
+
+                        return (
+                          <button
+                            type="button"
+                            disabled={!!followLoadingMap[u.handle]}
+                            onClick={(e) => handleToggleFollow(e, u)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 shrink-0 border ${
+                              isFollowing
+                                ? 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
+                                : isPending
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200'
+                                : 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600'
+                            }`}
+                            title={
+                              isFollowing
+                                ? t('profile.unfollow', '팔로우 취소')
+                                : isPending
+                                ? t('profile.cancel_request', '신청 취소')
+                                : t('profile.follow', '팔로우')
+                            }
+                          >
+                            {isFollowing ? (
+                              <>
+                                <UserCheck size={13} />
+                                <span>{t('profile.following', '팔로잉')}</span>
+                              </>
+                            ) : isPending ? (
+                              <>
+                                <Clock size={13} className="text-amber-600" />
+                                <span>{t('profile.requested', '요청됨')}</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus size={13} />
+                                <span>{t('profile.follow', '팔로우')}</span>
+                              </>
+                            )}
+                          </button>
+                        );
+                      })()}
                     </div>
 
                     {/* 중단: 직무 / 전공 / 지역 정보 */}

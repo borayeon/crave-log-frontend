@@ -22,7 +22,7 @@ import NotFoundView from './pages/NotFoundView'; // ⭐️ 404 페이지 임포�
 import { trackPlatformVisit, initGoogleAnalytics } from './utils/analyticsTracker';
 
 const AppContent = () => {
-  const { viewMode, isLoading } = useAppStore();
+  const { viewMode, isLoading, isAdmin } = useAppStore();
 
   // ⭐️ GA4 초기화 (측정 ID가 환경변수에 있을 시 자동 주입)
   useEffect(() => {
@@ -73,8 +73,8 @@ const AppContent = () => {
              {viewMode === 'archive' && <ArchiveView />}
              {viewMode === 'timeline' && <TimelineView />}
              {viewMode === 'search' && <SearchView />}
-             {viewMode === 'account_settings' && <AccountSettingsView />}
-             {viewMode === 'access_control' && <AccessControlView />}
+             {viewMode === 'account_settings' && (isAdmin ? <AccountSettingsView /> : <LandingView />)}
+             {viewMode === 'access_control' && (isAdmin ? <AccessControlView /> : <LandingView />)}
              
              {/* ⭐️ 404 에러 페이지 로직: 위에서 정의한 뷰가 아닐 때 렌더링됩니다 */}
              {!['landing', 'profile', 'edit_profile', 'archive', 'timeline', 'search', 'account_settings', 'access_control'].includes(viewMode) && (

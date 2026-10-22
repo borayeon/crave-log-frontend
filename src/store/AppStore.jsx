@@ -79,7 +79,13 @@ export const AppProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const v = params.get('view');
+      const token = localStorage.getItem('accessToken');
+
       if (v && ['landing', 'profile', 'archive', 'timeline', 'access_control', 'search', 'account_settings'].includes(v)) {
+        // 🔒 공개 권한 설정 및 계정 설정은 비로그인 회원 접근 원천 차단
+        if (['access_control', 'account_settings'].includes(v) && !token) {
+          return 'landing';
+        }
         return v;
       }
       // 공유 핸들 파라미터(?u=...)가 명시된 경우 프로필 뷰로 직행
@@ -88,7 +94,6 @@ export const AppProvider = ({ children }) => {
         return 'profile';
       }
       // 로그인된 회원일 경우 본인 프로필 뷰로 직행
-      const token = localStorage.getItem('accessToken');
       if (token) {
         return 'profile';
       }
@@ -116,6 +121,14 @@ export const AppProvider = ({ children }) => {
   const [records, setRecords] = useState([]);
   const [tagTree, setTagTree] = useState([]);
 
+  // 🔔 팔로우 및 시스템 알림 상태
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+
+  // 👥 팔로우 신청/수락 대기 상태
+  const [followRequests, setFollowRequests] = useState([]);
+  const [followRequestCount, setFollowRequestCount] = useState(0);
+
   // 🌐 i18n 다국어 지원 상태 (ko: 한국어, en: English, zh: 简体中文)
   const [currentLang, setCurrentLang] = useState(detectInitialLang);
 
@@ -137,20 +150,33 @@ export const AppProvider = ({ children }) => {
     }
   }, [currentLang]);
 
+  const showToast = useCallback((msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  }, []);
+
   // 초기에는 "손님 프로필"을 실제 데이터로 취급하지 않도록 한다.
   const [user, setUser] = useState(null);
   
   // ⭐️ 1. 진짜 내 계정 데이터를 고정하기 위한 새로운 상태 추가
   const [currentUser, setCurrentUser] = useState(null); 
 
-  // ⭐️ 통합 네비게이션 함수 (화면 전환 시 URL 찌꺼기 완벽 청소 및 상태 동기화)
+  // ⭐️ 통합 네비게이션 함수 (화면 전환 시 URL 찌꺼기 완벽 청소 및 비로그인 접근 통제)
   const setViewMode = useCallback((newMode, options = {}) => {
+    const token = localStorage.getItem('accessToken');
+
+    // 🔒 비로그인 사용자의 공개 권한 및 계정 설정 접근 차단
+    if (['access_control', 'account_settings'].includes(newMode) && !token) {
+      setLoginModalOpen(true);
+      showToast(t('toast.login_required', '로그인이 필요한 서비스입니다. 🔒'));
+      return;
+    }
+
     _setViewMode(newMode);
 
     if (newMode === 'landing') {
       // ⭐️ 홈으로 갈 때는 방문 중이던 사용자 상태와 주소창의 ?u=, ?p= 파라미터를 완전히 제거
       setVisitedHandle(null);
-      const token = localStorage.getItem('accessToken');
       setIsGuestMode(!token);
       if (!token) {
         setUser(null);
@@ -162,21 +188,18 @@ export const AppProvider = ({ children }) => {
       if (!options.keepHandle && !options.handle && !visitedHandle) {
         window.history.pushState({}, '', window.location.pathname);
       }
+    } else if (newMode === 'search') {
+      window.history.pushState({}, '', `${window.location.pathname}?view=search`);
     } else {
       if (!visitedHandle && window.location.search.includes('u=')) {
         window.history.pushState({}, '', window.location.pathname);
       }
     }
-  }, [visitedHandle]);
+  }, [visitedHandle, showToast, t]);
 
   const goToLanding = useCallback(() => {
     setViewMode('landing');
   }, [setViewMode]);
-
-  const showToast = useCallback((msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3000);
-  }, []);
 
   // -------------------------------------------------------
   // API FETCH
@@ -235,6 +258,77 @@ export const AppProvider = ({ children }) => {
     },
     []
   );
+
+  // -------------------------------------------------------
+  // NOTIFICATIONS (팔로우 및 시스템 알림 API)
+  // -------------------------------------------------------
+  const fetchNotifications = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    try {
+      const [listRes, countRes] = await Promise.all([
+        apiFetch('/me/notifications'),
+        apiFetch('/me/notifications/unread-count'),
+      ]);
+
+      if (listRes?.ok) {
+        const listData = await listRes.json();
+        setNotifications(Array.isArray(listData) ? listData : []);
+      }
+      if (countRes?.ok) {
+        const countData = await countRes.json();
+        setUnreadNotificationCount(countData?.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('알림 조회 실패:', err);
+    }
+  }, [apiFetch]);
+
+  const markNotificationAsRead = useCallback(async (id) => {
+    try {
+      const res = await apiFetch(`/me/notifications/${id}/read`, { method: 'PATCH' });
+      if (res?.ok) {
+        setNotifications(prev =>
+          prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+        );
+        setUnreadNotificationCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('알림 읽음 처리 실패:', err);
+    }
+  }, [apiFetch]);
+
+  const markAllNotificationsAsRead = useCallback(async () => {
+    try {
+      const res = await apiFetch('/me/notifications/read-all', { method: 'PATCH' });
+      if (res?.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadNotificationCount(0);
+      }
+    } catch (err) {
+      console.error('전체 알림 읽음 처리 실패:', err);
+    }
+  }, [apiFetch]);
+
+  const deleteNotification = useCallback(async (id) => {
+    try {
+      const target = notifications.find(n => n.id === id);
+      const res = await apiFetch(`/me/notifications/${id}`, { method: 'DELETE' });
+      if (res?.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        if (target && !target.isRead) {
+          setUnreadNotificationCount(prev => Math.max(0, prev - 1));
+        }
+      }
+    } catch (err) {
+      console.error('알림 삭제 실패:', err);
+    }
+  }, [apiFetch, notifications]);
 
   // -------------------------------------------------------
   // PROFILE DATA LOAD
@@ -485,6 +579,99 @@ export const AppProvider = ({ children }) => {
   );
 
   // -------------------------------------------------------
+  // FOLLOW REQUESTS (팔로우 신청/수락 승인제 API)
+  // -------------------------------------------------------
+  const fetchFollowRequests = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setFollowRequests([]);
+      setFollowRequestCount(0);
+      return;
+    }
+
+    try {
+      const [listRes, countRes] = await Promise.all([
+        apiFetch('/me/follow-requests'),
+        apiFetch('/me/follow-requests/count'),
+      ]);
+
+      if (listRes?.ok) {
+        const listData = await listRes.json();
+        setFollowRequests(Array.isArray(listData) ? listData : []);
+      }
+      if (countRes?.ok) {
+        const countData = await countRes.json();
+        setFollowRequestCount(countData?.count || 0);
+      }
+    } catch (err) {
+      console.error('팔로우 요청 조회 실패:', err);
+    }
+  }, [apiFetch]);
+
+  const acceptFollowRequest = useCallback(async (followerId) => {
+    try {
+      const res = await apiFetch(`/me/follow-requests/${followerId}/accept`, { method: 'POST' });
+      if (res?.ok) {
+        setFollowRequests(prev => prev.filter(r => r.id !== followerId));
+        setFollowRequestCount(prev => Math.max(0, prev - 1));
+        fetchNotifications();
+        fetchAllData(true);
+        showToast(
+          currentLang === 'zh'
+            ? '已接受关注申请！🎉'
+            : currentLang === 'en'
+            ? 'Follow request accepted! 🎉'
+            : '팔로우 요청을 수락했습니다! 🎉'
+        );
+        return true;
+      } else {
+        showToast(
+          currentLang === 'zh'
+            ? '处理失败。'
+            : currentLang === 'en'
+            ? 'Failed to process request.'
+            : '수락 처리에 실패했습니다.'
+        );
+        return false;
+      }
+    } catch (err) {
+      console.error('팔로우 수락 오류:', err);
+      return false;
+    }
+  }, [apiFetch, fetchNotifications, fetchAllData, currentLang, showToast]);
+
+  const rejectFollowRequest = useCallback(async (followerId) => {
+    try {
+      const res = await apiFetch(`/me/follow-requests/${followerId}/reject`, { method: 'DELETE' });
+      if (res?.ok) {
+        setFollowRequests(prev => prev.filter(r => r.id !== followerId));
+        setFollowRequestCount(prev => Math.max(0, prev - 1));
+        fetchNotifications();
+        showToast(
+          currentLang === 'zh'
+            ? '已拒绝关注申请。'
+            : currentLang === 'en'
+            ? 'Follow request declined.'
+            : '팔로우 요청을 거절했습니다.'
+        );
+        return true;
+      } else {
+        showToast(
+          currentLang === 'zh'
+            ? '处理失败。'
+            : currentLang === 'en'
+            ? 'Failed to process request.'
+            : '거절 처리에 실패했습니다.'
+        );
+        return false;
+      }
+    } catch (err) {
+      console.error('팔로우 거절 오류:', err);
+      return false;
+    }
+  }, [apiFetch, fetchNotifications, currentLang, showToast]);
+
+  // -------------------------------------------------------
   // 로그아웃
   // -------------------------------------------------------
   const handleLogout = useCallback(async () => {
@@ -495,11 +682,15 @@ export const AppProvider = ({ children }) => {
     setIsGuestMode(true);
     _setViewMode('landing');
     
-    // ⭐️ 로그아웃 시 내 고정 정보 및 프로필 상태 비움
+    // ⭐️ 로그아웃 시 내 고정 정보, 알림 및 팔로우 요청 상태 비움
     setCurrentUser(null);
     setUser(null);
     setRecords([]);
     setTagTree([]);
+    setNotifications([]);
+    setUnreadNotificationCount(0);
+    setFollowRequests([]);
+    setFollowRequestCount(0);
 
     window.history.pushState(
       {},
@@ -509,6 +700,21 @@ export const AppProvider = ({ children }) => {
 
     showToast(currentLang === 'zh' ? '已退出登录。👋' : currentLang === 'en' ? 'Logged out. 👋' : '로그아웃 되었습니다. 👋');
   }, [showToast, currentLang]);
+
+  // 🔔 로그인 회원 알림 및 팔로우 요청 주기적 폴링 및 동기화 (30초 주기)
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    fetchNotifications();
+    fetchFollowRequests();
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchFollowRequests();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isAdmin, fetchNotifications, fetchFollowRequests]);
 
   // -------------------------------------------------------
   // 최초 진입
@@ -720,7 +926,22 @@ export const AppProvider = ({ children }) => {
 
         apiFetch,
         fetchAllData,
-        handleLogout
+        handleLogout,
+
+        // 🔔 알림 상태 및 핸들러
+        notifications,
+        unreadNotificationCount,
+        fetchNotifications,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        deleteNotification,
+
+        // 👥 팔로우 신청/수락 상태 및 핸들러
+        followRequests,
+        followRequestCount,
+        fetchFollowRequests,
+        acceptFollowRequest,
+        rejectFollowRequest
       }}
     >
       {children}
